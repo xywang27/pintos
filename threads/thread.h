@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/fixednumber.h"
+#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -112,7 +113,7 @@ struct thread
     bool bWait;
     bool SaveData;
     struct thread *father;
-    semaphore SemaWait
+    semaphore SemaWait;
 
 #endif
 
