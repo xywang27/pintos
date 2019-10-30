@@ -113,7 +113,7 @@ struct thread
     bool bWait;
     bool SaveData;
     struct thread *father;
-    semaphore SemaWait;
+    struct semaphore SemaWait;
 
 #endif
 
