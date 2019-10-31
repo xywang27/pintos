@@ -293,6 +293,60 @@ syscall_handler (struct intr_frame *f UNUSED)
       f->eax = retval;
       return;
     }
+
+    case SYS_SEEK:
+    {
+      if (!check_ptr (f->esp +4, 8))
+      {
+        thread_exit();
+        return;
+      }
+
+      int fd = *(int *)(f->esp + 4);
+      unsigned position = *(unsigned *)(f->esp + 8);
+
+      struct fd_entry *fd_entry = get_fd_entry(fd);
+      if (fd_entry) {
+        file_seek (fd_entry->file, position);
+      }
+      return;
+    }
+
+    case SYS_TELL:
+    {
+
+      if (!check_ptr (f->esp +4, 4))
+      {
+        thread_exit();
+        return;
+      }
+
+      int fd = *(int *)(f->esp + 4);
+      struct fd_entry *fd_entry = get_fd_entry (fd);
+
+      f->eax = file_tell (fd_entry->file);
+
+      return;
+    }
+
+    case SYS_CLOSE:
+    {
+      if (!check_ptr (f->esp +4, 4))
+      {
+        thread_exit();
+        return;
+      }
+
+      int fd = *(int *)(f->esp + 4);
+
+      struct fd_entry *fd_entry = get_fd_entry (fd);
+      file_close (fd_entry->file);
+      list_remove (&fd_entry->elem);
+      free (fd_entry);
+
+      return;
+    }
+
     default:
     break;
   }
