@@ -115,11 +115,11 @@ struct thread
 
 struct wait_status{
   struct list_elem elem;
-  struct lock lock;
+  struct lock *lock;
   int ref_cnt;
   tid_t tid;
   int status;
-  struct semaphore dead;
+  struct semaphore *dead;
 }
 
 /* If false (default), use round-robin scheduler.

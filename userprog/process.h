@@ -6,7 +6,7 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "filesys/inode.h"
-#include "filesys/cache.h"
+
 
 struct fd_entry
 {
