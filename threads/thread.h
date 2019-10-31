@@ -4,7 +4,6 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -91,10 +90,6 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
 
-
-    struct wait_status *wait_status;   
-    struct list children;               
-
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -102,29 +97,11 @@ struct thread
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
 #endif
-                  
-    char *program_name;                 // program name
-    tid_t parent_tid;                   // parent process's id
-    struct list fd_entry_list;          // list of files opened by this thread
-    int next_fd;                        // next file descriptor to be opened
-    struct dir *cwd;    
-
-    struct file *executable;            // executable file               
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
-  };
 
-struct wait_status
-  {
-    struct list_elem elem;              
-    struct lock lock;                   
-    int ref_cnt;                        
-                                        
-                                        
-    tid_t tid;                          
-    int status;                      
-    struct semaphore dead;              
+    int exit_code;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -149,7 +126,6 @@ tid_t thread_tid (void);
 const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
-void sys_exit (void);
 void thread_yield (void);
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
@@ -164,5 +140,4 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-struct thread *thread_get(tid_t tid);
 #endif /* threads/thread.h */
