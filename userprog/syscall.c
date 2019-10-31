@@ -86,6 +86,21 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
+    case SYS_EXIT:
+    {
+      int status;
+      // check if arg is in boundary
+      if (check_ptr(f->esp + 4, 4)){
+        // extract status
+        status = *((int*)(f->esp+4));
+        thread_current ()->exit_code = status;
+        thread_exit ();
+      }else{
+        thread_exit ();
+      }
+      return;
+    }
+
     case SYS_WRITE:
     {
       if ( !check_ptr (f->esp + 4, 12) ){
