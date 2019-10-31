@@ -95,14 +95,14 @@ start_process (void *file_name_)
   p -= 4;
   *p=0;
   if_.esp = p;*/
-  i=argc;
+  i=n;
   if_.esp = if_.esp-4;
   (*(int *)if_.esp)=0;
   //printf("%d\targv[%d]\t%d\n",if_.esp,i,*((int *)if_.esp));
   while (--i>=0) {
 
     if_.esp = if_.esp-4;//sizeof()
-    (*(char **)if_.esp) = addr_arr[i]; // if_.esp a pointer to uint32_t*
+    (*(char **)if_.esp) = arg[i]; // if_.esp a pointer to uint32_t*
     //printf("%d\targv[%d]\t%d\n",if_.esp,i,(*(char **)if_.esp));
   }
 
@@ -112,7 +112,7 @@ start_process (void *file_name_)
 
   //put argc
   if_.esp = if_.esp-4;
-  (*(int *)if_.esp)=argc;
+  (*(int *)if_.esp)=n;
   //printf("%d\targc\t%d\n",if_.esp,(*(int *)if_.esp));
 
   //put return address 0
