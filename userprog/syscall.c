@@ -86,7 +86,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
-    /*case SYS_WRITE:
+    case SYS_WRITE:
     {
       if ( !check_ptr (f->esp + 4, 12) ){
         thread_exit ();
@@ -144,7 +144,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       f->eax = retval;
       return;
-    }*/
+    }
   }
 }
 
