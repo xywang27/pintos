@@ -67,14 +67,15 @@ check_str (void * str)
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
-  if ( !check_ptr (f->esp, 4) ) {
-    thread_exit();
-    return;
-  }
   if (!is_user_vaddr(f->esp)){
     thread_current ()->exit_code = -1;
     thread_exit();
   }
+  if ( !check_ptr (f->esp, 4) ) {
+    thread_exit();
+    return;
+  }
+
   /*is_valid_addr (&mc, f->esp, 4);*/
   // get syscall_num and check if it's valid
   int syscall_num = *((int *)f->esp);
