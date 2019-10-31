@@ -121,6 +121,21 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
+    case SYS_WAIT:
+    {
+      int pid;
+      if (check_ptr (f->esp + 4, 4))
+      {
+        pid = *((int*)f->esp+1);
+      } else {
+        thread_exit ();
+        return;
+      }
+
+      f->eax = process_wait(pid);
+      return;
+    }
+
     case SYS_CREATE:
     {
       if (!check_ptr (f->esp +4, 4) ||
