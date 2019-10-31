@@ -187,6 +187,53 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
+    case SYS_READ:
+    {
+      if ( !check_ptr (f->esp + 4, 12) )
+      {
+        thread_exit();
+        return;
+      }
+
+      int fd = *(int *)(f->esp + 4);
+      void *buffer = *(char**)(f->esp + 8);
+      unsigned size = *(unsigned *)(f->esp + 12);
+      if ( !check_ptr (buffer, 1) || !check_ptr (buffer + size, 1) )
+      {
+        thread_exit();
+        return;
+      }
+
+      struct fd_entry *fd_entry = get_fd_entry (fd);
+      if (fd_entry == NULL || fd_entry->dir) {
+        f->eax = -1;
+        return;
+      }
+
+      size_t tmp_size = size;
+      void *tmp_buffer = buffer;
+      int retval = 0;
+      while (tmp_size > 0)
+      {
+        size_t read_bytes;
+        if (tmp_size < PGSIZE - pg_ofs (tmp_buffer)) {
+          read_bytes = tmp_size;
+        } else {
+          read_bytes = PGSIZE - pg_ofs (tmp_buffer);
+        }
+
+        off_t bytes_read = file_read (fd_entry->file, tmp_buffer, read_bytes);
+        retval += bytes_read;
+
+        tmp_size -= bytes_read;
+        tmp_buffer += bytes_read;
+
+      }
+
+      f->eax = retval;
+      return;
+    }
+
     case SYS_WRITE:
     {
       if ( !check_ptr (f->esp + 4, 12) ){
