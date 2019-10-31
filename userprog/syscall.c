@@ -101,7 +101,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         return;
       }
 
-      if (fd == STDOUT) {
+      if (fd == 1) {
         putbuf((char *)buffer, (size_t)size);
         f->eax = size;
         return;
