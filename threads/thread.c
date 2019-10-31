@@ -293,13 +293,11 @@ thread_exit (void)
 #ifdef USERPROG
   process_exit ();
 #endif
-  sys_exit ();
 
   /* Remove thread from all threads list, set our status to dying,
      and schedule another process.  That process will destroy us
      when it calls thread_schedule_tail(). */
   intr_disable ();
-  dir_close (thread_current ()->cwd);
   list_remove (&thread_current()->allelem);
   thread_current ()->status = THREAD_DYING;
   schedule ();

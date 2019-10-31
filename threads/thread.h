@@ -100,34 +100,15 @@ struct thread
     struct list hold_locks;             /*all locks that a thread holds*/
     struct lock *waiting;               /*the lock that the thread is waiting for*/
 
-    struct wait_status *wait_status;
-    struct list children;
-
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
-    char *program_name;                 // program name
-    tid_t parent_tid;                   // parent process's id
-    struct list fd_entry_list;          // list of files opened by this thread
-    int next_fd;                        // next file descriptor to be opened
-    struct dir *cwd;
-
-    struct file *executable;            // executable file
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
-
-struct wait_status{
-  struct list_elem elem;
-  struct lock *lock;
-  int ref_cnt;
-  tid_t tid;
-  int status;
-  struct semaphore *dead;
-}
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
