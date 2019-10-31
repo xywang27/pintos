@@ -69,7 +69,7 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   if (!success)
     thread_exit ();
-  char *esp = (char*)if._esp;
+  char *esp = (char*)if_.esp;
   char *arg[256];
   int i,n=0;
   for(; token != NULL;token = strtok_r(NULL, " ", &save_ptr)){
@@ -90,7 +90,7 @@ start_process (void *file_name_)
   *p--=n;
   *p--=0;
   esp = p+1;
-  if_.esp = esp; 
+  if_.esp = esp;
   palloc_free_page (file_name);
 
   /* Start the user process by simulating a return from an
