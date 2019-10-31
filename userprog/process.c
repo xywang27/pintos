@@ -22,6 +22,8 @@
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
+char* extract_command(char* command,char* argv[],int* argc);
+
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
@@ -38,11 +40,14 @@ process_execute (const char *file_name)
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
-  char *token, *save_ptr;
-  token = strtok_r (file_name, " ", &save_ptr);
+  /*char *token, *save_ptr;
+  token = strtok_r (file_name, " ", &save_ptr);*/
+  char *argv[MAX_ARGC];
+  int argc;
+  char* command_bak = extract_command(file_name,argv,&argc);
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (token, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
   return tid;
@@ -57,15 +62,19 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-  char *token, *save_ptr;
-  token = strtok_r (file_name, " ", &save_ptr);
+  /*char *token, *save_ptr;
+  token = strtok_r (file_name, " ", &save_ptr);*/
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
+
+  char *argv[256];
+  int argc;
+  char* command_bak = extract_command(file_name,argv,&argc);
+  success = load (argv[0], &if_.eip, &if_.esp);
 
   /* If load failed, quit. */
   if (!success)
@@ -95,8 +104,6 @@ start_process (void *file_name_)
   p -= 4;
   *p=0;
   if_.esp = p;*/
-  char *argv[256];
-  int argc;
   int i=argc;
   char * addr_arr[argc];
   //printf("%s\n","try to put args" );
@@ -151,6 +158,28 @@ start_process (void *file_name_)
      and jump to it. */
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
+}
+
+char* extract_command(char* command,char* argv[],int* argc){
+  char* command_bak = NULL;
+  *argc=0;
+  command_bak = malloc(strlen(command)+1);
+  char* save = NULL;
+  char* temp = NULL;
+
+  // to command_bak, from command
+  strlcpy(command_bak,command,PGSIZE);
+
+
+  temp = strtok_r(command_bak," ",&save);
+  argv[*argc] = temp;
+
+  while (temp != NULL) {
+    (*argc)++; //will cause extra +1, need it!
+    temp = strtok_r(NULL," ",&save);
+    argv[*argc] = temp;
+  }
+  return command_bak;
 }
 
 /* Waits for thread TID to die and returns its exit status.  If
