@@ -81,7 +81,7 @@ start_process (void *file_name_)
   while((int)if_.esp%4!=0){
     esp--;
   }
-  int *p=esp-4;
+  /*int *p=esp-4;
   *p=0;
   p -= 4;
   for(i=n-1;i>=0;i--){
@@ -94,7 +94,30 @@ start_process (void *file_name_)
   *p=n;
   p -= 4;
   *p=0;
-  if_.esp = p;
+  if_.esp = p;*/
+  i=argc;
+  if_.esp = if_.esp-4;
+  (*(int *)if_.esp)=0;
+  //printf("%d\targv[%d]\t%d\n",if_.esp,i,*((int *)if_.esp));
+  while (--i>=0) {
+
+    if_.esp = if_.esp-4;//sizeof()
+    (*(char **)if_.esp) = addr_arr[i]; // if_.esp a pointer to uint32_t*
+    //printf("%d\targv[%d]\t%d\n",if_.esp,i,(*(char **)if_.esp));
+  }
+
+  if_.esp = if_.esp-4;
+  (*(char **)if_.esp)=if_.esp+4;
+  //printf("%d\targv\t%d\n",if_.esp,(*(char **)if_.esp));
+
+  //put argc
+  if_.esp = if_.esp-4;
+  (*(int *)if_.esp)=argc;
+  //printf("%d\targc\t%d\n",if_.esp,(*(int *)if_.esp));
+
+  //put return address 0
+  if_.esp = if_.esp-4;
+  (*(int *)if_.esp)=0;
   palloc_free_page (file_name);
 
   /* Start the user process by simulating a return from an
