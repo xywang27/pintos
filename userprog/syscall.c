@@ -112,6 +112,10 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       char *str =(char*)*((int*)f->esp+4);
 
+      if (str == NULL){
+        printf("12121111111111111111");
+      }
+
       f->eax = process_execute (str);
       return;
     }
