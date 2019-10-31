@@ -70,7 +70,7 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   if (!success)
     thread_exit ();
-  char *esp = (char*)if_.esp;
+  /*char *esp = (char*)if_.esp;
   char *arg[256];
   int i,n=0;
   for(; token != NULL;token = strtok_r(NULL, " ", &save_ptr)){
@@ -81,7 +81,7 @@ start_process (void *file_name_)
   while((int)if_.esp%4!=0){
     esp--;
   }
-  /*int *p=esp-4;
+  int *p=esp-4;
   *p=0;
   p -= 4;
   for(i=n-1;i>=0;i--){
@@ -95,14 +95,37 @@ start_process (void *file_name_)
   p -= 4;
   *p=0;
   if_.esp = p;*/
-  i=n;
+  char *argv[256];
+  int argc;
+  int i=argc;
+  char * addr_arr[argc];
+  //printf("%s\n","try to put args" );
+  //printf("Address\t         Nmae\t        Data\n");
+  while(--i>=0){
+    if_.esp = if_.esp - sizeof(char)*(strlen(argv[i])+1); //+1: extra \0
+
+    addr_arr[i]=(char *)if_.esp;
+    memcpy(if_.esp,argv[i],strlen(argv[i])+1);
+    //strlcpy(if_.esp,argv[i],strlen(argv[i])+1);
+    //printf("%d\targv[%d][...]\t'%s'\n",if_.esp,i,(char*)if_.esp);
+
+  }
+
+  // 4k  对齐
+  //world-align
+  while ((int)if_.esp%4!=0) {
+    if_.esp--;
+  }
+  //printf("%d\tworld-align\t0\n", if_.esp);
+
+  i=argc;
   if_.esp = if_.esp-4;
   (*(int *)if_.esp)=0;
   //printf("%d\targv[%d]\t%d\n",if_.esp,i,*((int *)if_.esp));
   while (--i>=0) {
 
     if_.esp = if_.esp-4;//sizeof()
-    (*(char **)if_.esp) = arg[i]; // if_.esp a pointer to uint32_t*
+    (*(char **)if_.esp) = addr_arr[i]; // if_.esp a pointer to uint32_t*
     //printf("%d\targv[%d]\t%d\n",if_.esp,i,(*(char **)if_.esp));
   }
 
@@ -112,7 +135,7 @@ start_process (void *file_name_)
 
   //put argc
   if_.esp = if_.esp-4;
-  (*(int *)if_.esp)=n;
+  (*(int *)if_.esp)=argc;
   //printf("%d\targc\t%d\n",if_.esp,(*(int *)if_.esp));
 
   //put return address 0

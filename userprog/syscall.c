@@ -83,7 +83,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_HALT:
     {
       shutdown_power_off();
-      return;
+      break;
     }
 
     case SYS_WRITE:
@@ -143,8 +143,9 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
 
       f->eax = retval;
-      return;
+      break;
     }
+    default:
   }
 }
 
