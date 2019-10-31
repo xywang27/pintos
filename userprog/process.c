@@ -82,16 +82,18 @@ start_process (void *file_name_)
     if_.esp--;
   }
   int *p=esp-4;
-  *p--=0;
+  *p=0;
   for(i=n-1;i>=0;i--){
-    *p--=(int *)arg[i];
+    p-=4;
+    *p=(int *)arg[i];
   }
-  *p = p+1;
-  p = p - 4;
-  *p--=n;
-  *p--=0;
-  esp = p+1;
-  if_.esp = esp;
+  p -= 4;
+  *p = p + 4;   
+  p -= 4;
+  *p=n;
+  p -= 4;
+  *p=0;
+  if_.esp = p;
   palloc_free_page (file_name);
 
   /* Start the user process by simulating a return from an

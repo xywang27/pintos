@@ -88,7 +88,6 @@ void
 thread_init (void)
 {
   ASSERT (intr_get_level () == INTR_OFF);
-  printf("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm");
 
   lock_init (&tid_lock);
   list_init (&ready_list);
