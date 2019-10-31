@@ -121,6 +121,22 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
+    case SYS_CREATE:
+    {
+      if (!check_ptr (f->esp +4, 4) ||
+          !check_str (*(char **)(f->esp + 4)) || !check_ptr (f->esp +8, 4))
+      {
+        thread_exit ();
+        return;
+      }
+      char *str = *(char**)(f->esp+4);
+      unsigned size = *(int *)(f->esp + 8);
+      f->eax = filesys_create (str, size);
+      palloc_free_page (str);
+
+      return;
+    }
+
     case SYS_WRITE:
     {
       if ( !check_ptr (f->esp + 4, 12) ){
