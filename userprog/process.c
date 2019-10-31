@@ -42,7 +42,7 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
   /*char *token, *save_ptr;
   token = strtok_r (file_name, " ", &save_ptr);*/
-  char *argv[MAX_ARGC];
+  char *argv[256];
   int argc;
   char* command_bak = extract_command(file_name,argv,&argc);
 
