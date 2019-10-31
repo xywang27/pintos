@@ -37,8 +37,8 @@ process_execute (const char *file_name)
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
-  char *token, *save_ptr; 
-  token = strtok_r (file_name, " ", &save_ptr); 
+  char *token, *save_ptr;
+  token = strtok_r (file_name, " ", &save_ptr);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (token, PRI_DEFAULT, start_process, fn_copy);
@@ -56,8 +56,8 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-  char *token, *save_ptr; 
-  token = strtok_r (file_name, " ", &save_ptr); 
+  char *token, *save_ptr;
+  token = strtok_r (file_name, " ", &save_ptr);
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -69,28 +69,28 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   if (!success)
     thread_exit ();
-  char *esp=(char *)if_.esp;
-  char *arg[256];
-  int i,n=0;
-  for (; token != NULL;token = strtok_r (NULL, " ", &save_ptr)){
-    esp-=strlen(token)+1;
+  char *esp = (char*)if._esp;
+  char *arg[256];
+  int i,n=0;
+  for(; token != NULL;token = strtok_r(NULL, " ", &save_ptr)){
+    esp = strlen(token)+1;
     strlcpy(esp,token,strlen(token)+2);
     arg[n++]=esp;
   }
-  while ((int)if_.esp%4!=0) {
+  while((int)if_.esp%4!=0){
     if_.esp--;
   }
-  int *p=esp-4; 
-  *p--=0; 
+  int *p=esp-4;
+  *p--=0;
   for(i=n-1;i>=0;i--){
     *p--=(int *)arg[i];
   }
   *p = p+1;
-  p = p-4;
+  p = p - 4;
   *p--=n;
-  *p--0;
+  *p--=0;
   esp = p+1;
-  if_.esp=esp; 
+  if_.esp = esp; 
   palloc_free_page (file_name);
 
   /* Start the user process by simulating a return from an
