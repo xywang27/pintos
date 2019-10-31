@@ -167,6 +167,26 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
+    case SYS_FILESIZE:
+    {
+      if (!check_ptr (f->esp +4, 4))
+      {
+        thread_exit();
+        return;
+      }
+
+      int fd = *(int *)(f->esp + 4);
+
+      struct fd_entry *fd_entry = get_fd_entry(fd);
+      if (fd_entry) {
+        f->eax = file_length(fd_entry->file);
+      } else {
+        f->eax = -1;
+      }
+
+      return;
+    }
+
     case SYS_WRITE:
     {
       if ( !check_ptr (f->esp + 4, 12) ){
