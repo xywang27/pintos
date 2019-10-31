@@ -74,21 +74,22 @@ start_process (void *file_name_)
   char *arg[256];
   int i,n=0;
   for(; token != NULL;token = strtok_r(NULL, " ", &save_ptr)){
-    esp = strlen(token)+1;
+    esp -= strlen(token)+1;
     strlcpy(esp,token,strlen(token)+2);
     arg[n++]=esp;
   }
   while((int)if_.esp%4!=0){
-    if_.esp--;
+    esp--;
   }
   int *p=esp-4;
   *p=0;
+  p -= 4;
   for(i=n-1;i>=0;i--){
-    p-=4;
+    p -= 4;
     *p=(int *)arg[i];
   }
   p -= 4;
-  *p = p + 4;   
+  *p=p+4;
   p -= 4;
   *p=n;
   p -= 4;
