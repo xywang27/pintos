@@ -110,7 +110,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
       /*is_valid_addr (&mc,(uint32_t*)f->esp+1,4);*/
 
-      char *str =*(char*)((int*)f->esp+4);
+      char *str =*(char**)(f->esp+4);
 
       f->eax = process_execute (str);
       return;
