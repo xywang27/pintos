@@ -5,7 +5,6 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/fixednumber.h"
-#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -101,25 +100,27 @@ struct thread
     struct list hold_locks;             /*all locks that a thread holds*/
     struct lock *waiting;               /*the lock that the thread is waiting for*/
 
+    struct wait_status *wait_status;
+    struct list children;
+
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
-    int exit_code;
-    int FileNum;
-    struct list file_list;
-    int maxfd;
-    struct list sons_ret;
-    bool bWait;
-    bool SaveData;
-    struct thread *father;
-    struct semaphore SemaWait;
-
 #endif
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
+
+struct wait_status{
+  struct list_elem elem;
+  struct lock lock;
+  int ref_cnt;
+  tid_t tid;
+  int status;
+  struct semaphore dead;
+}
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.

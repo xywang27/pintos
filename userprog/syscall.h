@@ -1,6 +1,17 @@
-#ifndef USERPROG_SYSCALL_H
+/*#ifndef USERPROG_SYSCALL_H
 #define USERPROG_SYSCALL_H
 
 void syscall_init (void);
 
+#endif /* userprog/syscall.h */
+
+#ifndef USERPROG_SYSCALL_H
+#define USERPROG_SYSCALL_H
+#include "filesys/directory.h"
+
+#define STDOUT 1
+
+struct dir;
+int mc;
+void syscall_init (void);
 #endif /* userprog/syscall.h */
