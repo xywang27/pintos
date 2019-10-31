@@ -152,6 +152,21 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
+    case SYS_REMOVE:
+    {
+      if (!check_ptr (f->esp +4, 4) ||
+          !check_str (*(char **)(f->esp + 4)))
+      {
+        thread_exit();
+        return;
+      }
+
+      char *str = is_valid_str(*(char**)(f->esp+4));
+      f->eax = filesys_remove (str);
+      palloc_free_page (str);
+      return;
+    }
+
     case SYS_WRITE:
     {
       if ( !check_ptr (f->esp + 4, 12) ){
