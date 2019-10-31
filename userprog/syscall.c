@@ -76,7 +76,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     return;
   }
 
-  /*is_valid_addr (&mc, f->esp, 4);*/
+  is_valid_addr (&mc, f->esp, 4);
   // get syscall_num and check if it's valid
   int syscall_num = *((int *)f->esp);
   if ( syscall_num < 0 || syscall_num >= 20 ) {
@@ -113,9 +113,9 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_exit ();
         return;
       }
-      /*is_valid_addr (&mc,(uint32_t*)f->esp+1,4);*/
+      is_valid_addr (&mc,(uint32_t*)f->esp+1,4);*/
 
-      char *str =*(char**)(f->esp+4);
+      char *str =is_valid_str(*(char**)(f->esp+4));
 
       f->eax = process_execute (str);
       return;
@@ -129,7 +129,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_exit ();
         return;
       }
-      char *str = *(char**)(f->esp+4);
+      char *str = is_valid_str(*(char**)(f->esp+4));
       unsigned size = *(int *)(f->esp + 8);
       f->eax = filesys_create (str, size);
       palloc_free_page (str);
