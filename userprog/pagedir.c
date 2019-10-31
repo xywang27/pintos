@@ -229,7 +229,52 @@ pagedir_activate (uint32_t *pd)
      Address of the Page Directory". */
   asm volatile ("movl %0, %%cr3" : : "r" (vtop (pd)) : "memory");
 }
+int
+copy_to (uint8_t *dst, const uint8_t *usrc)
+{
+  int eax;
+  asm ("movl $1f, %%eax; movb %2, %%al; movb %%al, %0; 1:"
+       : "=m" (*dst), "=&a" (eax) : "m" (*usrc));
+  return eax;
+}
 
+
+void
+is_valid_addr (void *dst_, const void *usrc_, size_t size)
+{
+  uint8_t *dst = dst_;
+  const uint8_t *usrc = usrc_;
+
+  for (; size > 0; size--, dst++, usrc++) {
+    if (usrc >= (uint8_t *) PHYS_BASE || copy_to (dst, usrc) == 0)
+      thread_exit ();
+  }
+}
+
+char *
+is_valid_str (const char *us)
+{
+  char *ks;
+  size_t length;
+
+  ks = palloc_get_page (0);
+  if (ks == NULL)
+    thread_exit ();
+
+  for (length = 0; length < PGSIZE; length++)
+    {
+      if (us >= (char *) PHYS_BASE || copy_to (ks + length, us++) == 0)
+        {
+          palloc_free_page (ks);
+          thread_exit ();
+        }
+
+      if (ks[length] == '\0')
+        return ks;
+    }
+  ks[PGSIZE - 1] = '\0';
+  return ks;
+}
 /* Returns the currently active page directory. */
 static uint32_t *
 active_pd (void) 

@@ -874,7 +874,7 @@ that they worked very hard on the algorithm until they found the
 right one.
 
 I think what they ended up using (and I hope someone will correct me,
-because I am not very confident about this) was the `longest common
+because I am not very confdent about this) was the `longest common
 subsequence' method.  In the LCS problem, you have two sequences of
 items:
 
