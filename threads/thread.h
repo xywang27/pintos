@@ -109,6 +109,13 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
+    char *program_name;                 // program name
+    tid_t parent_tid;                   // parent process's id
+    struct list fd_entry_list;          // list of files opened by this thread
+    int next_fd;                        // next file descriptor to be opened
+    struct dir *cwd;
+
+    struct file *executable;            // executable file
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
