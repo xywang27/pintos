@@ -101,6 +101,8 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
 
+    struct list fd_entry_list;          // list of files opened by this thread
+
     int exit_code;
   };
 
