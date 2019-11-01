@@ -160,7 +160,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_exit ();
       }
       char *str = *(char**)(f->esp+4);
-      if (str == NULL){
+      if (!check_ptr(str)){
         thread_current ()->exit_code = -1;
         thread_exit ();
       }
