@@ -223,38 +223,21 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
 
       /*lock_acquire(&file_lock);*/
-      struct fd_entry *fd_entry = get_fd_entry (fd);
-      /*if (fd_entry == NULL || fd_entry->dir) {
-        f->eax = -1;
-        return;
-      }*/
-      if(fd_entry->file ==NULL){
-        f->eax = -1;
-        return;
-      }
-
-      size_t tmp_size = size;
-      void *tmp_buffer = buffer;
-      int retval = 0;
-      while (tmp_size > 0)
-      {
-        size_t read_bytes;
-        if (tmp_size < PGSIZE - pg_ofs (tmp_buffer)) {
-          read_bytes = tmp_size;
-        } else {
-          read_bytes = PGSIZE - pg_ofs (tmp_buffer);
-        }
-
-        off_t bytes_read = file_read (fd_entry->file, tmp_buffer, read_bytes);
-        retval += bytes_read;
-
-        tmp_size -= bytes_read;
-        tmp_buffer += bytes_read;
-
-      }
-
-      f->eax = retval;
+      
       /*lock_release(&file_lock);*/
+      if(fd==1){
+        for(unsigned int i=0;i<length;i++){
+          *((char **)buffer)[i] = input_getc();
+        }
+        f->eax= length;
+      }else{
+        struct fd_entry *fd_entry = get_fd_entry (fd);
+
+        if(fd_entry->file == NULL){
+          f->eax = -1;
+        }
+        f->eax= file_read(f,buffer,length);
+      }
       return;
     }
 
