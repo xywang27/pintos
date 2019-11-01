@@ -47,7 +47,7 @@ check_ptr (void * esp, uint8_t size)
   /*if (get_user (((uint8_t *)esp)+size-1) == -1)
       return false;*/
   uint8_t i = 0;
-  for (; i < argc; ++i)
+  for (; i < size; ++i)
   {
     if((!is_user_vaddr(esp))||(pagedir_get_page(thread_current()->pagedir,esp)==NULL)){
       return false;
