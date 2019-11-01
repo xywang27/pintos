@@ -223,10 +223,10 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
 
       /*lock_acquire(&file_lock);*/
-      
+
       /*lock_release(&file_lock);*/
       if(fd==1){
-        for(unsigned int i=0;i<length;i++){
+        for(unsigned int i=0;i<size;i++){
           *((char **)buffer)[i] = input_getc();
         }
         f->eax= length;
