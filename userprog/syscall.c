@@ -145,6 +145,19 @@ void verify_pointer(void *pointer){
   }
 }
 
+struct thread* get_child_process(int tid){
+  struct thread* t = thread_current();
+  struct thread* c;
+  struct list_elem* e;
+  for(e = list_begin(&t->children);e != list_end(&t->children); e = list_next(e)){
+    c = list_entry(e, struct thread, child_elem);
+    if (c->tid == tid){
+      return c;
+    }
+  }
+  return null;
+}
+
 
 
 static void
@@ -208,7 +221,18 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
       else{
         tid_t cpid = process_execute(cmd);
-        f->eax = cpid;
+        struct thread* c = get_child_process(cpid);
+        if(c == NULL){
+          f->eax = -1;
+        }
+        else{
+          if(c->exit_code == -1){
+            f->eax = -1;
+          }
+          else{
+            f->eax = cpid;
+          }
+        }
       }
     //   if (!check_ptr (f->esp + 4, 4))
     //   {
@@ -254,7 +278,9 @@ syscall_handler (struct intr_frame *f UNUSED)
       char *file_name = (char*) *(pointer+1);
       verify_pointer(file_name);
       unsigned size = (unsigned) *(pointer+2);
+      lock_acquire(&file_lock);
       f->eax = (uint32_t) filesys_create(file_name, size);
+      lock_release(&file_lock);
       // if (!check_ptr (f->esp +4, 4) ||
       //     !check_str (*(char **)(f->esp + 4)) || !check_ptr (f->esp +8, 4))
       // {
@@ -274,7 +300,9 @@ syscall_handler (struct intr_frame *f UNUSED)
       verify_pointer(pointer+1);
       char *file_name = (char*) *(pointer+1);
       verify_pointer(file_name);
+      lock_acquire(&file_lock);
       f->eax = (uint32_t) filesys_remove(file_name);
+      lock_release(&file_lock);
       // if (!check_ptr (f->esp +4, 4) ||
       //     !check_str (*(char **)(f->esp + 4)))
       // {
@@ -309,7 +337,9 @@ syscall_handler (struct intr_frame *f UNUSED)
         f->eax = -1;
       }
       else{
+        lock_acquire(&file_lock);
         f->eax = (uint32_t) file_length(cor_file);
+        lock_release(&file_lock);
       }
       // if (!check_ptr (f->esp +4, 4))
       // {
@@ -350,7 +380,9 @@ syscall_handler (struct intr_frame *f UNUSED)
           f->eax = -1;
         }
         else{
+          lock_acquire(&file_lock);
           f->eax = file_read(read_file, buffer, size);
+          lock_release(&file_lock);
         }
       }
 
@@ -500,7 +532,9 @@ syscall_handler (struct intr_frame *f UNUSED)
           f->eax = -1;
         }
         else{
+          lock_acquire(&file_lock);
           f->eax = file_write(write_file, buffer, size);
+          lock_release(&file_lock);
         }
       }
       return;
@@ -531,7 +565,9 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
       else{
         unsigned pos = (unsigned) *(pointer + 2);
+        lock_acquire(&file_lock);
         file_seek(file,pos);
+        lock_release(&file_lock);
       }
       return;
     }
@@ -560,31 +596,33 @@ syscall_handler (struct intr_frame *f UNUSED)
         f->eax = -1;
       }
       else{
+        lock_acquire(&file_lock);
         f->eax = file_tell (file);
+        lock_release(&file_lock);
       }
 
       return;
     }
 
-    // case SYS_CLOSE:
-    // {
-    //   // if (!check_ptr (f->esp +4, 4))
-    //   // {
-    //   //   thread_current ()->exit_code = -1;
-    //   //   thread_exit ();
-    //   // }
-    //   //
-    //   // int fd = *(int *)(f->esp + 4);
-    //   //
-    //   // struct fd_entry *fd_entry = get_fd_entry (fd);
-    //   // file_close (fd_entry->file);
-    //   // list_remove (&fd_entry->elem);
-    //   // free (fd_entry);
-    //   verify_pointer(pointer+1);
-    //   close_file(*(pointer+1));
-    //
-    //   return;
-    // }
+    case SYS_CLOSE:
+    {
+      // if (!check_ptr (f->esp +4, 4))
+      // {
+      //   thread_current ()->exit_code = -1;
+      //   thread_exit ();
+      // }
+      //
+      // int fd = *(int *)(f->esp + 4);
+      //
+      // struct fd_entry *fd_entry = get_fd_entry (fd);
+      // file_close (fd_entry->file);
+      // list_remove (&fd_entry->elem);
+      // free (fd_entry);
+      verify_pointer(pointer+1);
+      close_file(*(pointer+1));
+
+      return;
+    }
 
     default:
     break;
