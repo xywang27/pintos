@@ -107,6 +107,8 @@ struct thread
     struct list fd_list;                /* List of all file_descriptor it owns*/
     int exit_code;
     struct file *executable;            /* The thread's executable*/
+    struct semaphore sema1;
+    struct thread* parent;
   };
 
 /* If false (default), use round-robin scheduler.
