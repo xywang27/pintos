@@ -29,7 +29,7 @@ struct file_struct{
   int fd;
   struct file* f;
   bool exec;
-}
+};
 /* A kernel thread or user process.
 
    Each thread structure is stored in its own 4 kB page.  The
