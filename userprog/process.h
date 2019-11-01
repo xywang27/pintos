@@ -3,17 +3,17 @@
 
 #include "threads/thread.h"
 
-struct fd_entry
-{
-  // fd is the only id for a file
-  int fd;
-  // the file name
-  struct file *file;
-  // to store in list
-  struct list_elem elem;
-  bool is_dir;
-  struct dir *dir;
-};
+// struct fd_entry
+// {
+//   // fd is the only id for a file
+//   int fd;
+//   // the file name
+//   struct file *file;
+//   // to store in list
+//   struct list_elem elem;
+//   bool is_dir;
+//   struct dir *dir;
+// };
 
 static struct fd_entry *
 get_fd_entry (int fd)
