@@ -577,7 +577,7 @@ syscall_handler (struct intr_frame *f)
     return;
   }
   verify_pointer(f->esp);
-  verify_pointer(f->esp+3);
+  // verify_pointer(f->esp+3);
   int syscall_num = * (int *)f->esp;
   //printf("system call number %d\n", syscall_num);
   if(syscall_num<=0||syscall_num>=SYS_CALL_NUM){
