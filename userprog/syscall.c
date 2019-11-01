@@ -552,9 +552,9 @@ void sys_close(struct intr_frame* f){
 }; /* Close a file. */
 
 void verify_pointer(void *pointer){
-  if (pointer == NULL){
-    exit(-1);
-  }
+  // if (pointer == NULL){
+  //   exit(-1);
+  // }
   if(!is_user_vaddr(pointer)){
     exit(-1);
   }
