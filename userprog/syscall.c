@@ -67,19 +67,17 @@ check_str (void * str)
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
-  if (!is_user_vaddr(f->esp)){
-    thread_current ()->exit_code = -1;
-    thread_exit();
-  }
   if ( !check_ptr (f->esp, 4) ) {
+    thread_current ()->exit_code = -1;
     thread_exit();
     return;
   }
 
-  is_valid_addr (&mc, f->esp, 4);
+  /*is_valid_addr (&mc, f->esp, 4);*/
   // get syscall_num and check if it's valid
   int syscall_num = *((int *)f->esp);
   if ( syscall_num < 0 || syscall_num >= 20 ) {
+    thread_current ()->exit_code = -1;
     thread_exit();
     return;
   }
@@ -101,6 +99,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_current ()->exit_code = status;
         thread_exit ();
       }else{
+        thread_current ()->exit_code = -1;
         thread_exit ();
       }
       return;
@@ -110,14 +109,21 @@ syscall_handler (struct intr_frame *f UNUSED)
     {
       if (!check_ptr (f->esp + 4, 4))
       {
+        thread_current ()->exit_code = -1;
         thread_exit ();
-        return;
       }
-      is_valid_addr (&mc,(uint32_t*)f->esp+1,4);
+      /*is_valid_addr (&mc,(uint32_t*)f->esp+1,4);*/
 
-      char *str =is_valid_str(*(char**)(f->esp+4));
+      if(!check_str(*(char**)(f->esp+4))){
+        thread_current ()->exit_code = -1;
+        thread_exit ();
+      }
+      char *str =*(char**)(f->esp+4);
+
+      lock_acqurie(&file_lock);
 
       f->eax = process_execute (str);
+      lock_release(&file_lock);
       return;
     }
 
@@ -128,8 +134,8 @@ syscall_handler (struct intr_frame *f UNUSED)
       {
         pid = *((int*)f->esp+1);
       } else {
+        thread_current ()->exit_code = -1;
         thread_exit ();
-        return;
       }
 
       f->eax = process_wait(pid);
@@ -141,13 +147,13 @@ syscall_handler (struct intr_frame *f UNUSED)
       if (!check_ptr (f->esp +4, 4) ||
           !check_str (*(char **)(f->esp + 4)) || !check_ptr (f->esp +8, 4))
       {
+        thread_current ()->exit_code = -1;
         thread_exit ();
-        return;
       }
-      char *str = is_valid_str(*(char**)(f->esp+4));
+      char *str = *(char**)(f->esp+4);
       unsigned size = *(int *)(f->esp + 8);
       f->eax = filesys_create (str, size);
-      palloc_free_page (str);
+      /*palloc_free_page (str);*/
 
       return;
     }
@@ -157,13 +163,13 @@ syscall_handler (struct intr_frame *f UNUSED)
       if (!check_ptr (f->esp +4, 4) ||
           !check_str (*(char **)(f->esp + 4)))
       {
-        thread_exit();
-        return;
+        thread_current ()->exit_code = -1;
+        thread_exit ();
       }
 
-      char *str = is_valid_str(*(char**)(f->esp+4));
+      char *str = *(char**)(f->esp+4);
       f->eax = filesys_remove (str);
-      palloc_free_page (str);
+      /*palloc_free_page (str);*/
       return;
     }
 
@@ -171,7 +177,8 @@ syscall_handler (struct intr_frame *f UNUSED)
     {
       if (!check_ptr (f->esp +4, 4))
       {
-        thread_exit();
+        thread_current ()->exit_code = -1;
+        thread_exit ();
         return;
       }
 
@@ -181,7 +188,9 @@ syscall_handler (struct intr_frame *f UNUSED)
       if (fd_entry) {
         f->eax = file_length(fd_entry->file);
       } else {
-        f->eax = -1;
+        thread_current ()->exit_code = -1;
+        thread_exit ();
+        /*f->eax = -1;*/
       }
 
       return;
@@ -191,8 +200,8 @@ syscall_handler (struct intr_frame *f UNUSED)
     {
       if ( !check_ptr (f->esp + 4, 12) )
       {
-        thread_exit();
-        return;
+        thread_current ()->exit_code = -1;
+        thread_exit ();
       }
 
       int fd = *(int *)(f->esp + 4);
@@ -200,12 +209,17 @@ syscall_handler (struct intr_frame *f UNUSED)
       unsigned size = *(unsigned *)(f->esp + 12);
       if ( !check_ptr (buffer, 1) || !check_ptr (buffer + size, 1) )
       {
-        thread_exit();
-        return;
+        thread_current ()->exit_code = -1;
+        thread_exit ();
       }
 
+      lock_acquie(&file_lock);
       struct fd_entry *fd_entry = get_fd_entry (fd);
-      if (fd_entry == NULL || fd_entry->dir) {
+      /*if (fd_entry == NULL || fd_entry->dir) {
+        f->eax = -1;
+        return;
+      }*/
+      if(fd_entry->file ==NULL){
         f->eax = -1;
         return;
       }
@@ -231,23 +245,26 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
 
       f->eax = retval;
+      lock_release(&file_lock);
       return;
     }
 
     case SYS_WRITE:
     {
       if ( !check_ptr (f->esp + 4, 12) ){
+        thread_current ()->exit_code = -1;
         thread_exit ();
-        return;
       }
 
       int fd = *(int *)(f->esp + 4);
       void *buffer = *(char**)(f->esp + 8);
       unsigned size = *(unsigned *)(f->esp + 12);
       if ( !check_ptr (buffer, 1) || !check_ptr (buffer + size, 1) ) {
+        thread_current ()->exit_code = -1;
         thread_exit ();
-        return;
       }
+
+      lock_acquie(&file_lock);
 
       if (fd == 1) {
         putbuf((char *)buffer, (size_t)size);
@@ -259,10 +276,14 @@ syscall_handler (struct intr_frame *f UNUSED)
       void *tmp_buffer = buffer;
       int retval = 0;
 
-      struct fd_entry *fd_entry =fd_entry = get_fd_entry (fd);
-      if (fd_entry==NULL || fd_entry->dir) {
+      struct fd_entry *fd_entry = get_fd_entry (fd);
+      /*if (fd_entry==NULL || fd_entry->dir) {
         f->eax = -1;
         return;
+      }*/
+      if(fd_entry->file == NULL){
+        thread_current ()->exit_code = -1;
+        thread_exit ();
       }
 
       while (tmp_size > 0)
@@ -291,6 +312,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
 
       f->eax = retval;
+      lock_release(&file_lock);
       return;
     }
 
@@ -298,17 +320,19 @@ syscall_handler (struct intr_frame *f UNUSED)
     {
       if (!check_ptr (f->esp +4, 8))
       {
-        thread_exit();
-        return;
+        thread_current ()->exit_code = -1;
+        thread_exit ();
       }
 
       int fd = *(int *)(f->esp + 4);
       unsigned position = *(unsigned *)(f->esp + 8);
 
       struct fd_entry *fd_entry = get_fd_entry(fd);
-      if (fd_entry) {
-        file_seek (fd_entry->file, position);
+      if (!fd_entry->file) {
+        thread_current ()->exit_code = -1;
+        thread_exit ();
       }
+      file_seek(fd_entry->file,position);
       return;
     }
 
@@ -317,24 +341,29 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       if (!check_ptr (f->esp +4, 4))
       {
-        thread_exit();
-        return;
+        thread_current ()->exit_code = -1;
+        thread_exit ();
       }
 
       int fd = *(int *)(f->esp + 4);
       struct fd_entry *fd_entry = get_fd_entry (fd);
+
+      if(!fd_entry->file){
+        thread_current ()->exit_code = -1;
+        thread_exit ();
+      }
 
       f->eax = file_tell (fd_entry->file);
 
       return;
     }
 
-    case SYS_CLOSE:
+    /*case SYS_CLOSE:
     {
       if (!check_ptr (f->esp +4, 4))
       {
-        thread_exit();
-        return;
+        thread_current ()->exit_code = -1;
+        thread_exit ();
       }
 
       int fd = *(int *)(f->esp + 4);
@@ -345,7 +374,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       free (fd_entry);
 
       return;
-    }
+    }*/
 
     default:
     break;
@@ -357,4 +386,7 @@ void
 syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+
+  lock_init(&file_lock);
+  list_init(&file_list);
 }
