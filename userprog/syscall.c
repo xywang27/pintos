@@ -33,7 +33,7 @@ int new_file(struct file* file, bool exec){
       break;
     }
   }
-  return fd->fd;
+  return fs->fd;
 }
 
 struct file* get_file(int fd, bool modify){
@@ -145,14 +145,7 @@ void verify_pointer(void *pointer){
   }
 }
 
-void
-syscall_init (void)
-{
-  intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 
-  // lock_init(&file_lock);
-  // list_init(&file_list);
-}
 
 static void
 syscall_handler (struct intr_frame *f UNUSED)
@@ -596,4 +589,13 @@ syscall_handler (struct intr_frame *f UNUSED)
     default:
     break;
   }
+}
+
+void
+syscall_init (void)
+{
+  intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+
+  // lock_init(&file_lock);
+  // list_init(&file_list);
 }
