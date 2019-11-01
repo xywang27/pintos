@@ -551,7 +551,20 @@ void sys_close(struct intr_frame* f){
 
 }; /* Close a file. */
 
-
+void verify_pointer(void *pointer){
+  if (pointer == NULL){
+    exit(-1);
+  }
+  if(!is_user_vaddr(pointer)){
+    exit(-1);
+  }
+  if(pagedir_get_page(thread_current()->pagedir,pointer)==NULL){
+    exit(-1);
+  }
+  if((uint32_t)pointer <= 0x08048000){
+    exit(-1);
+  }
+}
 
 // syscall_init put this function as syscall handler
 // switch handler by syscall num
@@ -563,6 +576,8 @@ syscall_handler (struct intr_frame *f)
     exit(-1);
     return;
   }
+  verify_pointer(f->esp);
+  verify_pointer(f->esp+3);
   int syscall_num = * (int *)f->esp;
   //printf("system call number %d\n", syscall_num);
   if(syscall_num<=0||syscall_num>=SYS_CALL_NUM){
