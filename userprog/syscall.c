@@ -222,11 +222,6 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_exit ();
       }
 
-      if (fd == 1){
-        thread_current ()->exit_code = -1;
-        thread_exit ();
-      }
-
       /*lock_acquire(&file_lock);*/
       struct fd_entry *fd_entry = get_fd_entry (fd);
       /*if (fd_entry == NULL || fd_entry->dir) {
@@ -293,7 +288,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       /*lock_acquire(&file_lock);*/
 
-      if (fd == 0) {
+      if (fd == 1) {
         putbuf((char *)buffer, (size_t)size);
         f->eax = size;
         return;
