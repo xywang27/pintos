@@ -293,7 +293,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       /*lock_acquire(&file_lock);*/
 
-      if (fd == 1) {
+      if (fd == 0) {
         putbuf((char *)buffer, (size_t)size);
         f->eax = size;
         return;
