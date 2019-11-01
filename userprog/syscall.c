@@ -566,7 +566,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
-    case SYS_CLOSE:
+    /*case SYS_CLOSE:
     {
       // if (!check_ptr (f->esp +4, 4))
       // {
@@ -584,7 +584,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       close_file(*(pointer+1));
 
       return;
-    }
+    }*/
 
     default:
     break;
