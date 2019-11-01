@@ -153,6 +153,10 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_exit ();
       }
       char *str = *(char**)(f->esp+4);
+      if (str == NULL){
+        thread_current ()->exit_code = -1;
+        thread_exit ();
+      }
       unsigned size = *(int *)(f->esp + 8);
       f->eax = filesys_create (str, size);
       /*palloc_free_page (str);*/
