@@ -52,6 +52,8 @@ check_ptr (void * esp, uint8_t size)
     if((!is_user_vaddr(esp))||(pagedir_get_page(thread_current()->pagedir,esp)==NULL)){
       return false;
     }
+    if(esp == NULL);
+      return false;
   }
   return true;
 }
