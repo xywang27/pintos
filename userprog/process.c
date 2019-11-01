@@ -50,6 +50,7 @@ process_execute (const char *file_name)
   tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
 
   sema_down(&thread_current()->sema1);
+  printf("999999999999999999");
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
   return tid;
