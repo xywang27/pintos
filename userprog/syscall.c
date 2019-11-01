@@ -234,7 +234,7 @@ while (!list_empty (&t->fd_list))
     close (list_entry (l, struct fd_entry, thread_elem)->fd);
   }
 
-t->exit_status = status;
+t->exit_code = status;
 thread_exit ();
 }
 
