@@ -49,8 +49,8 @@ process_execute (const char *file_name)
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
 
-  // sema_down(&thread_current()->sema1);
-  timer_sleep(10);
+  sema_down(&thread_current()->sema1);
+  printf("999999999999999");
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
   return tid;
@@ -163,7 +163,7 @@ start_process (void *file_name_)
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
-  // sema_up(&thread_current()->parent->sema1);
+  sema_up(&thread_current()->parent->sema1);
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
