@@ -386,7 +386,7 @@ for (; i < argc; ++i)
   // if (get_user(((uint8_t *)esp)+i) == -1){
   //   return false;
   // }
-  if((!is_user_vaddr(esp))||(pagedir_get_page(thread_current()->pagedir,esp)==NULL)||(uint32_t)esp <= 0x08048000){
+  if((!is_user_vaddr(esp))||(pagedir_get_page(thread_current()->pagedir,esp)==NULL)){
     return false;
   }
   esp = esp + 1;
@@ -399,12 +399,18 @@ return true if it is a valid string
 */
 bool is_valid_string(void *str){
   //return true;
-  int ch=-1;
-while((ch=get_user((uint8_t*)str++))!='\0' && ch!=-1);
-  if(ch=='\0')
+  char character;
+  character = get_user(((uint8_t*)str));
+  // if exceed the boundry, return -1
+  while (character != '\0' && character!=-1) {
+    str++;
+    character = get_user(((uint8_t*)str));
+  }
+  // valid string ends with '\0'
+  if ( character == '\0' ){
     return true;
-  else
-    return false;
+  }
+  return false;
 }
 
 
@@ -552,20 +558,6 @@ void sys_close(struct intr_frame* f){
 
 }; /* Close a file. */
 
-void verify_pointer(void *pointer){
-  // if (pointer == NULL){
-  //   exit(-1);
-  // }
-  if(!is_user_vaddr(pointer)){
-    exit(-1);
-  }
-  if(pagedir_get_page(thread_current()->pagedir,pointer)==NULL){
-    exit(-1);
-  }
-  if((uint32_t)pointer <= 0x08048000){
-    exit(-1);
-  }
-}
 
 // syscall_init put this function as syscall handler
 // switch handler by syscall num
@@ -577,8 +569,6 @@ syscall_handler (struct intr_frame *f)
     exit(-1);
     return;
   }
-  // verify_pointer(f->esp);
-  // verify_pointer(f->esp+3);
   int syscall_num = * (int *)f->esp;
   //printf("system call number %d\n", syscall_num);
   if(syscall_num<=0||syscall_num>=SYS_CALL_NUM){
