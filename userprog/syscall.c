@@ -288,18 +288,18 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
-    case SYS_OPEN:{
-      verify_pointer(pointer+1);
-      char *file_name = (char*) *(pointer+1);
-      verify_pointer(file_name);
-      struct file* open_file = filesys_open(file_name);
-      if (open_file == NULL){
-        f->eax = -1;
-      }
-      else{
-        f->eax = new_file(open_file,false);
-      }
-    }
+    // case SYS_OPEN:{
+    //   verify_pointer(pointer+1);
+    //   char *file_name = (char*) *(pointer+1);
+    //   verify_pointer(file_name);
+    //   struct file* open_file = filesys_open(file_name);
+    //   if (open_file == NULL){
+    //     f->eax = -1;
+    //   }
+    //   else{
+    //     f->eax = new_file(open_file,false);
+    //   }
+    // }
 
     case SYS_FILESIZE:
     {
@@ -566,25 +566,25 @@ syscall_handler (struct intr_frame *f UNUSED)
       return;
     }
 
-    /*case SYS_CLOSE:
-    {
-      // if (!check_ptr (f->esp +4, 4))
-      // {
-      //   thread_current ()->exit_code = -1;
-      //   thread_exit ();
-      // }
-      //
-      // int fd = *(int *)(f->esp + 4);
-      //
-      // struct fd_entry *fd_entry = get_fd_entry (fd);
-      // file_close (fd_entry->file);
-      // list_remove (&fd_entry->elem);
-      // free (fd_entry);
-      verify_pointer(pointer+1);
-      close_file(*(pointer+1));
-
-      return;
-    }*/
+    // case SYS_CLOSE:
+    // {
+    //   // if (!check_ptr (f->esp +4, 4))
+    //   // {
+    //   //   thread_current ()->exit_code = -1;
+    //   //   thread_exit ();
+    //   // }
+    //   //
+    //   // int fd = *(int *)(f->esp + 4);
+    //   //
+    //   // struct fd_entry *fd_entry = get_fd_entry (fd);
+    //   // file_close (fd_entry->file);
+    //   // list_remove (&fd_entry->elem);
+    //   // free (fd_entry);
+    //   verify_pointer(pointer+1);
+    //   close_file(*(pointer+1));
+    //
+    //   return;
+    // }
 
     default:
     break;
