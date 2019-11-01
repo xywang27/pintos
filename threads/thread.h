@@ -115,11 +115,11 @@ struct thread
 
     int exit_code;
     /*struct semaphare sema_sync;*/
-    struct thread* parent;
-    struct list children;
-    struct list_elem child_elem;
-    bool call_exit;
-    bool call_wait;
+    // struct thread* parent;
+    // struct list children;
+    // struct list_elem child_elem;
+    // bool call_exit;
+    // bool call_wait;
   };
 
 struct lock file_lock;

@@ -200,18 +200,19 @@ char* extract_command(char* command,char* argv[],int* argc){
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  /*timer_sleep(100);*/
-  struct thread* wait_thread = get_child_process(child_tid);
-  if(wait_thread == NULL){
-    return -1;
-  }
-  if(wait_thread->call_wait == true){
-    return -1;
-  }
-  wait_thread->call_wait = true;
-  /*sema_down(&wait_thread->exit_finish);*/
-  list_remove(&wait_thread->child_elem);
-  return wait_thread->exit_status;
+  timer_sleep(100);
+  // struct thread* wait_thread = get_child_process(child_tid);
+  // if(wait_thread == NULL){
+  //   return -1;
+  // }
+  // if(wait_thread->call_wait == true){
+  //   return -1;
+  // }
+  // wait_thread->call_wait = true;
+  // /*sema_down(&wait_thread->exit_finish);*/
+  // list_remove(&wait_thread->child_elem);
+  // return wait_thread->exit_status;
+  return -1;
 }
 
 /* Free the current process's resources. */
@@ -221,18 +222,18 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
-  struct list_elem* e = list_begin(&thread_current()->locks);
-  struct lock* l;
-  while(e!=list_end(&thread_current()->locks)){
-    l = list_entry(e,struct lock, elem);
-    lock_release(l);
-    e = list_remove(e);
-  }
-  for （int i = (cur->fd_max);i>=2;i--){
-    if (cur->fd_table[i] != NULL){
-      close_file(i);
-    }
-  }
+  // struct list_elem* e = list_begin(&thread_current()->locks);
+  // struct lock* l;
+  // while(e!=list_end(&thread_current()->locks)){
+  //   l = list_entry(e,struct lock, elem);
+  //   lock_release(l);
+  //   e = list_remove(e);
+  // }
+  // for （int i = (cur->fd_max);i>=2;i--){
+  //   if (cur->fd_table[i] != NULL){
+  //     close_file(i);
+  //   }
+  // }
   printf ("%s: exit(%d)\n", cur->name, cur->exit_code);
 
   /* Destroy the current process's page directory and switch back
