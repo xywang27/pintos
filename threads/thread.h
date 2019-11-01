@@ -4,7 +4,6 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-#include <threads/synch.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -25,12 +24,6 @@ typedef int tid_t;
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
 
-
-struct file_struct{
-  int fd;
-  struct file* f;
-  bool exec;
-};
 /* A kernel thread or user process.
 
    Each thread structure is stored in its own 4 kB page.  The
@@ -109,15 +102,11 @@ struct thread
     unsigned magic;                     /* Detects stack overflow. */
 
     struct list fd_entry_list;          // list of files opened by this thread
-
-    struct file_struct* fd_table[128];
-    int fd_max;
-
-    struct semaphore sema1;
-
-    struct thread* parent;
-
+    tid_t parent_id;                    /* parent pid (tid) */
+    struct list children;               /* child processes */
+    struct list fd_list;                /* List of all file_descriptor it owns*/
     int exit_code;
+    struct file *executable;            /* The thread's executable*/
   };
 
 /* If false (default), use round-robin scheduler.
