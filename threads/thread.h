@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include <threads/synch.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -111,6 +112,10 @@ struct thread
 
     struct file_struct* fd_table[128];
     int fd_max;
+
+    struct semaphore sema1;
+
+    struct thread* parent;
 
     int exit_code;
   };
