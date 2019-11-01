@@ -48,7 +48,7 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
-  sema_down(&thread_current()->sema_sync);
+  /*sema_down(&thread_current()->sema_sync);*/
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
   return tid;
@@ -77,7 +77,7 @@ start_process (void *file_name_)
   char* command_bak = extract_command(file_name,argv,&argc);
   success = load (argv[0], &if_.eip, &if_.esp);
 
-  sema_up(&thread_current()->parent->sema_sync)
+  /*sema_up(&thread_current()->parent->sema_sync)*/
 
   /* If load failed, quit. */
   if (!success){
@@ -209,7 +209,7 @@ process_wait (tid_t child_tid UNUSED)
     return -1;
   }
   wait_thread->call_wait = true;
-  sema_down(&wait_thread->exit_finish);
+  /*sema_down(&wait_thread->exit_finish);*/
   list_remove(&wait_thread->child_elem);
   return wait_thread->exit_status;
 }

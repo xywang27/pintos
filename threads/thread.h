@@ -114,7 +114,7 @@ struct thread
     int fd_max;
 
     int exit_code;
-    struct semaphare sema_sync;
+    /*struct semaphare sema_sync;*/
     struct thread* parent;
     struct list children;
     struct list_elem child_elem;
