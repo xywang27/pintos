@@ -77,8 +77,11 @@ start_process (void *file_name_)
   success = load (argv[0], &if_.eip, &if_.esp);
 
   /* If load failed, quit. */
-  if (!success)
+  if (!success){
+    thread_current()->exit_code = -1;
     thread_exit ();
+  }
+
   /*char *esp = (char*)if_.esp;
   char *arg[256];
   int i,n=0;
