@@ -333,6 +333,8 @@ syscall_init (void)
   syscall_handlers[SYS_FILESIZE] = &sys_filesize;
 
   list_init (&file_list);
+
+  lock_init(&file_lock);
 }
 
 
