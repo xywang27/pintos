@@ -229,14 +229,14 @@ syscall_handler (struct intr_frame *f UNUSED)
         for(unsigned int i=0;i<size;i++){
           *((char **)buffer)[i] = input_getc();
         }
-        f->eax= length;
+        f->eax= size;
       }else{
         struct fd_entry *fd_entry = get_fd_entry (fd);
 
         if(fd_entry->file == NULL){
           f->eax = -1;
         }
-        f->eax= file_read(f,buffer,length);
+        f->eax= file_read(f,buffer,size);
       }
       return;
     }
