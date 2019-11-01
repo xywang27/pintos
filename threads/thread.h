@@ -113,9 +113,6 @@ struct thread
     int fd_max;
 
     int exit_code;
-
-
-    struct list fd_list;
   };
 
 /* If false (default), use round-robin scheduler.
