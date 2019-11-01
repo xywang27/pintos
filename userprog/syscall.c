@@ -234,7 +234,7 @@ while (!list_empty (&t->fd_list))
     close (list_entry (l, struct fd_entry, thread_elem)->fd);
   }
 
-t->exit_code = status;
+t->exit_status = status;
 thread_exit ();
 }
 
@@ -332,9 +332,8 @@ syscall_init (void)
   syscall_handlers[SYS_EXEC] = &sys_exec;
   syscall_handlers[SYS_FILESIZE] = &sys_filesize;
 
-  list_init (&file_list);
-
   lock_init(&file_lock);
+  list_init (&file_list);
 }
 
 
@@ -429,7 +428,9 @@ void sys_exec(struct intr_frame* f){
     exit(-1);
   }
   char *file_name = *(char **)(f->esp+4);
+  lock_acquire(&file_lock);
   f->eax = exec(file_name);
+  lock_release(&file_lock);
 };
 
 /* Wait for a child process to die. */
@@ -473,7 +474,9 @@ void sys_open(struct intr_frame* f){
     exit(-1);
   }
   char *file_name = *(char **)(f->esp+4);
+  lock_acquire(&file_lock);
   f->eax = open(file_name);
+  lock_release(&file_lock);
 
 
 }; /*Open a file. */
@@ -498,7 +501,9 @@ void sys_read(struct intr_frame* f){
   if (!is_valid_pointer(buffer, 1) || !is_valid_pointer(buffer + size,1)){
     exit(-1);
   }
+  lock_acquire(&file_lock);
   f->eax = read(fd,buffer,size);
+  lock_release(&file_lock);
 
 };
 
@@ -513,7 +518,9 @@ void sys_write(struct intr_frame* f){
   if (!is_valid_pointer(buffer, 1) || !is_valid_pointer(buffer + size,1)){
     exit(-1);
 }
+  lock_acquire(&file_lock);
   f->eax = write(fd,buffer,size);
+  lock_release(&file_lock);
   return;
 }; /* Write to a file. */
 
