@@ -17,8 +17,6 @@
 #include "threads/vaddr.h"
 #include "userprog/pagedir.h"
 #include "userprog/process.h"
-#include "vm/frame.h"
-#include "vm/page.h"
 
 extern struct frame_table frame_table;
 
