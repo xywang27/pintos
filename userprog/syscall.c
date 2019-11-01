@@ -18,6 +18,8 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+struct list file_list;
+
 static int
 get_user (const uint8_t *uaddr)
 {
