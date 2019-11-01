@@ -389,6 +389,7 @@ for (; i < argc; ++i)
   if((!is_user_vaddr(esp))||(pagedir_get_page(thread_current()->pagedir,esp)==NULL)||(uint32_t)esp <= 0x08048000){
     return false;
   }
+  esp = esp + 1;
 }
 return true;
 }
