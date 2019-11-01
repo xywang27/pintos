@@ -20,6 +20,55 @@
 
 struct list file_list;
 
+int new_file(struct file* file, bool exec){
+  struct thread* t = thread_current();
+  struct file_struct* fs = malloc(sizeof(struct file_struct));
+  for(int i = 0; i<128; ++i){
+    if(t->fd_table[i] == NULL){
+      t->fd_table[i] == fs;
+      fs->fd = t->fd_max;
+      fs->f = file;
+      fs->exec = exec;
+      t->fd_max ++;
+      break;
+    }
+  }
+  return fd->fd;
+}
+
+struct file* get_file(int fd, bool modify){
+  struct file_struct* fs;
+  struct thread* t = thread_current();
+  for(int i = 0; i<128;++i){
+    fs = t->fd_table[i];
+    if(fs!=NULL){
+      if(fs->fd == fd){
+        if(fs->exec && modify){
+          return NULL;
+        }
+        return fs->f;
+      }
+    }
+  }
+  return NULL;
+}
+
+void close_file(int fd){
+  struct file_struct* fs;
+  struct thread* t = thread_current();
+  for(int i = 0; i<128;++i){
+    fs = t->fd_table[i];
+    if(fs!=NULL){
+      if(fs->fd == fd){
+        file_close(fs->f);
+        free(t->fd_table[i]);
+        t->fd_table[i] = NULL;
+        break;
+      }
+    }
+  }
+}
+
 static int
 get_user (const uint8_t *uaddr)
 {
@@ -116,7 +165,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
   verify_pointer(f->esp);
   verify_pointer(f->esp+3);
-  uint32_t syscall_num = *(uint_32 *)f->esp;
+  uint32_t syscall_num = *(uint32_t*)f->esp;
   int *pointer = (int*)f->esp;
 
   /*is_valid_addr (&mc, f->esp, 4);*/
@@ -546,54 +595,5 @@ syscall_handler (struct intr_frame *f UNUSED)
 
     default:
     break;
-  }
-}
-
-int new_file(struct file* file, bool exec){
-  struct thread* t = thread_current();
-  struct file_struct* fs = malloc(sizeof(struct file_struct));
-  for(int i = 0; i<128; ++i){
-    if(t->fd_table[i] == NULL){
-      t->fd_table[i] == fs;
-      fd->fd = t->fd_max;
-      fs->f = file;
-      fd->exec = exec;
-      t->fd_max ++;
-      break;
-    }
-  }
-  return fd->fd;
-}
-
-struct file* get_file(int fd, bool modify){
-  struct file_struct* fs;
-  struct thread* t = thread_current();
-  for(int i = 0; i<128;++i){
-    fs = t->fd_table[i];
-    if(fs!=NULL){
-      if(fd->fd == fd){
-        if(fd->exec && modify){
-          return NULL;
-        }
-        return fs->f;
-      }
-    }
-  }
-  return NULL;
-}
-
-void close_file(int fd){
-  struct file_struct* fs;
-  struct thread* t = thread_current();
-  for(int i = 0; i<128;++i){
-    fs = t->fd_table[i];
-    if(fs!=NULL){
-      if(fs->fd == fd){
-        file_close(fs->f);
-        free(t->fd_table[i]);
-        t->fd_table[i] = NULL;
-        break;
-      }
-    }
   }
 }
