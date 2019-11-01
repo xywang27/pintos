@@ -48,7 +48,6 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
-  /*sema_down(&thread_current()->sema_sync);*/
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
   return tid;
@@ -76,8 +75,6 @@ start_process (void *file_name_)
   int argc;
   char* command_bak = extract_command(file_name,argv,&argc);
   success = load (argv[0], &if_.eip, &if_.esp);
-
-  /*sema_up(&thread_current()->parent->sema_sync)*/
 
   /* If load failed, quit. */
   if (!success){
@@ -201,17 +198,6 @@ int
 process_wait (tid_t child_tid UNUSED)
 {
   timer_sleep(100);
-  // struct thread* wait_thread = get_child_process(child_tid);
-  // if(wait_thread == NULL){
-  //   return -1;
-  // }
-  // if(wait_thread->call_wait == true){
-  //   return -1;
-  // }
-  // wait_thread->call_wait = true;
-  // /*sema_down(&wait_thread->exit_finish);*/
-  // list_remove(&wait_thread->child_elem);
-  // return wait_thread->exit_status;
   return -1;
 }
 
@@ -221,19 +207,6 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-
-  // struct list_elem* e = list_begin(&thread_current()->locks);
-  // struct lock* l;
-  // while(e!=list_end(&thread_current()->locks)){
-  //   l = list_entry(e,struct lock, elem);
-  //   lock_release(l);
-  //   e = list_remove(e);
-  // }
-  // for （int i = (cur->fd_max);i>=2;i--){
-  //   if (cur->fd_table[i] != NULL){
-  //     close_file(i);
-  //   }
-  // }
   printf ("%s: exit(%d)\n", cur->name, cur->exit_code);
 
   /* Destroy the current process's page directory and switch back
