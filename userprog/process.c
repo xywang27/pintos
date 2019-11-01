@@ -8,6 +8,9 @@
 #include "userprog/gdt.h"
 #include "userprog/pagedir.h"
 #include "userprog/tss.h"
+#include "filesys/directory.h"
+#include "filesys/file.h"
+#include "filesys/filesys.h"
 #include "threads/flags.h"
 #include "threads/init.h"
 #include "threads/interrupt.h"
@@ -37,13 +40,16 @@ process_execute (const char *file_name)
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
-
-  char *argv[100];
+  /*char *token, *save_ptr;
+  token = strtok_r (file_name, " ", &save_ptr);*/
+  char *argv[256];
   int argc;
   char* command_bak = extract_command(file_name,argv,&argc);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
+
+  sema_down(&thread_current()->sema1);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
   return tid;
@@ -58,26 +64,52 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-
-  char *argv[100];
-  int argc;
-  char* command_bak = extract_command(file_name,argv,&argc);
+  /*char *token, *save_ptr;
+  token = strtok_r (file_name, " ", &save_ptr);*/
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
+
+  char *argv[256];
+  int argc;
+  char* command_bak = extract_command(file_name,argv,&argc);
   success = load (argv[0], &if_.eip, &if_.esp);
 
-
   /* If load failed, quit. */
-
-  if (!success)
+  if (!success){
+    thread_current()->exit_code = -1;
     thread_exit ();
+  }
 
-
-  int i = argc;
+  /*char *esp = (char*)if_.esp;
+  char *arg[256];
+  int i,n=0;
+  for(; token != NULL;token = strtok_r(NULL, " ", &save_ptr)){
+    esp -= strlen(token)+1;
+    strlcpy(esp,token,strlen(token)+2);
+    arg[n++]=esp;
+  }
+  while((int)if_.esp%4!=0){
+    esp--;
+  }
+  int *p=esp-4;
+  *p=0;
+  p -= 4;
+  for(i=n-1;i>=0;i--){
+    p -= 4;
+    *p=(int *)arg[i];
+  }
+  p -= 4;
+  *p=p+4;
+  p -= 4;
+  *p=n;
+  p -= 4;
+  *p=0;
+  if_.esp = p;*/
+  int i=argc;
   char * addr_arr[argc];
   //printf("%s\n","try to put args" );
   //printf("Address\t         Nmae\t        Data\n");
@@ -93,12 +125,12 @@ start_process (void *file_name_)
 
   // 4k  对齐
   //world-align
-  while ((int)if_.esp % 4 != 0) {
+  while ((int)if_.esp%4!=0) {
     if_.esp--;
   }
   //printf("%d\tworld-align\t0\n", if_.esp);
 
-  i = argc;
+  i=argc;
   if_.esp = if_.esp-4;
   (*(int *)if_.esp)=0;
   //printf("%d\targv[%d]\t%d\n",if_.esp,i,*((int *)if_.esp));
@@ -121,9 +153,6 @@ start_process (void *file_name_)
   //put return address 0
   if_.esp = if_.esp-4;
   (*(int *)if_.esp)=0;
-  //printf("%d\treturn address\t%d\n",if_.esp,(*(int *)if_.esp));
-
-  /* If load failed, quit. */
   free(command_bak);
   palloc_free_page (file_name);
 
@@ -133,6 +162,7 @@ start_process (void *file_name_)
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
+  sema_up(&thread_current()->parent->sema1);
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
@@ -171,8 +201,8 @@ char* extract_command(char* command,char* argv[],int* argc){
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  /*return -1;*/
   timer_sleep(10);
+  return -1;
 }
 
 /* Free the current process's resources. */
@@ -181,8 +211,8 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+  printf ("%s: exit(%d)\n", cur->name, cur->exit_code);
 
-  printf("%s: exit(%d)\n",cur->name,cur->exit_code);
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
