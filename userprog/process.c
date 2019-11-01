@@ -201,7 +201,7 @@ char* extract_command(char* command,char* argv[],int* argc){
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  timer_sleep(10);
+  timer_sleep(50);
   return -1;
 }
 
