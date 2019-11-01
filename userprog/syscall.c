@@ -122,10 +122,10 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
       char *str =*(char**)(f->esp+4);
 
-      lock_acquire(&file_lock);
+      /*lock_acquire(&file_lock);*/
 
       f->eax = process_execute (str);
-      lock_release(&file_lock);
+      /*lock_release(&file_lock);*/
       return;
     }
 
@@ -215,7 +215,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_exit ();
       }
 
-      lock_acquire(&file_lock);
+      /*lock_acquire(&file_lock);*/
       struct fd_entry *fd_entry = get_fd_entry (fd);
       /*if (fd_entry == NULL || fd_entry->dir) {
         f->eax = -1;
@@ -247,7 +247,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
 
       f->eax = retval;
-      lock_release(&file_lock);
+      /*lock_release(&file_lock);*/
       return;
     }
 
@@ -266,7 +266,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_exit ();
       }
 
-      lock_acquire(&file_lock);
+      /*lock_acquire(&file_lock);*/
 
       if (fd == 1) {
         putbuf((char *)buffer, (size_t)size);
@@ -314,7 +314,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
 
       f->eax = retval;
-      lock_release(&file_lock);
+      /*lock_release(&file_lock);*/
       return;
     }
 
