@@ -79,9 +79,7 @@ static int get_user (const uint8_t *uaddr){
 /* Writes BYTE to user address UDST.
    UDST must be below PHYS_BASE.
    Returns true if successful, false if a segfault occurred. */
-static bool
-put_user (uint8_t *udst, uint8_t byte)
-{
+static bool put_user (uint8_t *udst, uint8_t byte){
   if(!is_user_vaddr(udst))
     return false;
   int error_code;
