@@ -165,7 +165,7 @@ syscall_handler (struct intr_frame *f)
   }
 
   if (syscall_num == SYS_HALT){
-    Halt();
+    halt();
   }
 
   else if(syscall_num == SYS_EXIT){
