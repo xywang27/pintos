@@ -48,8 +48,7 @@ static temp_fd = 2;                 /*used to generate fd
 /*
 find file_element in current's thread fd_list
 */
-static struct file_element *
-find_file_element_by_fd_in_process (int fd)
+static struct file_element *find_file_element_by_fd_in_process (int fd)
 {
   struct file_element *ret;
   struct list_elem *l;
@@ -70,8 +69,7 @@ find_file_element_by_fd_in_process (int fd)
 /*
 find file be fd id
 */
-static struct file *
-find_file_by_fd (int fd)
+static struct file *find_file_by_fd (int fd)
 {
   struct file_element *ret;
 
@@ -81,8 +79,7 @@ find_file_by_fd (int fd)
   return ret->file;
 }
 
-static struct file_element *
-find_file_element_by_fd (int fd)
+static struct file_element *find_file_element_by_fd (int fd)
 {
   struct file_element *ret;
   struct list_elem *l;
@@ -97,19 +94,19 @@ find_file_element_by_fd (int fd)
   return NULL;
 }
 
-void
-is_valid (void *pointer)
-{
-    /* check for nullptr, access kernel space, and the user space is not allocated. */
 
-    /* check for start address. */
+void is_valid (void *pointer)
+{
     if ( pointer == NULL)
     {
         exit(-1);
     }
-    if (is_kernel_vaddr (pointer) || !is_user_vaddr(pointer))
+    if (is_kernel_vaddr (pointer))
     {
         exit(-1);
+    }
+    if(!is_user_vaddr(pointer)){
+      exit(-1);
     }
     if (pagedir_get_page (thread_current ()->pagedir, pointer) == NULL)
     {
