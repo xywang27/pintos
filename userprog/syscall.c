@@ -117,15 +117,15 @@ is_valid (void *pointer)
     /* check for nullptr, access kernel space, and the user space is not allocated. */
 
     /* check for start address. */
-    if ( ptr == NULL)
+    if ( pointer == NULL)
     {
         exit(-1);
     }
-    if (is_kernel_vaddr (ptr) || !is_user_vaddr(ptr))
+    if (is_kernel_vaddr (pointer) || !is_user_vaddr(pointer))
     {
         exit(-1);
     }
-    if (pagedir_get_page (thread_current ()->pagedir, ptr) == NULL)
+    if (pagedir_get_page (thread_current ()->pagedir, pointer) == NULL)
     {
         exit(-1);
     }
@@ -136,13 +136,13 @@ void
 is_valid_string(char *str)
 {
     /* check one bit at a time*/
-    is_valid (s);
-    is_valid (s+1);
+    is_valid (str);
+    is_valid (str+1);
     /* check until the end of C style string. */
-    while (*s != '\0')
-        s++;
-        is_valid (s+1);
-        is_valid (s+2);
+    while (*str != '\0')
+        str++;
+        is_valid (str+1);
+        is_valid (str+2);
 }
 // syscall_init put this function as syscall handler
 // switch handler by syscall num
@@ -197,9 +197,7 @@ syscall_handler (struct intr_frame *f)
     is_valid (ptr+8);
     is_valid (ptr+12);
     char* file_name = *(char **)(ptr+4);
-    if(!is_valid_string(file_name)){
-      exit(-1);
-    }
+    is_valid_string(file_name);
     unsigned size = *(int *)(ptr+8);
     f->eax = create(file_name,size);
   }
@@ -208,9 +206,7 @@ syscall_handler (struct intr_frame *f)
     is_valid(ptr+4);
     is_valid(ptr+8);
     char *file_name = *(char **)(ptr+4);
-    if(!is_valid_string(file_name)){
-      exit(-1);
-    }
+    is_valid_string(file_name);
     f->eax = remove(file_name);
   }
 
@@ -218,9 +214,7 @@ syscall_handler (struct intr_frame *f)
     is_valid(ptr+4);
     is_valid(ptr+8);
     char *file_name = *(char **)(ptr+4);
-    if(!is_valid_string(file_name)){
-      exit(-1);
-    }
+    is_valid_string(file_name);
     lock_acquire(&file_lock);
     f->eax = open(file_name);
     lock_release(&file_lock);
@@ -379,7 +373,7 @@ int filesize (int fd){
 
 int read (int fd, void *buffer, unsigned length){
   // printf("call read %d\n", fd);
-  if(fd==STDIN){
+  if(fd==0){
     for(unsigned int i=0;i<length;i++){
       *((char **)buffer)[i] = input_getc();
     }
@@ -395,7 +389,7 @@ int read (int fd, void *buffer, unsigned length){
 }
 
 int write (int fd, const void *buffer, unsigned length){
-  if(fd==STDOUT){ // stdout
+  if(fd==1){ // stdout
       putbuf((char *) buffer,(size_t)length);
       return (int)length;
   }else{
