@@ -465,14 +465,21 @@ implicitly closes all its open file descriptors,
 void close (int fd){
   struct file_element *f = find_file_element_by_fd_in_process(fd);
 
+  if (f != NULL){
+    file_close (f->file);
+    list_remove (&f->elem);
+    list_remove (&f->thread_elem);
+    free (f);
+  }
+  else{
+    exit(-1);
+  }
+
   // close more than once will fail
   // if(f == NULL){
   //   exit(-1);
   // }
-  file_close (f->file);
-  list_remove (&f->elem);
-  list_remove (&f->thread_elem);
-  free (f);
+
 }
 
 
