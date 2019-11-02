@@ -478,7 +478,7 @@ void close (int fd){
   struct list_elem *a;
   struct thread *t = thread_current ();
 
-  for (a = list_begin (&t->fd_list); a != list_end (&a->fd_list); a = list_next (a))
+  for (a = list_begin (&t->fd_list); a != list_end (&t->fd_list); a = list_next (a))
     {
       f_temp = list_entry (a, struct file_element, elem_of_thread);
       if (f_temp->fd == fd)
