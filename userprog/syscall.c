@@ -490,14 +490,13 @@ void close (int fd){
         return;
     }
   return -1;
-  }
+}
 
   // close more than once will fail
   // if(f == NULL){
   //   exit(-1);
   // }
 
-}
 
 
 
