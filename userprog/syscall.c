@@ -115,20 +115,22 @@ void is_valid_ptr (void *pointer)
     /* check for end address. */
 }
 
-void is_valid_string(char *str)
+void
+is_valid_string(char *str)
 {
     /* check one bit at a time*/
     is_valid_ptr (str);
-
+    is_valid_ptr (str+1);
     /* check until the end of C style string. */
-    while (*str != '\0'){
-      str++;
-      is_valid_ptr (str);
-    }
+    while (*str != '\0')
+        str++;
+        is_valid_ptr (str+1);
+        is_valid_ptr (str+2);
 }
 // syscall_init put this function as syscall handler
 // switch handler by syscall num
-static void syscall_handler (struct intr_frame *f)
+static void
+syscall_handler (struct intr_frame *f)
 {
   //printf ("system call!\n");
   // if(!is_valid_pointer(f->esp,4)){
@@ -195,7 +197,7 @@ static void syscall_handler (struct intr_frame *f)
     is_valid_ptr(ptr+4);
     is_valid_ptr(ptr+8);
     char *file_name = *(char **)(ptr+4);
-    is_valid_str(file_name);
+    is_valid_string(file_name);
     lock_acquire(&file_lock);
     f->eax = open(file_name);
     lock_release(&file_lock);
