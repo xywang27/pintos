@@ -1,376 +1,372 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
-#include <string.h>
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-#include "threads/palloc.h"
-#include "threads/synch.h"
-#include "filesys/filesys.h"
-#include "userprog/pagedir.h"
 #include "userprog/process.h"
-#include "devices/shutdown.h"
-#include "devices/input.h"
+#include "filesys/file.h"
+#include "filesys/filesys.h"
+#include "threads/malloc.h"
+#include "threads/synch.h"
 
+// struct file_element
+struct file_element{
+  struct file *file;                         /*file's name*/
+  struct list_elem elem;                     /*list member to store all the file opened*/
+  struct list_elem elem_of_thread;           /*list member tp store the file that the particular thread hold*/
+  int fd;                                    /*file's id*/
+};
 
-#define BUF_MAX 200
-
+static void syscall_handler (struct intr_frame *);
 typedef int pid_t;
 
-static bool valid_mem_access (const void *);
-static void syscall_handler (struct intr_frame *);
-static void userprog_halt (void);
-static void userprog_exit (int);
-static pid_t userprog_exec (const char *);
-static int userprog_wait (pid_t);
-static bool userprog_create (const char *, unsigned);
-static bool userprog_remove (const char *);
-static int userprog_open (const char *);
-static int userprog_filesize (int);
-static int userprog_read (int, void *, unsigned);
-static int userprog_write (int, const void *, unsigned);
-static void userprog_seek (int, unsigned);
-static unsigned userprog_tell (int);
-static void userprog_close (int);
-static struct openfile * getFile (int);
+// different kinds of systemcall function that will be used.
+void halt (void);
+void exit (int status);
+pid_t exec (const char *file);
+int wait (pid_t);
+bool create (const char *file, unsigned initial_size);
+bool remove (const char *file);
+int open (const char *file);
+int filesize (int fd);
+int read (int fd, void *buffer, unsigned size);
+int write (int fd, const void *buffer, unsigned size);
+void seek (int fd, unsigned position);
+unsigned tell (int fd);
+void close (int fd);
+
+static struct file *find_file (int fd);
+
+static struct list file_list;       /*list used to store all opened file*/
+
+static temp_fd = 2;                 /*used to generate fd*/
+
+// find the file in the file_list according to fd
+static struct file *find_file (int fd){
+  struct file_element *f;
+  struct list_elem *a;
+  for (a = list_begin (&file_list); a != list_end (&file_list); a = list_next (a)){    /*traverse the file_list*/
+    f = list_entry (a, struct file_element, elem);
+    if(f->fd == fd){                                                                  /*find the file with corresponding fd*/
+      if(!f){
+        return NULL;                                                                   /*return NULL if file dose not exit*/
+      }
+      else{
+        return f->file;
+      }
+    }
+  }
+}
+
+/* Reads a byte at user virtual address UADDR.
+   UADDR must be below PHYS_BASE.
+   Returns the byte value if successful, -1 if a segfault
+   occurred. */
+static int get_user (const uint8_t *uaddr){
+  if(!is_user_vaddr((void *)uaddr)){
+    return -1;
+  }
+  if(pagedir_get_page(thread_current()->pagedir,uaddr)==NULL){
+    return -1;
+  }
+  int result;
+  asm ("movl $1f, %0; movzbl %1, %0; 1:"
+       : "=&a" (result) : "m" (*uaddr));
+  return result;
+}
+
+/* Writes BYTE to user address UDST.
+   UDST must be below PHYS_BASE.
+   Returns true if successful, false if a segfault occurred. */
+static bool put_user (uint8_t *udst, uint8_t byte){
+  if(!is_user_vaddr(udst))
+    return false;
+  int error_code;
+  asm ("movl $1f, %0; movb %b2, %1; 1:"
+       : "=&a" (error_code), "=m" (*udst) : "q" (byte));
+  return error_code != -1;
+}
+
+// check if the pointer is valid
+void is_valid_ptr (void *pointer){
+  if(pointer == NULL){                                                             /*the pointer can not be NULL*/
+    exit(-1);
+  }
+  if(is_kernel_vaddr(pointer)){                                                    /*the pointer can not be kernal address*/
+    exit(-1);
+  }
+  if(!is_user_vaddr(pointer)){                                                     /*the pointer must be user address*/
+    exit(-1);
+  }
+  if(pagedir_get_page (thread_current ()->pagedir, pointer) == NULL){              /*the pointer must be mapped*/
+    exit(-1);
+  }
+}
+
+// check if the string is valid
+void is_valid_string(char *str){
+  char character = get_user(((uint8_t*)str));
+  while (character != '\0' && character!=-1){                                      /*loop until error or reach the end of the string*/
+    str++;
+    character = get_user(((uint8_t*)str));
+  }
+  if(character != '\0'){                                                           /*valid string must end with '\0'*/
+    exit(-1);
+  }
+}
+
+// function that call different syscalls
+static void syscall_handler (struct intr_frame *f){
+  void *ptr = f->esp;
+  is_valid_ptr(ptr);                                                    /*check if the head of the pointer is valid*/
+  is_valid_ptr(ptr+3);                                                  /*check if the tail of the pointer is valid*/
+  int syscall_num = * (int *)f->esp;                                    /*get which systemcall*/
+  if(syscall_num<=0||syscall_num>=20){                                  /*check if systemcall is in the boundary*/
+    exit(-1);
+  }
+  if (syscall_num == SYS_HALT){                                         /*sys_halt*/
+    halt();
+  }
+
+  else if(syscall_num == SYS_EXIT){                                     /*sys_exec*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    int status = *(int *)(ptr+4);                                       /*get status*/
+    exit(status);
+  }
+
+  else if(syscall_num == SYS_EXEC){                                     /*sys_exec*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    char *file_name = *(char **)(ptr+4);                                /*get file name*/
+    is_valid_string(file_name);                                         /*check if the file name is valid*/
+    lock_acquire(&file_lock);
+    f->eax = exec(file_name);
+    lock_release(&file_lock);
+  }
+
+  else if(syscall_num == SYS_WAIT){                                     /*sys_wait*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    int pid = *((int*)ptr+4);                                           /*get pid*/
+    f->eax = wait(pid);
+  }
+
+  else if(syscall_num == SYS_CREATE){                                   /*sys_create*/
+    is_valid_ptr (ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr (ptr+7);                                               /*check if the tail of the pointer is valid*/
+    char* file_name = *(char **)(ptr+4);                                /*get file name*/
+    is_valid_string(file_name);                                         /*check if file name is valid*/
+    unsigned size = *(int *)(ptr+8);                                    /*get size*/
+    f->eax = create(file_name,size);
+  }
+
+  else if(syscall_num == SYS_REMOVE){                                   /*sys_remove*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    char *file_name = *(char **)(ptr+4);                                /*get file name*/
+    is_valid_string(file_name);                                         /*check if file name is valid*/
+    f->eax = remove(file_name);
+  }
+
+  else if(syscall_num == SYS_OPEN){                                     /*sys_open*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    char *file_name = *(char **)(ptr+4);                                /*get file name*/
+    is_valid_string(file_name);                                         /*check if file name is valid*/
+    lock_acquire(&file_lock);
+    f->eax = open(file_name);
+    lock_release(&file_lock);
+  }
+
+  else if(syscall_num == SYS_FILESIZE){                                /*sys_filesize*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    f->eax = filesize(fd);
+  }
+
+  else if(syscall_num == SYS_READ){                                    /*sys_read*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    void *buffer = *(char**)(ptr + 8);                                 /*get buffer*/
+    unsigned size = *(unsigned *)(ptr + 12);                           /*get size*/
+    is_valid_ptr (buffer);                                             /*check if buffer is valid*/
+    is_valid_ptr (buffer+size);                                        /*chekc if buffer+size is valid*/
+    lock_acquire(&file_lock);
+    f->eax = read(fd,buffer,size);
+    lock_release(&file_lock);
+  }
+
+  else if(syscall_num == SYS_WRITE){                                   /*sys_write*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    void *buffer = *(char**)(ptr + 8);                                 /*get buffer*/
+    unsigned size = *(unsigned *)(ptr + 12);                           /*get size*/
+    is_valid_ptr (buffer);                                             /*check if buffer is valid*/
+    is_valid_ptr (buffer+size);                                        /*check if buffer+size is valid*/
+    lock_acquire(&file_lock);
+    f->eax = write(fd,buffer,size);
+    lock_release(&file_lock);
+  }
+
+  else if(syscall_num == SYS_SEEK){                                    /*sys_seek*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    unsigned pos = *(unsigned *)(ptr + 8);                             /*get pos*/
+    seek(fd,pos);
+  }
+
+  else if(syscall_num == SYS_TELL){                                    /*sys_tell*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    tell(fd);
+  }
+
+  else if(syscall_num == SYS_CLOSE){                                   /*sys_close*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    close(fd);
+  }
+}
+
+// Terminates Pintos by calling shutdown_power_off()
+void halt (void){
+  shutdown_power_off();
+}
+
+// Terminates the current user program with thestatus giving
+void exit(int status){
+struct thread *cur = thread_current ();
+struct list_elem *a;
+while (!list_empty (&cur->fd_list))                                      /*loop if current thread still has files unclosed*/
+  {
+    a = list_begin (&cur->fd_list);
+    close (list_entry (a, struct file_element, elem_of_thread)->fd);     /*close this file*/
+  }
+cur->exit_code = status;                                                 /*set status to exit_code and exit*/
+thread_exit ();
+}
+
+//run the excutable with the name given
+pid_t exec (const char *file){
+  return process_execute(file);
+}
+
+// Wait for a child process
+int wait (pid_t pid){
+  return process_wait(pid);
+}
+
+// create a new file
+bool create (const char *file, unsigned initial_size){
+    return filesys_create(file,initial_size);
+}
+
+// remove the particular file
+bool remove (const char *file){
+  return filesys_remove(file);
+}
+
+// Opens the file called file.
+int open (const char *file){
+    struct file* f = filesys_open(file);
+    struct thread *cur = thread_current();
+    if(f == NULL){                                                                        /*return -1 if open fails*/
+      return -1;
+    }
+    struct file_element *a = (struct file_element*)malloc(sizeof(struct file_element));   /*build a new file_element*/
+    list_push_back(&file_list,&a->elem);                                                  /*put newly opened file into file_list*/
+    list_push_back(&cur->fd_list,&a->elem_of_thread);                                     /*put newly opened file into file list of current thread*/
+    a->file = f;
+    a->fd = temp_fd + 1;                                                                  /*give fd to this file*/
+    temp_fd = temp_fd + 1;                                                                /*produce a new fd*/
+    return a->fd;
+}
+
+// Returns the size, in bytes, of the file open as fd.
+int filesize (int fd){
+  struct file *f = find_file(fd);                                        /*find the file with corresponding fd*/
+  return file_length(f);
+}
+
+// Reads size bytes from the file open as fd into buffer.
+int read (int fd, void *buffer, unsigned size){
+  if(fd == 0){                                                           /*if it is STDIN*/
+    input_getc();
+    return size;
+  }
+  else{                                                                 /*if it is not STDIN*/
+    struct file *f = find_file(fd);                                     /*find the file with corresponding fd*/
+    if(f != NULL){
+      return file_read(f,buffer,size);
+    }
+    else{                                                               /*return -1 if read fails*/
+      return -1;
+    }
+  }
+}
+
+// Writes size bytes from buffer to the open file fd
+int write (int fd, const void *buffer, unsigned size){
+  if(fd == 1){                                                          /*if it is STDOUT*/
+      putbuf(buffer,size);
+      return size;
+  }
+  else{                                                                /*if it is not STDOUT*/
+    struct file *f = find_file(fd);                                    /*find the file with corresponding fd*/
+    if(f!=NULL){
+      return file_write(f,buffer,size);
+    }
+    else{                                                              /*return -1 if write fails*/
+      return -1;
+    }
+  }
+}
+
+// Changes the next byte to be read or written in open file fd to position, expressed in bytes from the beginning of the file.
+void seek (int fd, unsigned position){
+  struct file *f = find_file(fd);                                     /*find the file with corresponding fd*/
+  file_seek(f,position);
+}
+
+// Returns the position of the next byte to be read or written in open file fd, expressed in bytes from the beginning of the file.
+unsigned tell (int fd){
+  struct file *f = find_file(fd);                                     /*find the file with corresponding fd*/
+  return file_tell(f);
+}
+
+// close the file with the corresponding fd
+void close (int fd){
+  struct file_element *f;
+  f = NULL;
+  struct file_element *f_temp;
+  struct list_elem *a;
+  struct thread *cur = thread_current ();
+  for (a = list_begin (&cur->fd_list); a != list_end (&cur->fd_list); a = list_next (a)){         /*traverse the file list of the current thread*/
+    f_temp = list_entry (a, struct file_element, elem_of_thread);
+    if (f_temp->fd == fd){                                                                        /*find the file with the corresponding fd*/
+      f = f_temp;
+      file_close (f->file);
+      list_remove (&f->elem);                                                                     /*remove from file_list*/
+      list_remove (&f->elem_of_thread);                                                           /*remove from file list of current thread*/
+      free (f);
+      return;
+    }
+  }
+  return -1;
+}
 
 void
-syscall_init (void)
-{
+syscall_init (void){
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
-  lock_init (&file_lock);
-}
 
-/* Verify that the user pointer is valid */
-static bool
-valid_mem_access (const void *up)
-{
-	struct thread *t = thread_current ();
-
-	if (up == NULL)
-		return false;
-  if (is_kernel_vaddr (up))
-    return false;
-  if (pagedir_get_page (t->pagedir, up) == NULL)
-   	return false;
-
-	return true;
-}
-
-static void
-syscall_handler (struct intr_frame *f UNUSED)
-{
-  void *esp = f->esp;
-  uint32_t *eax = &f->eax;
-  int syscall_num;
-
-  if(!valid_mem_access ( ((int *) esp) ))
-    userprog_exit (-1);
-  if(!valid_mem_access ( ((int *) esp)+1 ))
-    userprog_exit (-1);
-  syscall_num = *((int *) esp);
-
-  switch (syscall_num) {
-  	case 0:
-  	  userprog_halt ();
-  	  break;
-  	case 1:
-  	{
-  	  int status = *(((int *) esp) + 1);
-  	  userprog_exit (status);
-  	  break;
-  	}
-  	case 2:
-  	{
-  	  const char *cmd_line = *(((char **) esp) + 1);
-  	  *eax = (uint32_t) userprog_exec (cmd_line);
-  	  break;
-  	}
-  	case 3:
-  	{
-  	  pid_t pid = *(((pid_t *) esp) + 1);
-  	  *eax = (uint32_t) userprog_wait (pid);
-  	  break;
-  	}
-  	case 4:
-  	{
-  	  const char *file = *(((char **) esp) + 1);
-  	  unsigned initial_size = *(((unsigned *) esp) + 2);
-  	  *eax = (uint32_t) userprog_create (file, initial_size);
-  	  break;
-  	}
-  	case 5:
-  	{
-  	  const char *file = *(((char **) esp) + 1);
-  	  *eax = (uint32_t) userprog_remove (file);
-  	  break;
-  	}
-  	case 6:
-  	{
-  	  const char *file = *(((char **) esp) + 1);
-  	  *eax = (uint32_t) userprog_open (file);
-  	  break;
-  	}
-  	case 7:
-  	{
-  	  int fd = *(((int *) esp) + 1);
-  	  *eax = (uint32_t) userprog_filesize (fd);
-  	  break;
-  	}
-  	case 8:
-  	{
-  	  int fd = *(((int *) esp) + 1);
-  	  void *buffer = (void *) *(((int **) esp) + 2);
-  	  unsigned size = *(((unsigned *) esp) + 3);
-  	  *eax = (uint32_t) userprog_read (fd, buffer, size);
-  	  break;
-  	}
-  	case 9:
-  	{
-  	  int fd = *(((int *) esp) + 1);
-  	  const void *buffer = (void *) *(((int **) esp) + 2);
-  	  unsigned size = *(((unsigned *) esp) + 3);
-  	  *eax = (uint32_t) userprog_write (fd, buffer, size);
-  	  break;
-  	}
-  	case 10:
-  	{
-  	  int fd = *(((int *) esp) + 1);
-  	  unsigned position = *(((unsigned *) esp) + 2);
-  	  userprog_seek (fd, position);
-  	  break;
-  	}
-  	case 11:
-  	{
-  	  int fd = *(((int *) esp) + 1);
-  	  *eax = (uint32_t) userprog_tell (fd);
-  	  break;
-  	}
-  	case 12:
-  	{
-  	  int fd = *(((int *) esp) + 1);
-  	  userprog_close (fd);
-  	  break;
-  	}
-  }
-}
-
-static void
-userprog_halt ()
-{
-	shutdown_power_off ();
-}
-
-static void
-userprog_exit (int status)
-{
-  struct thread *cur = thread_current ();
-  cur->exit_code = status;
-	thread_exit ();
-}
-
-static pid_t
-userprog_exec (const char *cmd_line)
-{
-	//printf("System call: exec\ncmd_line: %s\n", cmd_line);
-  tid_t child_tid = TID_ERROR;
-
-  if(!valid_mem_access(cmd_line))
-    userprog_exit (-1);
-
-  child_tid = process_execute (cmd_line);
-
-	return child_tid;
-}
-
-static int
-userprog_wait (pid_t pid)
-{
-  return process_wait (pid);
-}
-
-static bool
-userprog_create (const char *file, unsigned initial_size)
-{
-  bool retval;
-  if(valid_mem_access(file)) {
-    lock_acquire (&file_lock);
-    retval = filesys_create (file, initial_size);
-    lock_release (&file_lock);
-    return retval;
-  }
-	else
-    userprog_exit (-1);
-
-  return false;
-}
-
-static bool
-userprog_remove (const char *file)
-{
-  bool retval;
-	if(valid_mem_access(file)) {
-    lock_acquire (&file_lock);
-    retval = filesys_remove (file);
-    lock_release (&file_lock);
-    return retval;
-  }
-  else
-    userprog_exit (-1);
-
-  return false;
-}
-
-static int
-userprog_open (const char *file)
-{
-	if(valid_mem_access ((void *) file)) {
-    struct openfile *new = palloc_get_page (0);
-    new->fd = thread_current ()->next_fd;
-    thread_current ()->next_fd++;
-    lock_acquire (&file_lock);
-    new->file = filesys_open(file);
-    lock_release (&file_lock);
-    if (new->file == NULL)
-      return -1;
-    list_push_back(&thread_current ()->openfiles, &new->elem);
-    return new->fd;
-  }
-	else
-    userprog_exit (-1);
-
-	return -1;
-
-}
-
-static int
-userprog_filesize (int fd)
-{
-  int retval;
-  struct openfile *of = NULL;
-	of = getFile (fd);
-  if (of == NULL)
-    return 0;
-  lock_acquire (&file_lock);
-  retval = file_length (of->file);
-  lock_release (&file_lock);
-  return retval;
-}
-
-static int
-userprog_read (int fd, void *buffer, unsigned size)
-{
-  int bytes_read = 0;
-  char *bufChar = NULL;
-  struct openfile *of = NULL;
-	if (!valid_mem_access(buffer))
-    userprog_exit (-1);
-  bufChar = (char *)buffer;
-	if(fd == 0) {
-    while(size > 0) {
-      input_getc();
-      size--;
-      bytes_read++;
-    }
-    return bytes_read;
-  }
-  else {
-    of = getFile (fd);
-    if (of == NULL)
-      return -1;
-    lock_acquire (&file_lock);
-    bytes_read = file_read (of->file, buffer, size);
-    lock_release (&file_lock);
-    return bytes_read;
-  }
-}
-
-static int
-userprog_write (int fd, const void *buffer, unsigned size)
-{
-  int bytes_written = 0;
-  char *bufChar = NULL;
-  struct openfile *of = NULL;
-	if (!valid_mem_access(buffer))
-		userprog_exit (-1);
-  bufChar = (char *)buffer;
-  if(fd == 1) {
-    /* break up large buffers */
-    while(size > BUF_MAX) {
-      putbuf(bufChar, BUF_MAX);
-      bufChar += BUF_MAX;
-      size -= BUF_MAX;
-      bytes_written += BUF_MAX;
-    }
-    putbuf(bufChar, size);
-    bytes_written += size;
-    return bytes_written;
-  }
-  else {
-    of = getFile (fd);
-    if (of == NULL)
-      return 0;
-    lock_acquire (&file_lock);
-    bytes_written = file_write (of->file, buffer, size);
-    lock_release (&file_lock);
-    return bytes_written;
-  }
-}
-
-static void
-userprog_seek (int fd, unsigned position)
-{
-	struct openfile *of = NULL;
-  of = getFile (fd);
-  if (of == NULL)
-    return;
-  lock_acquire (&file_lock);
-  file_seek (of->file, position);
-  lock_release (&file_lock);
-}
-
-static unsigned
-userprog_tell (int fd)
-{
-  unsigned retval;
-	struct openfile *of = NULL;
-  of = getFile (fd);
-  if (of == NULL)
-    return 0;
-  lock_acquire (&file_lock);
-  retval = file_tell (of->file);
-  lock_release (&file_lock);
-  return retval;
-}
-
-static void
-userprog_close (int fd)
-{
-	struct openfile *of = NULL;
-  of = getFile (fd);
-  if (of == NULL)
-    return;
-  lock_acquire (&file_lock);
-  file_close (of->file);
-  lock_release (&file_lock);
-  list_remove (&of->elem);
-  palloc_free_page (of);
-}
-
-/* Helper function for getting a thread's opened
-   file by its file descriptor */
-static struct openfile *
-getFile (int fd)
-{
-  struct thread *t = thread_current ();
-  struct list_elem *e;
-  for (e = list_begin (&t->openfiles); e != list_end (&t->openfiles);
-       e = list_next (e))
-    {
-      struct openfile *of = list_entry (e, struct openfile, elem);
-      if(of->fd == fd)
-        return of;
-    }
-  return NULL;
+  lock_init(&file_lock);
+  list_init(&file_list);
 }
