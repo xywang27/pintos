@@ -444,9 +444,11 @@ void sys_halt(struct intr_frame* f){
 
 /* Terminate this process. */
 void sys_exit(struct intr_frame* f){
-  if(!is_valid_pointer(f->esp+4,4)){
-    exit(-1);
-  }
+  // if(!is_valid_pointer(f->esp+4,4)){
+  //   exit(-1);
+  // }
+  is_valid (esp);
+  is_valid (esp+4);
   int status = *(int *)(f->esp +4);
   exit(status);
 };
@@ -457,6 +459,8 @@ void sys_exec(struct intr_frame* f){
   if(!is_valid_pointer(f->esp+4,4)||!is_valid_string(*(char **)(f->esp + 4))){
     exit(-1);
   }
+  is_valid (esp);
+  is_valid (esp+4);
   char *file_name = *(char **)(f->esp+4);
   lock_acquire(&file_lock);
   f->eax = exec(file_name);
@@ -465,6 +469,8 @@ void sys_exec(struct intr_frame* f){
 
 /* Wait for a child process to die. */
 void sys_wait(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
   pid_t pid;
   if(!is_valid_pointer(f->esp+4,4)){
     exit(-1);
@@ -475,6 +481,9 @@ void sys_wait(struct intr_frame* f){
 
 
 void sys_create(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
+  is_valid (esp+8);
 if(!is_valid_pointer(f->esp+4,4)){
   exit(-1);
 }
@@ -488,6 +497,8 @@ f->eax = create(file_name,size);
 }; /* Create a file. */
 
 void sys_remove(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
   if (!is_valid_pointer(f->esp +4, 4) || !is_valid_string(*(char **)(f->esp + 4))){
     exit(-1);
   }
@@ -496,6 +507,8 @@ void sys_remove(struct intr_frame* f){
 
 };/* Create a file. */
 void sys_open(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
 
   if (!is_valid_pointer(f->esp +4, 4)){
     exit(-1);
@@ -512,6 +525,8 @@ void sys_open(struct intr_frame* f){
 }; /*Open a file. */
 
 void sys_filesize(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
   if (!is_valid_pointer(f->esp +4, 4)){
     exit(-1);
   }
@@ -522,6 +537,10 @@ void sys_filesize(struct intr_frame* f){
 
 };/* Obtain a file's size. */
 void sys_read(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
+  is_valid(esp+8);
+  is_valid (esp+12);
   if (!is_valid_pointer(f->esp + 4, 12)){
     exit(-1);
   }
@@ -531,6 +550,8 @@ void sys_read(struct intr_frame* f){
   if (!is_valid_pointer(buffer, 1) || !is_valid_pointer(buffer + size,1)){
     exit(-1);
   }
+  is_valid (buffer);
+  is_valid (buffer+size);
   lock_acquire(&file_lock);
   f->eax = read(fd,buffer,size);
   lock_release(&file_lock);
@@ -539,12 +560,18 @@ void sys_read(struct intr_frame* f){
 
 /* Read from a file. */
 void sys_write(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
+  is_valid (esp+8);
+  is_valid (esp+12);
   if(!is_valid_pointer(f->esp+4,12)){
     exit(-1);
   }
   int fd = *(int *)(f->esp +4);
   void *buffer = *(char**)(f->esp + 8);
   unsigned size = *(unsigned *)(f->esp + 12);
+  is_valid (buffer);
+  is_valid (buffer+size);
   if (!is_valid_pointer(buffer, 1) || !is_valid_pointer(buffer + size,1)){
     exit(-1);
 }
@@ -555,6 +582,9 @@ void sys_write(struct intr_frame* f){
 }; /* Write to a file. */
 
 void sys_seek(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
+  is_valid (esp+8);
   if (!is_valid_pointer(f->esp +4, 8)){
     exit(-1);
   }
@@ -564,6 +594,8 @@ void sys_seek(struct intr_frame* f){
 }; /* Change position in a file. */
 
 void sys_tell(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
   if (!is_valid_pointer(f->esp +4, 4)){
     exit(-1);
   }
@@ -572,6 +604,8 @@ void sys_tell(struct intr_frame* f){
 }; /* Report current position in a file. */
 
 void sys_close(struct intr_frame* f){
+  is_valid (esp);
+  is_valid (esp+4);
   if (!is_valid_pointer(f->esp +4, 4)){
     return exit(-1);
   }
@@ -600,6 +634,8 @@ syscall_handler (struct intr_frame *f)
   if(syscall_num<=0||syscall_num>=SYS_CALL_NUM){
     exit(-1);
   }
+
+  esp = esp + 4;
   // printf("sys call number: %d\n",syscall_num );
   syscall_handlers[syscall_num](f);
 
