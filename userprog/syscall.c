@@ -386,7 +386,7 @@ for (; i < argc; ++i)
   // if (get_user(((uint8_t *)esp)+i) == -1){
   //   return false;
   // }
-  if((!is_user_vaddr(esp))||(pagedir_get_page(thread_current()->pagedir,esp)==NULL)||(is_kernal_vaddr(esp))){
+  if((!is_user_vaddr(esp))||(pagedir_get_page(thread_current()->pagedir,esp)==NULL)||(is_kernel_vaddr(esp))){
     return false;
   }
   esp = esp + 1;
