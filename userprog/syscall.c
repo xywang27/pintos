@@ -233,7 +233,7 @@ syscall_handler (struct intr_frame *f)
 
   else if(syscall_num == SYS_REMOVE){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+7);
     char *file_name = *(char **)(ptr+4);
     is_valid_string(file_name);
     f->eax = remove(file_name);
@@ -241,7 +241,7 @@ syscall_handler (struct intr_frame *f)
 
   else if(syscall_num == SYS_OPEN){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+7);
     char *file_name = *(char **)(ptr+4);
     is_valid_string(file_name);
     lock_acquire(&file_lock);
@@ -251,7 +251,7 @@ syscall_handler (struct intr_frame *f)
 
   else if(syscall_num == SYS_FILESIZE){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+7);
     int fd = *(int *)(ptr + 4);
     f->eax = filesize(fd);
   }
