@@ -10,12 +10,18 @@
 #include "threads/malloc.h"
 #include "threads/synch.h"
 
-static void syscall_handler (struct intr_frame *);
+// struct file_element
+struct file_element{
+  struct file *file;                         /*file's name*/
+  struct list_elem elem;                     /*used to store in fd_list*/
+  struct list_elem thread_elem;
+  int fd;                                    /*file's id*/
+};
 
-/* Process identifier. */
+static void syscall_handler (struct intr_frame *);
 typedef int pid_t;
 
-//Projects 2 and later.
+// different kinds of systemcall function that will be used.
 void halt (void);
 void exit (int status);
 pid_t exec (const char *file);
@@ -24,50 +30,27 @@ bool create (const char *file, unsigned initial_size);
 bool remove (const char *file);
 int open (const char *file);
 int filesize (int fd);
-int read (int fd, void *buffer, unsigned length);
-int write (int fd, const void *buffer, unsigned length);
+int read (int fd, void *buffer, unsigned size);
+int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
 
 static struct file *find_file_by_fd (int fd);
-static struct fd_entry *find_fd_entry_by_fd (int fd);
-static int alloc_fid (void);
-static struct fd_entry *find_fd_entry_by_fd_in_process (int fd);
-
-/*
-file descriptors
-*/
-struct fd_entry{
-  int fd;
-  struct file *file;
-  struct list_elem elem;
-  struct list_elem thread_elem;
-};
+static struct file_element *find_file_element_by_fd (int fd);
+static struct file_element *find_file_element_by_fd_in_process (int fd);
 
 static struct list file_list;
 
-static temp_fd = 2;
+static temp_fd = 2;                 /*used to generate fd*/
+
 
 /*
-file descriptor id generaor
-generate from 2
-to all process
+find file_element in current's thread fd_list
 */
-static int
-alloc_fid (void)
+static struct file_element *find_file_element_by_fd_in_process (int fd)
 {
-  static int fid = 2;
-  return fid++;
-}
-
-/*
-find fd_entry in current's thread fd_list
-*/
-static struct fd_entry *
-find_fd_entry_by_fd_in_process (int fd)
-{
-  struct fd_entry *ret;
+  struct file_element *ret;
   struct list_elem *l;
   struct thread *t;
 
@@ -75,7 +58,7 @@ find_fd_entry_by_fd_in_process (int fd)
 
   for (l = list_begin (&t->fd_list); l != list_end (&t->fd_list); l = list_next (l))
     {
-      ret = list_entry (l, struct fd_entry, thread_elem);
+      ret = list_entry (l, struct file_element, thread_elem);
       if (ret->fd == fd)
         return ret;
     }
@@ -86,26 +69,24 @@ find_fd_entry_by_fd_in_process (int fd)
 /*
 find file be fd id
 */
-static struct file *
-find_file_by_fd (int fd)
+static struct file *find_file_by_fd (int fd)
 {
-  struct fd_entry *ret;
+  struct file_element *ret;
 
-  ret = find_fd_entry_by_fd (fd);
+  ret = find_file_element_by_fd (fd);
   if (!ret)
     return NULL;
   return ret->file;
 }
 
-static struct fd_entry *
-find_fd_entry_by_fd (int fd)
+static struct file_element *find_file_element_by_fd (int fd)
 {
-  struct fd_entry *ret;
+  struct file_element *ret;
   struct list_elem *l;
 
   for (l = list_begin (&file_list); l != list_end (&file_list); l = list_next (l))
     {
-      ret = list_entry (l, struct fd_entry, elem);
+      ret = list_entry (l, struct file_element, elem);
       if (ret->fd == fd)
         return ret;
     }
@@ -113,25 +94,20 @@ find_fd_entry_by_fd (int fd)
   return NULL;
 }
 
-void
-is_valid (void *pointer)
-{
-    /* check for nullptr, access kernel space, and the user space is not allocated. */
-
-    /* check for start address. */
-    if ( pointer == NULL)
-    {
-        exit(-1);
-    }
-    if (is_kernel_vaddr (pointer) || !is_user_vaddr(pointer))
-    {
-        exit(-1);
-    }
-    if (pagedir_get_page (thread_current ()->pagedir, pointer) == NULL)
-    {
-        exit(-1);
-    }
-    /* check for end address. */
+// check if the pointer is valid.
+void is_valid_ptr (void *pointer){
+  if (pointer){                                                   /*pointer can not be NULL*/
+    exit(-1);
+  }
+  if (is_kernel_vaddr(pointer)){                                  /*pointer can not be kernal address*/
+    exit(-1);
+  }
+  if (!is_user_vaddr(pointer)){                                   /*pointer must be user addresss*/
+    exit(-1);
+  }
+  if (pagedir_get_page(thread_current ()->pagedir, pointer)){     /*the user page must be mapped*/
+    exit(-1);
+  }
 }
 
 void
@@ -300,7 +276,7 @@ t = thread_current ();
 while (!list_empty (&t->fd_list))
   {
     l = list_begin (&t->fd_list);
-    close (list_entry (l, struct fd_entry, thread_elem)->fd);
+    close (list_entry (l, struct file_element, thread_elem)->fd);
   }
 
 t->exit_code = status;
@@ -347,7 +323,7 @@ int open (const char *file){
     }
 
     // add file descriptor
-    struct fd_entry *fde = (struct fd_entry *)malloc(sizeof(struct fd_entry));
+    struct file_element *fde = (struct file_element *)malloc(sizeof(struct file_element));
     // malloc fails
     if(fde == NULL){
       file_close(f);
@@ -428,7 +404,7 @@ implicitly closes all its open file descriptors,
  as if by calling this function for each one.
 */
 void close (int fd){
-  struct fd_entry *f = find_fd_entry_by_fd_in_process(fd);
+  struct file_element *f = find_file_element_by_fd_in_process(fd);
 
   // close more than once will fail
   if(f == NULL){
