@@ -415,9 +415,10 @@ int filesize (int fd){
 int read (int fd, void *buffer, unsigned size){
   // printf("call read %d\n", fd);
   if(fd==0){
-    for(unsigned int i=0;i<size;i++){
-      *((char **)buffer)[i] = input_getc();
-    }
+    // for(unsigned int i=0;i<size;i++){
+    //   *((char **)buffer)[i] = input_getc();
+    // }
+    input_getc();
     return size;
   }else{
     struct file *f = find_file_by_fd(fd);
@@ -433,8 +434,8 @@ int read (int fd, void *buffer, unsigned size){
 
 int write (int fd, const void *buffer, unsigned size){
   if(fd==1){ // stdout
-      putbuf((char *) buffer,(size_t)size);
-      return (int)size;
+      putbuf(buffer,size);
+      return size;
   }else{
     struct file *f = find_file_by_fd(fd);
     if(f!=NULL){
