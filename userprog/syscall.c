@@ -256,161 +256,119 @@ cur->exit_code = status;                                                 /*set s
 thread_exit ();
 }
 
-/*
-create  a process execute this file
-*/
+//run the excutable with the name given
 pid_t exec (const char *file){
   return process_execute(file);
 }
 
-
+// Wait for a child process
 int wait (pid_t pid){
   return process_wait(pid);
 }
 
+// create a new file
 bool create (const char *file, unsigned initial_size){
-  //printf("call create %s\n",file);
-    /*
-    TODO: check of file_name valid
-    */
     return filesys_create(file,initial_size);
 }
 
+// remove the particular file
 bool remove (const char *file){
-  //printf("call remove file %s\n",file);
   return filesys_remove(file);
 }
 
+// Opens the file called file.
 int open (const char *file){
-    //printf("call open file %s\n",file );  // if (get_user(((uint8_t *)esp)+i) == -1){
-  //   return false;
-  // }
-    /*
-    TODO: check valid string
-    */
     struct file* f = filesys_open(file);
     struct thread *cur = thread_current();
-    // open  fail, kill the process
-    if(f == NULL){
-      //printf("%s\n","open fails");
+    if(f == NULL){                                                                        /*return -1 if open fails*/
       return -1;
     }
-
-    // add file descriptor
-    struct file_element *a = (struct file_element*)malloc(sizeof(struct file_element));
-    list_push_back(&file_list,&a->elem);
-    list_push_back(&cur->fd_list,&a->elem_of_thread);
-    // malloc fails
-    // if(fde == NULL){
-    //   file_close(f);
-    //   return -1; // open fail
-    // }
+    struct file_element *a = (struct file_element*)malloc(sizeof(struct file_element));   /*build a new file_element*/
+    list_push_back(&file_list,&a->elem);                                                  /*put newly opened file into file_list*/
+    list_push_back(&cur->fd_list,&a->elem_of_thread);                                     /*put newly opened file into file list of current thread*/
     a->file = f;
-    a->fd = temp_fd + 1;
-    temp_fd = temp_fd + 1;
-
-
-
-
+    a->fd = temp_fd + 1;                                                                  /*give fd to this file*/
+    temp_fd = temp_fd + 1;                                                                /*produce a new fd*/
     return a->fd;
-
 }
 
+// Returns the size, in bytes, of the file open as fd.
 int filesize (int fd){
-
-  struct file *f = find_file(fd);
-  // if(f == NULL){
-  //   exit(-1);
-  // }
+  struct file *f = find_file(fd);                                        /*find the file with corresponding fd*/
   return file_length(f);
-
 }
 
+// Reads size bytes from the file open as fd into buffer.
 int read (int fd, void *buffer, unsigned size){
-  // printf("call read %d\n", fd);
-  if(fd==0){
-    // for(unsigned int i=0;i<size;i++){
-    //   *((char **)buffer)[i] = input_getc();
-    // }
+  if(fd == 0){                                                           /*if it is STDIN*/
     input_getc();
     return size;
-  }else{
-    struct file *f = find_file(fd);
-
+  }
+  else{                                                                 /*if it is not STDIN*/
+    struct file *f = find_file(fd);                                     /*find the file with corresponding fd*/
     if(f != NULL){
       return file_read(f,buffer,size);
     }
-    else{
+    else{                                                               /*return -1 if read fails*/
       return -1;
     }
   }
 }
 
+// Writes size bytes from buffer to the open file fd
 int write (int fd, const void *buffer, unsigned size){
-  if(fd==1){ // stdout
+  if(fd == 1){                                                          /*if it is STDOUT*/
       putbuf(buffer,size);
       return size;
-  }else{
-    struct file *f = find_file(fd);
+  }
+  else{                                                                /*if it is not STDOUT*/
+    struct file *f = find_file(fd);                                    /*find the file with corresponding fd*/
     if(f!=NULL){
       return file_write(f,buffer,size);
     }
-    else{
+    else{                                                              /*return -1 if write fails*/
       return -1;
     }
-
-
   }
 }
 
+// Changes the next byte to be read or written in open file fd to position, expressed in bytes from the beginning of the file.
 void seek (int fd, unsigned position){
-
-  struct file *f = find_file(fd);
-  // if(f == NULL){
-  //   exit(-1);
-  // }
+  struct file *f = find_file(fd);                                     /*find the file with corresponding fd*/
   file_seek(f,position);
 }
 
+// Returns the position of the next byte to be read or written in open file fd, expressed in bytes from the beginning of the file.
 unsigned tell (int fd){
-  struct file *f = find_file(fd);
-  // if(f == NULL){
-  //   exit(-1);
-  // }
+  struct file *f = find_file(fd);                                     /*find the file with corresponding fd*/
   return file_tell(f);
 }
 
-/*
-Closes file descriptor fd. Exiting or terminating a process
-implicitly closes all its open file descriptors,
- as if by calling this function for each one.
-*/
+// close the file with the corresponding fd
 void close (int fd){
   struct file_element *f;
   f = NULL;
   struct file_element *f_temp;
   struct list_elem *a;
-  struct thread *t = thread_current ();
-
-  for (a = list_begin (&t->fd_list); a != list_end (&t->fd_list); a = list_next (a))
-    {
-      f_temp = list_entry (a, struct file_element, elem_of_thread);
-      if (f_temp->fd == fd)
-        f = f_temp;
-        file_close (f->file);
-        list_remove (&f->elem);
-        list_remove (&f->elem_of_thread);
-        free (f);
-        return;
+  struct thread *cur = thread_current ();
+  for (a = list_begin (&cur->fd_list); a != list_end (&cur->fd_list); a = list_next (a)){         /*traverse the file list of the current thread*/
+    f_temp = list_entry (a, struct file_element, elem_of_thread);
+    if (f_temp->fd == fd){                                                                        /*find the file with the corresponding fd*/
+      f = f_temp;
+      file_close (f->file);
+      list_remove (&f->elem);                                                                     /*remove from file_list*/
+      list_remove (&f->elem_of_thread);                                                           /*remove from file list of current thread*/
+      free (f);
+      return;
     }
+  }
   return -1;
 }
 
 void
-syscall_init (void)
-{
+syscall_init (void){
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 
   lock_init(&file_lock);
-  list_init (&file_list);
+  list_init(&file_list);
 }
