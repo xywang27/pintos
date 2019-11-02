@@ -115,18 +115,51 @@ void is_valid_ptr (void *pointer)
     /* check for end address. */
 }
 
-void
-is_valid_string(char *str)
+static int
+get_user (const uint8_t *uaddr)
 {
-    /* check one bit at a time*/
-    is_valid_ptr (str);
-    is_valid_ptr (str+1);
-    /* check until the end of C style string. */
-    while (*str != '\0')
-        str++;
-        is_valid_ptr (str+1);
-        is_valid_ptr (str+2);
+    //printf("%s\n", "call get user");
+  if(!is_user_vaddr((void *)uaddr)){
+    return -1;
+  }
+  if(pagedir_get_page(thread_current()->pagedir,uaddr)==NULL){
+    return -1;
+  }
+  //printf("%s\n","is_user_vaddr" );
+  int result;
+  asm ("movl $1f, %0; movzbl %1, %0; 1:"
+       : "=&a" (result) : "m" (*uaddr));
+  return result;
 }
+
+void is_valid_string(char *str){
+  //return true;
+  char character;
+  character = get_user(((uint8_t*)str));
+  // if exceed the boundry, return -1
+  while (character != '\0' && character!=-1) {
+    str++;
+    character = get_user(((uint8_t*)str));
+  }
+  // valid string ends with '\0'
+  if ( character != '\0' ){
+    exit(-1);
+  }
+  
+}
+
+// void
+// is_valid_string(char *str)
+// {
+//     /* check one bit at a time*/
+//     is_valid_ptr (str);
+//     is_valid_ptr (str+1);
+//     /* check until the end of C style string. */
+//     while (*str != '\0')
+//         str++;
+//         is_valid_ptr (str+1);
+//         is_valid_ptr (str+2);
+// }
 // syscall_init put this function as syscall handler
 // switch handler by syscall num
 static void
