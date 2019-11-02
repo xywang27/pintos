@@ -84,6 +84,7 @@ start_process (void *file_name_)
     thread_exit ();
   }
   char *arg[argc];
+  int i;
   for(i = argc-1; i >= 0; i = i - 1){                                 /*put argv[] into the stack and get address of argv[]*/
     if_.esp = if_.esp - sizeof(char)*(strlen(argv[i])+1);
     arg[i]=(char *)if_.esp;
