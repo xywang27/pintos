@@ -261,6 +261,7 @@ invalidate_pagedir (uint32_t *pd)
       pagedir_activate (pd);
     }
 }
+
 int
 copy_to (uint8_t *dst, const uint8_t *usrc)
 {
@@ -277,9 +278,12 @@ is_valid_addr (void *dst_, const void *usrc_, size_t size)
   uint8_t *dst = dst_;
   const uint8_t *usrc = usrc_;
 
-  for (; size > 0; size--, dst++, usrc++) {
+  for (; size > 0; size--, dst++, usrc++)
+  {
     if (usrc >= (uint8_t *) PHYS_BASE || copy_to (dst, usrc) == 0)
+    {
       thread_exit ();
+    }
   }
 }
 
@@ -291,19 +295,22 @@ is_valid_str (const char *us)
 
   ks = palloc_get_page (0);
   if (ks == NULL)
+  {
     thread_exit ();
+  }
+
 
   for (length = 0; length < PGSIZE; length++)
-    {
-      if (us >= (char *) PHYS_BASE || copy_to (ks + length, us++) == 0)
-        {
-          palloc_free_page (ks);
-          thread_exit ();
-        }
+  {
+    if (us >= (char *) PHYS_BASE || copy_to (ks + length, us++) == 0)
+      {
+        palloc_free_page (ks);
+        thread_exit ();
+      }
 
-      if (ks[length] == '\0')
-        return ks;
-    }
+    if (ks[length] == '\0')
+      return ks;
+  }
   ks[PGSIZE - 1] = '\0';
   return ks;
 }
