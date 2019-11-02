@@ -102,14 +102,10 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
 
-    struct list fd_entry_list;          // list of files opened by this thread
-    tid_t parent_id;                    /* parent pid (tid) */
-    struct list children;               /* child processes */
-    struct list fd_list;                /* List of all file_descriptor it owns*/
-    int exit_code;
-    struct file *executable;            /* The thread's executable*/
-    struct semaphore sema1;
-    struct thread* parent;
+    struct list fd_list;                /* List of all file_descriptor the thread has*/
+    int exit_code;                      /*the exit_code of the thread(-1 means sth wrong with it)*/
+    struct semaphore sema1;             /*semaphore used to let parent thread wait for child thread to load*/
+    struct thread* parent;              /*the parent of the thread(who creats this thread)*/
   };
 
 /* If false (default), use round-robin scheduler.
