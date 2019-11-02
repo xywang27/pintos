@@ -592,6 +592,7 @@ syscall_handler (struct intr_frame *f)
     exit(-1);
     return;
   }
+  void *esp = f->esp;
   is_valid(esp);
   is_valid(esp+4);
   int syscall_num = * (int *)f->esp;
