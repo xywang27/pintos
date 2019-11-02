@@ -36,7 +36,7 @@ void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
 
-static struct file *find_file_by_fd (int fd);
+static struct file *find_file (int fd);
 // static struct file_element *find_file_element_by_fd (int fd);
 static struct file_element *find_file_element_by_fd_in_process (int fd);
 
@@ -69,7 +69,7 @@ static struct file_element *find_file_element_by_fd_in_process (int fd)
 /*
 find file be fd id
 */
-static struct file *find_file_by_fd (int fd)
+static struct file *find_file (int fd)
 {
   struct file_element *f;
   struct list_elem *a;
@@ -404,7 +404,7 @@ int open (const char *file){
 
 int filesize (int fd){
 
-  struct file *f = find_file_by_fd(fd);
+  struct file *f = find_file(fd);
   // if(f == NULL){
   //   exit(-1);
   // }
@@ -421,7 +421,7 @@ int read (int fd, void *buffer, unsigned size){
     input_getc();
     return size;
   }else{
-    struct file *f = find_file_by_fd(fd);
+    struct file *f = find_file(fd);
 
     if(f != NULL){
       return file_read(f,buffer,size);
@@ -437,7 +437,7 @@ int write (int fd, const void *buffer, unsigned size){
       putbuf(buffer,size);
       return size;
   }else{
-    struct file *f = find_file_by_fd(fd);
+    struct file *f = find_file(fd);
     if(f!=NULL){
       return file_write(f,buffer,size);
     }
@@ -451,7 +451,7 @@ int write (int fd, const void *buffer, unsigned size){
 
 void seek (int fd, unsigned position){
 
-  struct file *f = find_file_by_fd(fd);
+  struct file *f = find_file(fd);
   // if(f == NULL){
   //   exit(-1);
   // }
@@ -459,7 +459,7 @@ void seek (int fd, unsigned position){
 }
 
 unsigned tell (int fd){
-  struct file *f = find_file_by_fd(fd);
+  struct file *f = find_file(fd);
   // if(f == NULL){
   //   exit(-1);
   // }
@@ -472,16 +472,24 @@ implicitly closes all its open file descriptors,
  as if by calling this function for each one.
 */
 void close (int fd){
-  struct file_element *f = find_file_element_by_fd_in_process(fd);
+  struct file_element *f;
+  f = NULL;
+  struct file_element *f_temp;
+  struct list_elem *a;
+  struct thread *t = thread_current ();
 
-  if (f != NULL){
-    file_close (f->file);
-    list_remove (&f->elem);
-    list_remove (&f->elem_of_thread);
-    free (f);
-  }
-  else{
-    exit(-1);
+  for (a = list_begin (&t->fd_list); a != list_end (&a->fd_list); a = list_next (a))
+    {
+      f_temp = list_entry (a, struct file_element, elem_of_thread);
+      if (f_temp->fd == fd)
+        f = f_temp;
+        file_close (f->file);
+        list_remove (&f->elem);
+        list_remove (&f->elem_of_thread);
+        free (f);
+        return;
+    }
+  return -1;
   }
 
   // close more than once will fail
