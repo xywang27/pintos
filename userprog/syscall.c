@@ -138,7 +138,7 @@ static void syscall_handler (struct intr_frame *f)
   // void *esp = f->esp;
   void *ptr = f->esp;
   is_valid_ptr(ptr);
-  // is_valid_ptr(ptr+4);
+  is_valid_ptr(ptr+3);
   int syscall_num = * (int *)f->esp;
   //printf("system call number %d\n", syscall_num);
   if(syscall_num<=0||syscall_num>=20){
