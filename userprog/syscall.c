@@ -47,6 +47,8 @@ struct fd_entry{
 
 static struct list file_list;
 
+static temp_fd = 2;
+
 /*
 file descriptor id generaor
 generate from 2
@@ -352,7 +354,8 @@ int open (const char *file){
       return -1; // open fail
     }
     struct thread *cur = thread_current();
-    fde->fd = 4;
+    fde->fd = temp_fd + 1;
+    temp_fd = temp_fd + 1;
     fde->file = f;
     list_push_back(&cur->fd_list,&fde->thread_elem);
     list_push_back(&file_list,&fde->elem);
