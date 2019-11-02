@@ -466,8 +466,10 @@ init_thread (struct thread *t, const char *name, int priority)
 
   t->parent = running_thread();
 
+  t->exit_code = -1;
+
   sema_init(&t->sema1,0);
-  
+
   list_init(&(t->fd_list));
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
