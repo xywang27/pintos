@@ -37,7 +37,7 @@ unsigned tell (int fd);
 void close (int fd);
 
 static struct file *find_file_by_fd (int fd);
-static struct file_element *find_file_element_by_fd (int fd);
+// static struct file_element *find_file_element_by_fd (int fd);
 static struct file_element *find_file_element_by_fd_in_process (int fd);
 
 static struct list file_list;
@@ -71,28 +71,36 @@ find file be fd id
 */
 static struct file *find_file_by_fd (int fd)
 {
-  struct file_element *ret;
-
-  ret = find_file_element_by_fd (fd);
-  if (!ret)
-    return NULL;
-  return ret->file;
-}
-
-static struct file_element *find_file_element_by_fd (int fd)
-{
-  struct file_element *ret;
-  struct list_elem *l;
-
-  for (l = list_begin (&file_list); l != list_end (&file_list); l = list_next (l))
+  struct file_element *f;
+  struct list_elem *a;
+  for (a = list_begin (&file_list); a != list_end (&file_list); a = list_next (a))
     {
-      ret = list_entry (l, struct file_element, elem);
-      if (ret->fd == fd)
-        return ret;
+      f = list_entry (l, struct file_element, elem);
+      if (f->fd == fd){
+        if(!f){
+          return NULL;
+        }
+        else{
+          return f->file;
+        }
+      }
     }
-
-  return NULL;
 }
+
+// static struct file_element *find_file_element_by_fd (int fd)
+// {
+//   struct file_element *ret;
+//   struct list_elem *l;
+//
+//   for (l = list_begin (&file_list); l != list_end (&file_list); l = list_next (l))
+//     {
+//       ret = list_entry (l, struct file_element, elem);
+//       if (ret->fd == fd)
+//         return ret;
+//     }
+//
+//   return NULL;
+// }
 
 
 void is_valid_ptr (void *pointer)
