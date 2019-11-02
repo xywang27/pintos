@@ -233,7 +233,7 @@ process_wait (tid_t child_tid UNUSED)
 
   sema_down (&child->wait_sema);
 
-  exit_status = child->exit_status;
+  exit_status = child->exit_code;
 
   sema_up (&child->exit_sema);
 
