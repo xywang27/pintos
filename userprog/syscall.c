@@ -402,9 +402,9 @@ int open (const char *file){
 int filesize (int fd){
 
   struct file *f = find_file_by_fd(fd);
-  if(f == NULL){
-    exit(-1);
-  }
+  // if(f == NULL){
+  //   exit(-1);
+  // }
   return file_length(f);
 
 }
@@ -443,17 +443,17 @@ int write (int fd, const void *buffer, unsigned length){
 void seek (int fd, unsigned position){
 
   struct file *f = find_file_by_fd(fd);
-  if(f == NULL){
-    exit(-1);
-  }
+  // if(f == NULL){
+  //   exit(-1);
+  // }
   file_seek(f,position);
 }
 
 unsigned tell (int fd){
   struct file *f = find_file_by_fd(fd);
-  if(f == NULL){
-    exit(-1);
-  }
+  // if(f == NULL){
+  //   exit(-1);
+  // }
   return file_tell(f);
 }
 
@@ -466,9 +466,9 @@ void close (int fd){
   struct file_element *f = find_file_element_by_fd_in_process(fd);
 
   // close more than once will fail
-  if(f == NULL){
-    exit(-1);
-  }
+  // if(f == NULL){
+  //   exit(-1);
+  // }
   file_close (f->file);
   list_remove (&f->elem);
   list_remove (&f->thread_elem);
