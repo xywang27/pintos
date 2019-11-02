@@ -119,11 +119,11 @@ void is_valid_string(char *str)
 {
     /* check one bit at a time*/
     is_valid_ptr (str);
-    // is_valid_ptr (str+1);
+    is_valid_ptr (str+1);
     /* check until the end of C style string. */
     while (*str != '\0')
         str++;
-        is_valid_ptr (str+1);
+    is_valid_ptr (str+1);
         // is_valid_ptr (str+2);
 }
 // syscall_init put this function as syscall handler
