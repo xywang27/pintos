@@ -132,10 +132,23 @@ get_user (const uint8_t *uaddr)
   return result;
 }
 
+/* Writes BYTE to user address UDST.
+   UDST must be below PHYS_BASE.
+   Returns true if successful, false if a segfault occurred. */
+static bool
+put_user (uint8_t *udst, uint8_t byte)
+{
+  if(!is_user_vaddr(udst))
+    return false;
+  int error_code;
+  asm ("movl $1f, %0; movb %b2, %1; 1:"
+       : "=&a" (error_code), "=m" (*udst) : "q" (byte));
+  return error_code != -1;
+}
+
 void is_valid_string(char *str){
   //return true;
-  char character;
-  character = get_user(((uint8_t*)str));
+  char character = get_user(((uint8_t*)str));
   // if exceed the boundry, return -1
   while (character != '\0' && character!=-1) {
     str++;
@@ -145,7 +158,7 @@ void is_valid_string(char *str){
   if ( character != '\0' ){
     exit(-1);
   }
-  
+
 }
 
 // void
@@ -173,7 +186,7 @@ syscall_handler (struct intr_frame *f)
   // void *esp = f->esp;
   void *ptr = f->esp;
   is_valid_ptr(ptr);
-  is_valid_ptr(ptr+4);
+  is_valid_ptr(ptr+3);
   int syscall_num = * (int *)f->esp;
   //printf("system call number %d\n", syscall_num);
   if(syscall_num<=0||syscall_num>=20){
