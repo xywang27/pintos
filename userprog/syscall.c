@@ -115,7 +115,7 @@ void is_valid_ptr (void *pointer)
     /* check for end address. */
 }
 
-void is_valid_str(char *str)
+void is_valid_string(char *str)
 {
     /* check one bit at a time*/
     is_valid_ptr (str);
@@ -160,7 +160,7 @@ static void syscall_handler (struct intr_frame *f)
     is_valid_ptr(ptr+4);
     is_valid_ptr(ptr+8);
     char *file_name = *(char **)(ptr+4);
-    is_valid_str(file_name);
+    is_valid_string(file_name);
     lock_acquire(&file_lock);
     f->eax = exec(file_name);
     lock_release(&file_lock);
@@ -178,7 +178,7 @@ static void syscall_handler (struct intr_frame *f)
     is_valid_ptr (ptr+8);
     is_valid_ptr (ptr+12);
     char* file_name = *(char **)(ptr+4);
-    is_valid_str(file_name);
+    is_valid_string(file_name);
     unsigned size = *(int *)(ptr+8);
     f->eax = create(file_name,size);
   }
@@ -187,7 +187,7 @@ static void syscall_handler (struct intr_frame *f)
     is_valid_ptr(ptr+4);
     is_valid_ptr(ptr+8);
     char *file_name = *(char **)(ptr+4);
-    is_valid_str(file_name);
+    is_valid_string(file_name);
     f->eax = remove(file_name);
   }
 
