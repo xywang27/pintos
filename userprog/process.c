@@ -50,7 +50,6 @@ process_execute (const char *file_name)
   tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
 
   sema_down(&thread_current()->sema1);
-  // printf("\n%s sema down\n %d",thread_current()->name,tid);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
   return tid;
@@ -202,7 +201,7 @@ char* extract_command(char* command,char* argv[],int* argc){
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  timer_sleep(50);
+  timer_sleep(10);
   return -1;
 }
 
