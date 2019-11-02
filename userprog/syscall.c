@@ -352,7 +352,7 @@ int open (const char *file){
       return -1; // open fail
     }
     struct thread *cur = thread_current();
-    fde->fd = 4
+    fde->fd = 4;
     fde->file = f;
     list_push_back(&cur->fd_list,&fde->thread_elem);
     list_push_back(&file_list,&fde->elem);
