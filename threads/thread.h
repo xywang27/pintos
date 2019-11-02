@@ -106,6 +106,11 @@ struct thread
     int exit_code;                      /*the exit_code of the thread(-1 means sth wrong with it)*/
     struct semaphore sema1;             /*semaphore used to let parent thread wait for child thread to load*/
     struct thread* parent;              /*the parent of the thread(who creats this thread)*/
+    struct list children;
+    struct list_elem childelem;
+    struct semaphore wait_sema;
+    struct semaphore exit_sema;
+    int load_success;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -135,6 +140,8 @@ void thread_yield (void);
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
+
+struct thread *get_thread_by_tid (tid_t);
 
 int thread_get_priority (void);
 void thread_set_priority (int);

@@ -331,6 +331,21 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
+struct thread *
+get_thread_by_tid (tid_t tid)
+{
+  struct list_elem *e;
+
+  for (e = list_begin (&all_list); e != list_end (&all_list);
+       e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, allelem);
+      if (t->tid == tid)
+        return t;
+    }
+  return NULL;
+}
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority)
@@ -469,8 +484,11 @@ init_thread (struct thread *t, const char *name, int priority)
   t->exit_code = -1;
 
   sema_init(&t->sema1,0);
-
+  sema_init (&t->wait_sema, 0);
+  sema_init (&t->exit_sema, 0);
   list_init(&(t->fd_list));
+  list_init (&t->children);
+  t->load_success = 1;
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);

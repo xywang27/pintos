@@ -33,6 +33,7 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
+  struct thread *child = NULL;
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -49,10 +50,18 @@ process_execute (const char *file_name)
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
 
-  sema_down(&thread_current()->sema1);
   // printf("\n%s sema down\n %d",thread_current()->name,tid);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
+  if(tid != TID_ERROR)
+    child = get_thread_by_tid (tid);
+  if (child != NULL) {
+    list_push_back (&thread_current()->children, &child->childelem);
+    sema_down (&child->sema1);
+    if(child->load_success == -1) {
+      tid = TID_ERROR;
+    }
+  }
   return tid;
 }
 
@@ -64,7 +73,7 @@ start_process (void *file_name_)
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
-
+  struct thread *t = thread_current ();
   /*char *token, *save_ptr;
   token = strtok_r (file_name, " ", &save_ptr);*/
 
@@ -79,11 +88,7 @@ start_process (void *file_name_)
   char* command_bak = extract_command(file_name,argv,&argc);
   success = load (argv[0], &if_.eip, &if_.esp);
 
-  /* If load failed, quit. */
-  if (!success){
-    thread_current()->exit_code = -1;
-    thread_exit ();
-  }
+
 
   /*char *esp = (char*)if_.esp;
   char *arg[256];
@@ -157,13 +162,20 @@ start_process (void *file_name_)
   free(command_bak);
   palloc_free_page (file_name);
 
+  /* If load failed, quit. */
+  if (!success){
+    t->load_success = -1;
+    sema_up (&t->sema1);
+    thread_exit ();
+  }
+  sema_up (&t->sema1);
+
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
-  sema_up(&thread_current()->parent->sema1);
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
@@ -202,8 +214,30 @@ char* extract_command(char* command,char* argv[],int* argc){
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  timer_sleep(50);
-  return -1;
+  int exit_status;
+  struct thread *t = thread_current ();
+  struct thread *child = NULL;
+  struct list_elem *e;
+
+    /* Get child whose tid is tid if one exists */
+  for (e = list_begin (&t->children); e != list_end (&t->children);
+        e = list_next (e))
+    {
+      child = list_entry (e, struct thread, childelem);
+      if(child->tid == child_tid)
+        break;
+      }
+  if (e == list_end (&t->children))
+    return -1;
+  list_remove (&child->childelem);
+
+  sema_down (&child->wait_sema);
+
+  exit_status = child->exit_status;
+
+  sema_up (&child->exit_sema);
+
+  return exit_status;
 }
 
 /* Free the current process's resources. */
