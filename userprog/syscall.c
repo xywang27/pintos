@@ -37,89 +37,42 @@ unsigned tell (int fd);
 void close (int fd);
 
 static struct file *find_file (int fd);
-// static struct file_element *find_file_element_by_fd (int fd);
-static struct file_element *find_file_element_by_fd_in_process (int fd);
 
 static struct list file_list;
 
-static temp_fd = 2;                 /*used to generate fd
+static temp_fd = 2;                 /*used to generate fd*/
 
-
-/*
-find file_element in current's thread fd_list
-*/
-static struct file_element *find_file_element_by_fd_in_process (int fd)
-{
-  struct file_element *ret;
-  struct list_elem *l;
-  struct thread *t;
-
-  t = thread_current ();
-
-  for (l = list_begin (&t->fd_list); l != list_end (&t->fd_list); l = list_next (l))
-    {
-      ret = list_entry (l, struct file_element, elem_of_thread);
-      if (ret->fd == fd)
-        return ret;
-    }
-
-  return NULL;
-}
-
-/*
-find file be fd id
-*/
-static struct file *find_file (int fd)
-{
+// find the file in the file_list according to fd
+static struct file *find_file (int fd){
   struct file_element *f;
   struct list_elem *a;
-  for (a = list_begin (&file_list); a != list_end (&file_list); a = list_next (a))
-    {
-      f = list_entry (a, struct file_element, elem);
-      if (f->fd == fd){
-        if(!f){
-          return NULL;
-        }
-        else{
-          return f->file;
-        }
+  for (a = list_begin (&file_list); a != list_end (&file_list); a = list_next (a)){    /*traverse the file_list*/
+    f = list_entry (a, struct file_element, elem);
+    if (f->fd == fd){                                                                  /*find the file with corresponding fd*/
+      if(!f){
+        return NULL;                                                                   /*return NULL if file dose not exit*/
+      }
+      else{
+        return f->file;
       }
     }
+  }
 }
 
-// static struct file_element *find_file_element_by_fd (int fd)
-// {
-//   struct file_element *ret;
-//   struct list_elem *l;
-//
-//   for (l = list_begin (&file_list); l != list_end (&file_list); l = list_next (l))
-//     {
-//       ret = list_entry (l, struct file_element, elem);
-//       if (ret->fd == fd)
-//         return ret;
-//     }
-//
-//   return NULL;
-// }
-
-
-void is_valid_ptr (void *pointer)
-{
-    if ( pointer == NULL)
-    {
-        exit(-1);
-    }
-    if (is_kernel_vaddr (pointer))
-    {
-        exit(-1);
-    }
-    if(!is_user_vaddr(pointer)){
-      exit(-1);
-    }
-    if (pagedir_get_page (thread_current ()->pagedir, pointer) == NULL)
-    {
-        exit(-1);
-    }
+// check if the pointer is valid
+void is_valid_ptr (void *pointer){
+  if ( pointer == NULL){
+    exit(-1);
+  }
+  if (is_kernel_vaddr (pointer)){
+    exit(-1);
+  }
+  if(!is_user_vaddr(pointer)){
+    exit(-1);
+  }
+  if (pagedir_get_page (thread_current ()->pagedir, pointer) == NULL){
+    exit(-1);
+  }
     /* check for end address. */
 }
 
@@ -492,82 +445,6 @@ void close (int fd){
   return -1;
 }
 
-  // close more than once will fail
-  // if(f == NULL){
-  //   exit(-1);
-  // }
-
-
-
-
-
-
-/**
-Creates a new file called file initially initial size bytes in size.
-Returns true if successful, false otherwise.
-Creating a new file does not open it:
-opening the new file is a separate operation
-which would require a open system call.
-@param file: file name
-@param
-*/
-
-
-/*
-delete the fiile called file.
-return true if successful, false otherwise
-A file may be removed regardless of whether it is
-open or closed. and removing an open file does not
-close it
-*/
-
-
-/*
-Opens the file called file. Returns a nonnegative integer handle called a “file descriptor” (fd), or -1 if the file could not be opened. File descriptors numbered 0 and 1 are reserved for the console:
-fd 0 (STDIN_FILENO) is standard input, fd 1 (STDOUT_FILENO) is standard ouint open (const char *file){
-tput.
-The open system call will never return either of these file descriptors,
-which are valid as system call arguments only as explicitly described below.
-Each process has an independent set of file descriptors.
-File descriptors are not inherited by child processes.
-When a single file is opened more than once,
-whether by a single process or different processes, each open returns a new
-file descriptor. Different file descriptors for a single file are
-closed independently in separate calls to close and they do not share
-*/
-
-
-
-/*
-wait for process with pid
-*/
-
-/*
-write buffer to stdout or file
-*/
-
-
-
-
-
-
-
-/*
-Reads size bytes from the file open as fd into buffer.
-Returns the number of bytes actually read (0 at end of file),
-or -1 if the file could not be read (due to a condition other than end of file).
- Fd 0 reads from the keyboard using input_getc().
-*/
-
-
-
-
-
-
-
-
-
-
 void
 syscall_init (void)
 {
@@ -576,284 +453,3 @@ syscall_init (void)
   lock_init(&file_lock);
   list_init (&file_list);
 }
-
-
-/* Reads a byte at user virtual address UADDR.
-   UADDR must be below PHYS_BASE.
-   Returns the byte value if successful, -1 if a segfault
-   occurred. */
-
-   //uint8_t unsigned char
-   //uaddr is a address
-// static int
-// get_user (const uint8_t *uaddr)
-// {
-//     //printf("%s\n", "call get user");
-//   if(!is_user_vaddr((void *)uaddr)){
-//     return -1;
-//   }
-//   if(pagedir_get_page(thread_current()->pagedir,uaddr)==NULL){
-//     return -1;
-//   }
-//   //printf("%s\n","is_user_vaddr" );
-//   int result;
-//   asm ("movl $1f, %0; movzbl %1, %0; 1:"
-//        : "=&a" (result) : "m" (*uaddr));
-//   return result;
-// }
-//
-// /* Writes BYTE to user address UDST.
-//    UDST must be below PHYS_BASE.
-//    Returns true if successful, false if a segfault occurred. */
-// static bool
-// put_user (uint8_t *udst, uint8_t byte)
-// {
-//   if(!is_user_vaddr(udst))
-//     return false;
-//   int error_code;
-//   asm ("movl $1f, %0; movb %b2, %1; 1:"
-//        : "=&a" (error_code), "=m" (*udst) : "q" (byte));
-//   return error_code != -1;
-// }
-//
-// /*
-// check the following address is valid:
-// if one of them are not valid, the function will return false
-// */
-// bool is_valid_pointer(void* esp,uint8_t argc){
-//   uint8_t i = 0;
-// for (; i < argc; ++i)
-// {
-//   // if (get_user(((uint8_t *)esp)+i) == -1){
-//   //   return false;
-//   // }
-//   if((!is_user_vaddr(esp))||(pagedir_get_page(thread_current()->pagedir,esp)==NULL)||(is_kernel_vaddr(esp))){
-//     return false;
-//   }
-//   esp = esp + 1;
-// }
-// return true;
-// }
-//
-// /*
-// return true if it is a valid string
-// */
-// bool is_valid_string(void *str){
-//   //return true;
-//   char character;
-//   character = get_user(((uint8_t*)str));
-//   // if exceed the boundry, return -1
-//   while (character != '\0' && character!=-1) {
-//     str++;
-//     character = get_user(((uint8_t*)str));
-//   }
-//   // valid string ends with '\0'
-//   if ( character == '\0' ){
-//     return true;
-//   }
-//   return false;
-// }
-//
-//
-//
-// /* Halt the operating system. */
-// void sys_halt(struct intr_frame* f){
-//   shutdown();
-// };
-//
-// /* Terminate this process. */
-// void sys_exit(struct intr_frame* f){
-//   // if(!is_valid_pointer(f->esp+4,4)){
-//   //   exit(-1);
-//   // }
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   int status = *(int *)(f->esp +4);
-//   exit(status);
-// };
-//
-// /* Start another process. */
-// void sys_exec(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   // max name char[16]
-//   if(!is_valid_pointer(f->esp+4,4)||!is_valid_string(*(char **)(f->esp + 4))){
-//     exit(-1);
-//   }
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   char *file_name = *(char **)(f->esp+4);
-//   lock_acquire(&file_lock);
-//   f->eax = exec(file_name);
-//   lock_release(&file_lock);
-// };
-//
-// /* Wait for a child process to die. */
-// void sys_wait(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   pid_t pid;
-//   if(!is_valid_pointer(f->esp+4,4)){
-//     exit(-1);
-//   }
-//   pid = *((int*)f->esp+1);
-//   f->eax = wait(pid);
-// };
-//
-//
-// void sys_create(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   is_valid (esp+8);
-// if(!is_valid_pointer(f->esp+4,4)){
-//   exit(-1);
-// }
-// char* file_name = *(char **)(f->esp+4);
-// if(!is_valid_string(file_name)){
-//   exit(-1);
-// }
-// unsigned size = *(int *)(f->esp+8);
-// f->eax = create(file_name,size);
-//
-// }; /* Create a file. */
-//
-// void sys_remove(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   if (!is_valid_pointer(f->esp +4, 4) || !is_valid_string(*(char **)(f->esp + 4))){
-//     exit(-1);
-//   }
-//   char *file_name = *(char **)(f->esp+4);
-//   f->eax = remove(file_name);
-//
-// };/* Create a file. */
-// void sys_open(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//
-//   if (!is_valid_pointer(f->esp +4, 4)){
-//     exit(-1);
-//   }
-//   if (!is_valid_string(*(char **)(f->esp + 4))){
-//     exit(-1);
-//   }
-//   char *file_name = *(char **)(f->esp+4);
-//   lock_acquire(&file_lock);
-//   f->eax = open(file_name);
-//   lock_release(&file_lock);
-//
-//
-// }; /*Open a file. */
-//
-// void sys_filesize(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   if (!is_valid_pointer(f->esp +4, 4)){
-//     exit(-1);
-//   }
-//   int fd = *(int *)(f->esp + 4);
-//
-//   f->eax = filesize(fd);
-//
-//
-// };/* Obtain a file's size. */
-// void sys_read(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   is_valid(esp+8);
-//   is_valid (esp+12);
-//   if (!is_valid_pointer(f->esp + 4, 12)){
-//     exit(-1);
-//   }
-//   int fd = *(int *)(f->esp + 4);
-//   void *buffer = *(char**)(f->esp + 8);
-//   unsigned size = *(unsigned *)(f->esp + 12);
-//   if (!is_valid_pointer(buffer, 1) || !is_valid_pointer(buffer + size,1)){
-//     exit(-1);
-//   }
-//   is_valid (buffer);
-//   is_valid (buffer+size);
-//   lock_acquire(&file_lock);
-//   f->eax = read(fd,buffer,size);
-//   lock_release(&file_lock);
-//
-// };
-//
-// /* Read from a file. */
-// void sys_write(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   is_valid (esp+8);
-//   is_valid (esp+12);
-//   if(!is_valid_pointer(f->esp+4,12)){
-//     exit(-1);
-//   }
-//   int fd = *(int *)(f->esp +4);
-//   void *buffer = *(char**)(f->esp + 8);
-//   unsigned size = *(unsigned *)(f->esp + 12);
-//   is_valid (buffer);
-//   is_valid (buffer+size);
-//   if (!is_valid_pointer(buffer, 1) || !is_valid_pointer(buffer + size,1)){
-//     exit(-1);
-// }
-//   lock_acquire(&file_lock);
-//   f->eax = write(fd,buffer,size);
-//   lock_release(&file_lock);
-//   return;
-// }; /* Write to a file. */
-//
-// void sys_seek(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   is_valid (esp+8);
-//   if (!is_valid_pointer(f->esp +4, 8)){
-//     exit(-1);
-//   }
-//   int fd = *(int *)(f->esp + 4);
-//   unsigned pos = *(unsigned *)(f->esp + 8);
-//   seek(fd,pos);
-// }; /* Change position in a file. */
-//
-// void sys_tell(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   if (!is_valid_pointer(f->esp +4, 4)){
-//     exit(-1);
-//   }
-//     int fd = *(int *)(f->esp + 4);
-//     f->eax = tell(fd);
-// }; /* Report current position in a file. */
-//
-// void sys_close(struct intr_frame* f){
-//   void *esp = f->esp;
-//   esp = esp + 4;
-//   is_valid (esp);
-//   is_valid (esp+4);
-//   if (!is_valid_pointer(f->esp +4, 4)){
-//     return exit(-1);
-//   }
-//   int fd = *(int *)(f->esp + 4);
-//
-//   close(fd);
-//
-// }; /* Close a file. */
