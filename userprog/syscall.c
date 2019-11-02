@@ -199,14 +199,14 @@ syscall_handler (struct intr_frame *f)
 
   else if(syscall_num == SYS_EXIT){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+7);
     int status = *(int *)(ptr+4);
     exit(status);
   }
 
   else if(syscall_num == SYS_EXEC){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+7);
     char *file_name = *(char **)(ptr+4);
     is_valid_string(file_name);
     lock_acquire(&file_lock);
@@ -216,15 +216,15 @@ syscall_handler (struct intr_frame *f)
 
   else if(syscall_num == SYS_WAIT){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+7);
     int pid = *((int*)ptr+4);
     f->eax = wait(pid);
   }
 
   else if(syscall_num == SYS_CREATE){
     is_valid_ptr (ptr+4);
-    is_valid_ptr (ptr+8);
-    is_valid_ptr (ptr+12);
+    is_valid_ptr (ptr+7);
+    // is_valid_ptr (ptr+12);
     char* file_name = *(char **)(ptr+4);
     is_valid_string(file_name);
     unsigned size = *(int *)(ptr+8);
