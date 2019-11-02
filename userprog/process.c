@@ -127,7 +127,7 @@ start_process (void *file_name_)
   //put return address 0
   if_.esp = if_.esp-4;
   (*(int *)if_.esp)=0;
-  free(command_bak);
+  free(command);
   palloc_free_page (file_name);
 
   /* Start the user process by simulating a return from an
