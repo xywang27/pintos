@@ -38,7 +38,7 @@ void close (int fd);
 
 static struct file *find_file (int fd);
 
-static struct list file_list;
+static struct list file_list;       /*list used to store all opened file*/
 
 static temp_fd = 2;                 /*used to generate fd*/
 
@@ -48,7 +48,7 @@ static struct file *find_file (int fd){
   struct list_elem *a;
   for (a = list_begin (&file_list); a != list_end (&file_list); a = list_next (a)){    /*traverse the file_list*/
     f = list_entry (a, struct file_element, elem);
-    if (f->fd == fd){                                                                  /*find the file with corresponding fd*/
+    if(f->fd == fd){                                                                  /*find the file with corresponding fd*/
       if(!f){
         return NULL;                                                                   /*return NULL if file dose not exit*/
       }
@@ -59,34 +59,17 @@ static struct file *find_file (int fd){
   }
 }
 
-// check if the pointer is valid
-void is_valid_ptr (void *pointer){
-  if ( pointer == NULL){
-    exit(-1);
-  }
-  if (is_kernel_vaddr (pointer)){
-    exit(-1);
-  }
-  if(!is_user_vaddr(pointer)){
-    exit(-1);
-  }
-  if (pagedir_get_page (thread_current ()->pagedir, pointer) == NULL){
-    exit(-1);
-  }
-    /* check for end address. */
-}
-
-static int
-get_user (const uint8_t *uaddr)
-{
-    //printf("%s\n", "call get user");
+/* Reads a byte at user virtual address UADDR.
+   UADDR must be below PHYS_BASE.
+   Returns the byte value if successful, -1 if a segfault
+   occurred. */
+static int get_user (const uint8_t *uaddr){
   if(!is_user_vaddr((void *)uaddr)){
     return -1;
   }
   if(pagedir_get_page(thread_current()->pagedir,uaddr)==NULL){
     return -1;
   }
-  //printf("%s\n","is_user_vaddr" );
   int result;
   asm ("movl $1f, %0; movzbl %1, %0; 1:"
        : "=&a" (result) : "m" (*uaddr));
@@ -107,44 +90,36 @@ put_user (uint8_t *udst, uint8_t byte)
   return error_code != -1;
 }
 
+// check if the pointer is valid
+void is_valid_ptr (void *pointer){
+  if(pointer == NULL){                                                             /*the pointer can not be NULL*/
+    exit(-1);
+  }
+  if(is_kernel_vaddr(pointer)){                                                    /*the pointer can not be kernal address*/
+    exit(-1);
+  }
+  if(!is_user_vaddr(pointer)){                                                     /*the pointer must be user address*/
+    exit(-1);
+  }
+  if(pagedir_get_page (thread_current ()->pagedir, pointer) == NULL){              /*the pointer must be mapped*/
+    exit(-1);
+  }
+}
+
+// check if the string is valid
 void is_valid_string(char *str){
-  //return true;
   char character = get_user(((uint8_t*)str));
-  // if exceed the boundry, return -1
-  while (character != '\0' && character!=-1) {
+  while (character != '\0' && character!=-1){                                      /*loop until error or reach the end of the string*/
     str++;
     character = get_user(((uint8_t*)str));
   }
-  // valid string ends with '\0'
-  if ( character != '\0' ){
+  if(character != '\0'){                                                           /*valid string must end with '\0'*/
     exit(-1);
   }
-
 }
 
-// void
-// is_valid_string(char *str)
-// {
-//     /* check one bit at a time*/
-//     is_valid_ptr (str);
-//     is_valid_ptr (str+1);
-//     /* check until the end of C style string. */
-//     while (*str != '\0')
-//         str++;
-//         is_valid_ptr (str+1);
-//         is_valid_ptr (str+2);
-// }
-// syscall_init put this function as syscall handler
-// switch handler by syscall num
-static void
-syscall_handler (struct intr_frame *f)
-{
-  //printf ("system call!\n");
-  // if(!is_valid_pointer(f->esp,4)){
-  //   exit(-1);
-  //   return;
-  // }
-  // void *esp = f->esp;
+// function that call different syscalls
+static void syscall_handler (struct intr_frame *f){
   void *ptr = f->esp;
   is_valid_ptr(ptr);
   is_valid_ptr(ptr+3);
