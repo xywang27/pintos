@@ -16,6 +16,8 @@
 
 #define BUF_MAX 200
 
+typedef int pid_t;
+
 static bool valid_mem_access (const void *);
 static void syscall_handler (struct intr_frame *);
 static void userprog_halt (void);
@@ -37,7 +39,7 @@ void
 syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
-  lock_init (&filesys_lock);
+  lock_init (&file_lock);
 }
 
 /* Verify that the user pointer is valid */
@@ -164,7 +166,7 @@ static void
 userprog_exit (int status)
 {
   struct thread *cur = thread_current ();
-  cur->exit_status = status;
+  cur->exit_code = status;
 	thread_exit ();
 }
 
@@ -193,9 +195,9 @@ userprog_create (const char *file, unsigned initial_size)
 {
   bool retval;
   if(valid_mem_access(file)) {
-    lock_acquire (&filesys_lock);
+    lock_acquire (&file_lock);
     retval = filesys_create (file, initial_size);
-    lock_release (&filesys_lock);
+    lock_release (&file_lock);
     return retval;
   }
 	else
@@ -209,9 +211,9 @@ userprog_remove (const char *file)
 {
   bool retval;
 	if(valid_mem_access(file)) {
-    lock_acquire (&filesys_lock);
+    lock_acquire (&file_lock);
     retval = filesys_remove (file);
-    lock_release (&filesys_lock);
+    lock_release (&file_lock);
     return retval;
   }
   else
@@ -227,9 +229,9 @@ userprog_open (const char *file)
     struct openfile *new = palloc_get_page (0);
     new->fd = thread_current ()->next_fd;
     thread_current ()->next_fd++;
-    lock_acquire (&filesys_lock);
+    lock_acquire (&file_lock);
     new->file = filesys_open(file);
-    lock_release (&filesys_lock);
+    lock_release (&file_lock);
     if (new->file == NULL)
       return -1;
     list_push_back(&thread_current ()->openfiles, &new->elem);
@@ -250,9 +252,9 @@ userprog_filesize (int fd)
 	of = getFile (fd);
   if (of == NULL)
     return 0;
-  lock_acquire (&filesys_lock);
+  lock_acquire (&file_lock);
   retval = file_length (of->file);
-  lock_release (&filesys_lock);
+  lock_release (&file_lock);
   return retval;
 }
 
@@ -277,9 +279,9 @@ userprog_read (int fd, void *buffer, unsigned size)
     of = getFile (fd);
     if (of == NULL)
       return -1;
-    lock_acquire (&filesys_lock);
+    lock_acquire (&file_lock);
     bytes_read = file_read (of->file, buffer, size);
-    lock_release (&filesys_lock);
+    lock_release (&file_lock);
     return bytes_read;
   }
 }
@@ -309,9 +311,9 @@ userprog_write (int fd, const void *buffer, unsigned size)
     of = getFile (fd);
     if (of == NULL)
       return 0;
-    lock_acquire (&filesys_lock);
+    lock_acquire (&file_lock);
     bytes_written = file_write (of->file, buffer, size);
-    lock_release (&filesys_lock);
+    lock_release (&file_lock);
     return bytes_written;
   }
 }
@@ -323,9 +325,9 @@ userprog_seek (int fd, unsigned position)
   of = getFile (fd);
   if (of == NULL)
     return;
-  lock_acquire (&filesys_lock);
+  lock_acquire (&file_lock);
   file_seek (of->file, position);
-  lock_release (&filesys_lock);
+  lock_release (&file_lock);
 }
 
 static unsigned
@@ -336,9 +338,9 @@ userprog_tell (int fd)
   of = getFile (fd);
   if (of == NULL)
     return 0;
-  lock_acquire (&filesys_lock);
+  lock_acquire (&file_lock);
   retval = file_tell (of->file);
-  lock_release (&filesys_lock);
+  lock_release (&file_lock);
   return retval;
 }
 
@@ -349,9 +351,9 @@ userprog_close (int fd)
   of = getFile (fd);
   if (of == NULL)
     return;
-  lock_acquire (&filesys_lock);
+  lock_acquire (&file_lock);
   file_close (of->file);
-  lock_release (&filesys_lock);
+  lock_release (&file_lock);
   list_remove (&of->elem);
   palloc_free_page (of);
 }

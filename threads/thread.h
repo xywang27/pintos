@@ -117,6 +117,9 @@ struct thread
     struct semaphore wait_sema;
     struct semaphore exit_sema;
     int load_success;
+    struct list openfiles;
+    char *cmd;
+    int next_fd;
   };
 
 /* If false (default), use round-robin scheduler.
