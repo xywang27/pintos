@@ -252,7 +252,7 @@ while (!list_empty (&cur->fd_list))                                      /*loop 
     a = list_begin (&cur->fd_list);
     close (list_entry (a, struct file_element, elem_of_thread)->fd);     /*close this file*/
   }
-t->exit_code = status;                                                   /*set status to exit_code and exit*/
+cur->exit_code = status;                                                 /*set status to exit_code and exit*/
 thread_exit ();
 }
 
