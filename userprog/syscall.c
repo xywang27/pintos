@@ -258,9 +258,9 @@ syscall_handler (struct intr_frame *f)
 
   else if(syscall_num == SYS_READ){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
-    is_valid_ptr(ptr+12);
-    is_valid_ptr(ptr+16);
+    is_valid_ptr(ptr+7);
+    // is_valid_ptr(ptr+12);
+    // is_valid_ptr(ptr+16);
     int fd = *(int *)(ptr + 4);
     void *buffer = *(char**)(ptr + 8);
     unsigned size = *(unsigned *)(ptr + 12);
@@ -273,9 +273,9 @@ syscall_handler (struct intr_frame *f)
 
   else if(syscall_num == SYS_WRITE){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
-    is_valid_ptr(ptr+12);
-    is_valid_ptr(ptr+16);
+    is_valid_ptr(ptr+7);
+    // is_valid_ptr(ptr+12);
+    // is_valid_ptr(ptr+16);
     int fd = *(int *)(ptr + 4);
     void *buffer = *(char**)(ptr + 8);
     unsigned size = *(unsigned *)(ptr + 12);
@@ -288,8 +288,8 @@ syscall_handler (struct intr_frame *f)
 
   else if(syscall_num == SYS_SEEK){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
-    is_valid_ptr(ptr+12);
+    is_valid_ptr(ptr+7);
+    // is_valid_ptr(ptr+12);
     int fd = *(int *)(ptr + 4);
     unsigned pos = *(unsigned *)(ptr + 8);
     seek(fd,pos);
@@ -297,14 +297,14 @@ syscall_handler (struct intr_frame *f)
 
   else if(syscall_num == SYS_TELL){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+7);
     int fd = *(int *)(ptr + 4);
     tell(fd);
   }
 
   else if(syscall_num == SYS_CLOSE){
     is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+7);
     int fd = *(int *)(ptr + 4);
     close(fd);
   }
