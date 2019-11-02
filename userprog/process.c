@@ -106,7 +106,7 @@ start_process (void *file_name_)
   i = argc - 1;
   if_.esp = if_.esp-4;
   (*(int *)if_.esp)=0;
-  for(i = arc-1; i >= 0; i = i - 1){
+  for(i = argc-1; i >= 0; i = i - 1){
     if_.esp = if_.esp-4;//sizeof()
     (*(char **)if_.esp) = arg[i]; // if_.esp a pointer to uint32_t*
   }
