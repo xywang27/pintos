@@ -114,13 +114,13 @@ void
 is_valid_string(char *str)
 {
     /* check one bit at a time*/
-    is_valid (str);
-    is_valid (str+1);
+    is_valid_ptr (str);
+    is_valid_ptr (str+1);
     /* check until the end of C style string. */
     while (*str != '\0')
         str++;
-        is_valid (str+1);
-        is_valid (str+2);
+        is_valid_ptr (str+1);
+        is_valid_ptr (str+2);
 }
 // syscall_init put this function as syscall handler
 // switch handler by syscall num
@@ -134,8 +134,8 @@ syscall_handler (struct intr_frame *f)
   // }
   // void *esp = f->esp;
   void *ptr = f->esp;
-  is_valid(ptr);
-  is_valid(ptr+4);
+  is_valid_ptr(ptr);
+  is_valid_ptr(ptr+4);
   int syscall_num = * (int *)f->esp;
   //printf("system call number %d\n", syscall_num);
   if(syscall_num<=0||syscall_num>=20){
@@ -147,15 +147,15 @@ syscall_handler (struct intr_frame *f)
   }
 
   else if(syscall_num == SYS_EXIT){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
     int status = *(int *)(ptr+4);
     exit(status);
   }
 
   else if(syscall_num == SYS_EXEC){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
     char *file_name = *(char **)(ptr+4);
     is_valid_string(file_name);
     lock_acquire(&file_lock);
@@ -164,16 +164,16 @@ syscall_handler (struct intr_frame *f)
   }
 
   else if(syscall_num == SYS_WAIT){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
     int pid = *((int*)ptr+4);
     f->eax = wait(pid);
   }
 
   else if(syscall_num == SYS_CREATE){
-    is_valid (ptr+4);
-    is_valid (ptr+8);
-    is_valid (ptr+12);
+    is_valid_ptr (ptr+4);
+    is_valid_ptr (ptr+8);
+    is_valid_ptr (ptr+12);
     char* file_name = *(char **)(ptr+4);
     is_valid_string(file_name);
     unsigned size = *(int *)(ptr+8);
@@ -181,16 +181,16 @@ syscall_handler (struct intr_frame *f)
   }
 
   else if(syscall_num == SYS_REMOVE){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
     char *file_name = *(char **)(ptr+4);
     is_valid_string(file_name);
     f->eax = remove(file_name);
   }
 
   else if(syscall_num == SYS_OPEN){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
     char *file_name = *(char **)(ptr+4);
     is_valid_string(file_name);
     lock_acquire(&file_lock);
@@ -199,61 +199,61 @@ syscall_handler (struct intr_frame *f)
   }
 
   else if(syscall_num == SYS_FILESIZE){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
     int fd = *(int *)(ptr + 4);
     f->eax = filesize(fd);
   }
 
   else if(syscall_num == SYS_READ){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
-    is_valid(ptr+12);
-    is_valid(ptr+16);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+12);
+    is_valid_ptr(ptr+16);
     int fd = *(int *)(ptr + 4);
     void *buffer = *(char**)(ptr + 8);
     unsigned size = *(unsigned *)(ptr + 12);
-    is_valid (buffer);
-    is_valid (buffer+size);
+    is_valid_ptr (buffer);
+    is_valid_ptr (buffer+size);
     lock_acquire(&file_lock);
     f->eax = read(fd,buffer,size);
     lock_release(&file_lock);
   }
 
   else if(syscall_num == SYS_WRITE){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
-    is_valid(ptr+12);
-    is_valid(ptr+16);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+12);
+    is_valid_ptr(ptr+16);
     int fd = *(int *)(ptr + 4);
     void *buffer = *(char**)(ptr + 8);
     unsigned size = *(unsigned *)(ptr + 12);
-    is_valid (buffer);
-    is_valid (buffer+size);
+    is_valid_ptr (buffer);
+    is_valid_ptr (buffer+size);
     lock_acquire(&file_lock);
     f->eax = write(fd,buffer,size);
     lock_release(&file_lock);
   }
 
   else if(syscall_num == SYS_SEEK){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
-    is_valid(ptr+12);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
+    is_valid_ptr(ptr+12);
     int fd = *(int *)(ptr + 4);
     unsigned pos = *(unsigned *)(ptr + 8);
     seek(fd,pos);
   }
 
   else if(syscall_num == SYS_TELL){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
     int fd = *(int *)(ptr + 4);
     tell(fd);
   }
 
   else if(syscall_num == SYS_CLOSE){
-    is_valid(ptr+4);
-    is_valid(ptr+8);
+    is_valid_ptr(ptr+4);
+    is_valid_ptr(ptr+8);
     int fd = *(int *)(ptr + 4);
     close(fd);
   }
