@@ -14,7 +14,7 @@
 struct file_element{
   struct file *file;                         /*file's name*/
   struct list_elem elem;                     /*list member to store all the file opened*/
-  struct list_elem elem_of_thread;           /*list member tp store the file that the particular thread hold*/
+  struct list_elem elem_of_thread;           /*list member to store the file that the particular thread hold*/
   int fd;                                    /*file's id*/
 };
 
