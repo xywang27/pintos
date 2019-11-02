@@ -83,49 +83,32 @@ start_process (void *file_name_)
     thread_current()->exit_code = -1;
     thread_exit ();
   }
-
-  int i = argc - 1;
   char *arg[argc];
-  while(i>=0){
-    if_.esp = if_.esp - sizeof(char)*(strlen(argv[i])+1); //+1: extra \0
+  for(i = argc-1; i >= 0; i = i - 1){                                 /*put argv[] into the stack and get address of argv[]*/
+    if_.esp = if_.esp - sizeof(char)*(strlen(argv[i])+1);
     arg[i]=(char *)if_.esp;
     memcpy(if_.esp,argv[i],strlen(argv[i])+1);
-    i = i - 1;
-    //strlcpy(if_.esp,argv[i],strlen(argv[i])+1);
-    //printf("%d\targv[%d][...]\t'%s'\n",if_.esp,i,(char*)if_.esp);
-
   }
 
-  // 4k  对齐
-  //world-align
-  while ((int)if_.esp%4!=0){
+  while ((int)if_.esp%4!=0){                                          /*world-align*/
     if_.esp--;
   }
-  //printf("%d\tworld-align\t0\n", if_.esp);
 
-  i = argc - 1;
-  if_.esp = if_.esp-4;
+  if_.esp = if_.esp-4;                                                /*put 0 into the stack*/
   (*(int *)if_.esp)=0;
-  for(i = argc-1; i >= 0; i = i - 1){
-    if_.esp = if_.esp-4;//sizeof()
-    (*(char **)if_.esp) = arg[i]; // if_.esp a pointer to uint32_t*
+
+  for(i = argc-1; i >= 0; i = i - 1){                                 /*put address of argv[] into the stack*/
+    if_.esp = if_.esp-4;
+    (*(char **)if_.esp) = arg[i];
   }
-  //printf("%d\targv[%d]\t%d\n",if_.esp,i,*((int *)if_.esp));
 
-
-    //printf("%d\targv[%d]\t%d\n",if_.esp,i,(*(char **)if_.esp));
-
-  if_.esp = if_.esp-4;
+  if_.esp = if_.esp-4;                                                /*put argv into the stack*/
   (*(char **)if_.esp)=if_.esp+4;
-  //printf("%d\targv\t%d\n",if_.esp,(*(char **)if_.esp));
 
-  //put argc
-  if_.esp = if_.esp-4;
+  if_.esp = if_.esp-4;                                               /*put argc into the stack*/
   (*(int *)if_.esp)=argc;
-  //printf("%d\targc\t%d\n",if_.esp,(*(int *)if_.esp));
 
-  //put return address 0
-  if_.esp = if_.esp-4;
+  if_.esp = if_.esp-4;                                               /*put return address 0 into the stack*/
   (*(int *)if_.esp)=0;
   free(command);
   palloc_free_page (file_name);
