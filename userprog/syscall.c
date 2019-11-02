@@ -13,8 +13,8 @@
 // struct file_element
 struct file_element{
   struct file *file;                         /*file's name*/
-  struct list_elem elem;                     /*used to store in fd_list*/
-  struct list_elem thread_elem;
+  struct list_elem elem;                     /*list member to store all the file opened*/
+  struct list_elem elem_of_thread;           /*list member tp store the file that the particular thread hold*/
   int fd;                                    /*file's id*/
 };
 
@@ -58,7 +58,7 @@ static struct file_element *find_file_element_by_fd_in_process (int fd)
 
   for (l = list_begin (&t->fd_list); l != list_end (&t->fd_list); l = list_next (l))
     {
-      ret = list_entry (l, struct file_element, thread_elem);
+      ret = list_entry (l, struct file_element, elem_of_thread);
       if (ret->fd == fd)
         return ret;
     }
@@ -335,7 +335,7 @@ t = thread_current ();
 while (!list_empty (&t->fd_list))
   {
     l = list_begin (&t->fd_list);
-    close (list_entry (l, struct file_element, thread_elem)->fd);
+    close (list_entry (l, struct file_element, elem_of_thread)->fd);
   }
 
 t->exit_code = status;
@@ -375,6 +375,7 @@ int open (const char *file){
     TODO: check valid string
     */
     struct file* f = filesys_open(file);
+    struct thread *cur = thread_current();
     // open  fail, kill the process
     if(f == NULL){
       //printf("%s\n","open fails");
@@ -382,20 +383,22 @@ int open (const char *file){
     }
 
     // add file descriptor
-    struct file_element *fde = (struct file_element *)malloc(sizeof(struct file_element));
+    struct file_element *a = (struct file_element*)malloc(sizeof(struct file_element));
+    list_push_back(&file_list,&a->elem);
+    list_push_back(&cur->fd_list,&a->elem_of_thread);
     // malloc fails
-    if(fde == NULL){
-      file_close(f);
-      return -1; // open fail
-    }
-    struct thread *cur = thread_current();
-    fde->fd = temp_fd + 1;
+    // if(fde == NULL){
+    //   file_close(f);
+    //   return -1; // open fail
+    // }
+    a->file = f;
+    a->fd = temp_fd + 1;
     temp_fd = temp_fd + 1;
-    fde->file = f;
-    list_push_back(&cur->fd_list,&fde->thread_elem);
-    list_push_back(&file_list,&fde->elem);
 
-    return fde->fd;
+
+
+
+    return a->fd;
 
 }
 
@@ -468,7 +471,7 @@ void close (int fd){
   if (f != NULL){
     file_close (f->file);
     list_remove (&f->elem);
-    list_remove (&f->thread_elem);
+    list_remove (&f->elem_of_thread);
     free (f);
   }
   else{
