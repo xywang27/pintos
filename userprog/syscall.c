@@ -75,7 +75,7 @@ static struct file *find_file_by_fd (int fd)
   struct list_elem *a;
   for (a = list_begin (&file_list); a != list_end (&file_list); a = list_next (a))
     {
-      f = list_entry (l, struct file_element, elem);
+      f = list_entry (a, struct file_element, elem);
       if (f->fd == fd){
         if(!f){
           return NULL;
