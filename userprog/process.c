@@ -41,14 +41,14 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
-  char *argv[256];
+  char *argv[128];
   int argc;
-  char* command_bak = split(file_name,argv,&argc);
+  char* command = split(file_name,argv,&argc);                           /*split the command*/
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);   /*use the first token of command to create thread*/
 
-  sema_down(&thread_current()->sema1);
+  sema_down(&thread_current()->sema1);                                  /*let current thread wait*/
   // printf("\n%s sema down\n %d",thread_current()->name,tid);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
@@ -73,10 +73,10 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
 
-  char *argv[256];
+  char *argv[128];
   int argc;
-  char* command_bak = split(file_name,argv,&argc);
-  success = load (argv[0], &if_.eip, &if_.esp);
+  char* command = split(file_name,argv,&argc);                         /*split the command*/
+  success = load (argv[0], &if_.eip, &if_.esp);                        /*use the first token of command to load*/
 
   /* If load failed, quit. */
   if (!success){
@@ -84,40 +84,13 @@ start_process (void *file_name_)
     thread_exit ();
   }
 
-  /*char *esp = (char*)if_.esp;
-  char *arg[256];
-  int i,n=0;
-  for(; token != NULL;token = strtok_r(NULL, " ", &save_ptr)){
-    esp -= strlen(token)+1;
-    strlcpy(esp,token,strlen(token)+2);
-    arg[n++]=esp;
-  }
-  while((int)if_.esp%4!=0){
-    esp--;
-  }
-  int *p=esp-4;
-  *p=0;
-  p -= 4;
-  for(i=n-1;i>=0;i--){
-    p -= 4;
-    *p=(int *)arg[i];
-  }
-  p -= 4;
-  *p=p+4;
-  p -= 4;
-  *p=n;
-  p -= 4;
-  *p=0;
-  if_.esp = p;*/
-  int i=argc;
-  char * addr_arr[argc];
-  //printf("%s\n","try to put args" );
-  //printf("Address\t         Nmae\t        Data\n");
-  while(--i>=0){
+  int i = argc - 1;
+  char *arg[argc];
+  while(i>=0){
     if_.esp = if_.esp - sizeof(char)*(strlen(argv[i])+1); //+1: extra \0
-
-    addr_arr[i]=(char *)if_.esp;
+    arg[i]=(char *)if_.esp;
     memcpy(if_.esp,argv[i],strlen(argv[i])+1);
+    i = i - 1;
     //strlcpy(if_.esp,argv[i],strlen(argv[i])+1);
     //printf("%d\targv[%d][...]\t'%s'\n",if_.esp,i,(char*)if_.esp);
 
@@ -125,21 +98,22 @@ start_process (void *file_name_)
 
   // 4k  对齐
   //world-align
-  while ((int)if_.esp%4!=0) {
+  while ((int)if_.esp%4!=0){
     if_.esp--;
   }
   //printf("%d\tworld-align\t0\n", if_.esp);
 
-  i=argc;
+  i = argc - 1;
   if_.esp = if_.esp-4;
   (*(int *)if_.esp)=0;
-  //printf("%d\targv[%d]\t%d\n",if_.esp,i,*((int *)if_.esp));
-  while (--i>=0) {
-
+  for(i = arc-1; i >= 0; i = i - 1){
     if_.esp = if_.esp-4;//sizeof()
-    (*(char **)if_.esp) = addr_arr[i]; // if_.esp a pointer to uint32_t*
-    //printf("%d\targv[%d]\t%d\n",if_.esp,i,(*(char **)if_.esp));
+    (*(char **)if_.esp) = arg[i]; // if_.esp a pointer to uint32_t*
   }
+  //printf("%d\targv[%d]\t%d\n",if_.esp,i,*((int *)if_.esp));
+
+
+    //printf("%d\targv[%d]\t%d\n",if_.esp,i,(*(char **)if_.esp));
 
   if_.esp = if_.esp-4;
   (*(char **)if_.esp)=if_.esp+4;
@@ -162,25 +136,25 @@ start_process (void *file_name_)
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
-  sema_up(&thread_current()->parent->sema1);
+  sema_up(&thread_current()->parent->sema1);                         /*awake the waiting thread*/
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
 
 /*split the command and save it into argv[],save numbers into srgc*/
 char* split(char* command,char* argv[],int* argc){
+  *argc=0;
   char* a = NULL;
   char* save = NULL;
   char* token = NULL;
   a = malloc(strlen(command)+1);                                              /*malloc space for a*/
   strlcpy(a,command,PGSIZE);                                                  /*copy command to a*/
-  *argc=0;
-  token = strtok_r(a," ",&save);
-  argv[*argc] = token;
+  token = strtok_r(a," ",&save);                                              /*get first token*/
+  argv[0] = token;                                                            /*put it in argv[0]*/
   while (token != NULL) {
     (*argc)++; //will cause extra +1, need it!
-    token = strtok_r(NULL," ",&save);
-    argv[*argc] = token;
+    token = strtok_r(NULL," ",&save);                                         /*keep splitting*/
+    argv[*argc] = token;                                                      /*put it into argv*/
   }
   return a;
 }
