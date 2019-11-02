@@ -121,152 +121,138 @@ void is_valid_string(char *str){
 // function that call different syscalls
 static void syscall_handler (struct intr_frame *f){
   void *ptr = f->esp;
-  is_valid_ptr(ptr);
-  is_valid_ptr(ptr+3);
-  int syscall_num = * (int *)f->esp;
-  //printf("system call number %d\n", syscall_num);
-  if(syscall_num<=0||syscall_num>=20){
+  is_valid_ptr(ptr);                                                    /*check if the head of the pointer is valid*/
+  is_valid_ptr(ptr+3);                                                  /*check if the tail of the pointer is valid*/
+  int syscall_num = * (int *)f->esp;                                    /*get which systemcall*/
+  if(syscall_num<=0||syscall_num>=20){                                  /*check if systemcall is in the boundary*/
     exit(-1);
   }
-
-  if (syscall_num == SYS_HALT){
+  if (syscall_num == SYS_HALT){                                         /*sys_halt*/
     halt();
   }
 
-  else if(syscall_num == SYS_EXIT){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    int status = *(int *)(ptr+4);
+  else if(syscall_num == SYS_EXIT){                                     /*sys_exec*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    int status = *(int *)(ptr+4);                                       /*get status*/
     exit(status);
   }
 
-  else if(syscall_num == SYS_EXEC){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    char *file_name = *(char **)(ptr+4);
-    is_valid_string(file_name);
+  else if(syscall_num == SYS_EXEC){                                     /*sys_exec*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    char *file_name = *(char **)(ptr+4);                                /*get file name*/
+    is_valid_string(file_name);                                         /*check if the file name is valid*/
     lock_acquire(&file_lock);
     f->eax = exec(file_name);
     lock_release(&file_lock);
   }
 
-  else if(syscall_num == SYS_WAIT){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    int pid = *((int*)ptr+4);
+  else if(syscall_num == SYS_WAIT){                                     /*sys_wait*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    int pid = *((int*)ptr+4);                                           /*get pid*/
     f->eax = wait(pid);
   }
 
-  else if(syscall_num == SYS_CREATE){
-    is_valid_ptr (ptr+4);
-    is_valid_ptr (ptr+7);
-    // is_valid_ptr (ptr+12);
-    char* file_name = *(char **)(ptr+4);
-    is_valid_string(file_name);
-    unsigned size = *(int *)(ptr+8);
+  else if(syscall_num == SYS_CREATE){                                   /*sys_create*/
+    is_valid_ptr (ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr (ptr+7);                                               /*check if the tail of the pointer is valid*/
+    char* file_name = *(char **)(ptr+4);                                /*get file name*/
+    is_valid_string(file_name);                                         /*check if file name is valid*/
+    unsigned size = *(int *)(ptr+8);                                    /*get size*/
     f->eax = create(file_name,size);
   }
 
-  else if(syscall_num == SYS_REMOVE){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    char *file_name = *(char **)(ptr+4);
-    is_valid_string(file_name);
+  else if(syscall_num == SYS_REMOVE){                                   /*sys_remove*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    char *file_name = *(char **)(ptr+4);                                /*get file name*/
+    is_valid_string(file_name);                                         /*check if file name is valid*/
     f->eax = remove(file_name);
   }
 
-  else if(syscall_num == SYS_OPEN){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    char *file_name = *(char **)(ptr+4);
-    is_valid_string(file_name);
+  else if(syscall_num == SYS_OPEN){                                     /*sys_open*/
+    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    char *file_name = *(char **)(ptr+4);                                /*get file name*/
+    is_valid_string(file_name);                                         /*check if file name is valid*/
     lock_acquire(&file_lock);
     f->eax = open(file_name);
     lock_release(&file_lock);
   }
 
-  else if(syscall_num == SYS_FILESIZE){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    int fd = *(int *)(ptr + 4);
+  else if(syscall_num == SYS_FILESIZE){                                /*sys_filesize*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
     f->eax = filesize(fd);
   }
 
-  else if(syscall_num == SYS_READ){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    // is_valid_ptr(ptr+12);
-    // is_valid_ptr(ptr+16);
-    int fd = *(int *)(ptr + 4);
-    void *buffer = *(char**)(ptr + 8);
-    unsigned size = *(unsigned *)(ptr + 12);
-    is_valid_ptr (buffer);
-    is_valid_ptr (buffer+size);
+  else if(syscall_num == SYS_READ){                                    /*sys_read*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    void *buffer = *(char**)(ptr + 8);                                 /*get buffer*/
+    unsigned size = *(unsigned *)(ptr + 12);                           /*get size*/
+    is_valid_ptr (buffer);                                             /*check if buffer is valid*/
+    is_valid_ptr (buffer+size);                                        /*chekc if buffer+size is valid*/
     lock_acquire(&file_lock);
     f->eax = read(fd,buffer,size);
     lock_release(&file_lock);
   }
 
-  else if(syscall_num == SYS_WRITE){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    // is_valid_ptr(ptr+12);
-    // is_valid_ptr(ptr+16);
-    int fd = *(int *)(ptr + 4);
-    void *buffer = *(char**)(ptr + 8);
-    unsigned size = *(unsigned *)(ptr + 12);
-    is_valid_ptr (buffer);
-    is_valid_ptr (buffer+size);
+  else if(syscall_num == SYS_WRITE){                                   /*sys_write*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    void *buffer = *(char**)(ptr + 8);                                 /*get buffer*/
+    unsigned size = *(unsigned *)(ptr + 12);                           /*get size*/
+    is_valid_ptr (buffer);                                             /*check if buffer is valid*/
+    is_valid_ptr (buffer+size);                                        /*check if buffer+size is valid*/
     lock_acquire(&file_lock);
     f->eax = write(fd,buffer,size);
     lock_release(&file_lock);
   }
 
-  else if(syscall_num == SYS_SEEK){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    // is_valid_ptr(ptr+12);
-    int fd = *(int *)(ptr + 4);
-    unsigned pos = *(unsigned *)(ptr + 8);
+  else if(syscall_num == SYS_SEEK){                                    /*sys_seek*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    unsigned pos = *(unsigned *)(ptr + 8);                             /*get pos*/
     seek(fd,pos);
   }
 
-  else if(syscall_num == SYS_TELL){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    int fd = *(int *)(ptr + 4);
+  else if(syscall_num == SYS_TELL){                                    /*sys_tell*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
     tell(fd);
   }
 
-  else if(syscall_num == SYS_CLOSE){
-    is_valid_ptr(ptr+4);
-    is_valid_ptr(ptr+7);
-    int fd = *(int *)(ptr + 4);
+  else if(syscall_num == SYS_CLOSE){                                   /*sys_close*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
     close(fd);
   }
 }
 
+// Terminates Pintos by calling shutdown_power_off()
 void halt (void){
   shutdown_power_off();
 }
 
-/*
-exit curret thread with given status
-*/
+// Terminates the current user program with thestatus giving
 void exit(int status){
-
-  /* Close all the files */
-struct thread *t;
-struct list_elem *l;
-
-t = thread_current ();
-while (!list_empty (&t->fd_list))
+struct thread *cur = thread_current ();
+struct list_elem *a;
+while (!list_empty (&cur->fd_list))                                      /*loop if current thread still has files unclosed*/
   {
-    l = list_begin (&t->fd_list);
-    close (list_entry (l, struct file_element, elem_of_thread)->fd);
+    a = list_begin (&cur->fd_list);
+    close (list_entry (a, struct file_element, elem_of_thread)->fd);     /*close this file*/
   }
-
-t->exit_code = status;
+t->exit_code = status;                                                   /*set status to exit_code and exit*/
 thread_exit ();
 }
 
