@@ -112,7 +112,7 @@ struct thread
     struct list_elem childelem;         /* List element for children processes list. */
     struct list children;               /* List of children processes. */
     struct file* exec_file;             /* Executable file. */
-    struct file* file[MAX];             /* All files */
+    struct file* file[128];             /* All files */
   };
 
 /* If false (default), use round-robin scheduler.
