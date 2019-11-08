@@ -200,7 +200,7 @@ process_wait (tid_t child_tid UNUSED)
       check = 1;
       sema_down (&child->wait_sema);
       /* Change the exit status. */
-      exit_status = child->exit_code;
+      exit_status = child->exit_status;
       break;
     }
   }
