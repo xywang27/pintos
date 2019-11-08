@@ -472,7 +472,7 @@ init_thread (struct thread *t, const char *name, int priority)
       t->file[i] = NULL;
 
 
-  t->exit_code = -1;
+  t->exit_status = -1;
 
 
   list_init(&(t->fd_list));
