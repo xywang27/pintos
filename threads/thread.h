@@ -4,20 +4,18 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-#include <threads/synch.h>
+#include "synch.h"
 #include "filesys/file.h"
 #include "userprog/syscall.h"
 
-#define MAX 128
-
 /* States in a thread's life cycle. */
 enum thread_status
-  {
+{
     THREAD_RUNNING,     /* Running thread. */
     THREAD_READY,       /* Not running but ready to run. */
     THREAD_BLOCKED,     /* Waiting for an event to trigger. */
     THREAD_DYING        /* About to be destroyed. */
-  };
+};
 
 /* Thread identifier type.
    You can redefine this to whatever type you like. */
@@ -86,7 +84,7 @@ typedef int tid_t;
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
 struct thread
-  {
+{
     /* Owned by thread.c. */
     tid_t tid;                          /* Thread identifier. */
     enum thread_status status;          /* Thread state. */
@@ -101,21 +99,23 @@ struct thread
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
+    struct list_elem childelem;         /* List element for children processes list. */
+    struct list children;               /* List of children processes. */
+    int exit_status;                    /* The exit status code */
+    struct file* exec_file;             /* Executable file. */
+    struct file* file[MAX];             /* All files */
+    struct semaphore load_sema;         /* notify parent process whether the child process is loaded. */
+    struct semaphore exit_sema;         /* The exit semaphore. */
+    struct semaphore wait_sema;         /* parent process wait for its child process's exit. */
 #endif
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+};
 
-    struct list fd_list;                /* List of all file_descriptor the thread has*/
-    int exit_code;                      /*the exit_code of the thread(-1 means sth wrong with it)*/
-    struct semaphore load_sema;         /* notify parent process whether the child process is loaded. */
-    struct semaphore exit_sema;         /* The exit semaphore. */
-    struct semaphore wait_sema;         /* parent process wait for its child process's exit. */
-    struct list_elem childelem;         /* List element for children processes list. */
-    struct list children;               /* List of children processes. */
-    struct file* exec_file;             /* Executable file. */
-    struct file* file[MAX];             /* All files */
-  };
+/*struct for maintaining all the open files a certain thread opened */
+
+
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
