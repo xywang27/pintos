@@ -224,7 +224,7 @@ process_exit (void)
   struct list_elem *e ;
   struct list_elem *next;
   uint32_t *pd;
-  printf ("%s: exit(%d)\n", cur->name, cur->exit_code);
+  printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
