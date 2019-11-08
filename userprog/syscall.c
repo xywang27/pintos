@@ -297,9 +297,9 @@ int open (const char *file){
     int i;
     for (i = 2; i < MAX; i = i + 1)
     {
-      if (t->file[i] == NULL)
+      if (cur->file[i] == NULL)
       {
-        t->file[i] = f;
+        cur->file[i] = f;
         break;
       }
     }
@@ -363,6 +363,7 @@ int write (int fd, const void *buffer, unsigned size){
     }
     putbuf (buffChar, size);
     buffer_write = buffer_write + size;
+  }
 }
 
 // Changes the next byte to be read or written in open file fd to position, expressed in bytes from the beginning of the file.
