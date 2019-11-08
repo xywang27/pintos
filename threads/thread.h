@@ -8,6 +8,8 @@
 #include "filesys/file.h"
 #include "userprog/syscall.h"
 
+#define MAX 128
+
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -112,7 +114,7 @@ struct thread
     struct list_elem childelem;         /* List element for children processes list. */
     struct list children;               /* List of children processes. */
     struct file* exec_file;             /* Executable file. */
-    struct file* file[128];             /* All files */
+    struct file* file[MAX];             /* All files */
   };
 
 /* If false (default), use round-robin scheduler.
