@@ -22,26 +22,9 @@
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
+char* split(char* command,char* argv[],int* argc);
 
 static bool load_success = true;                                              /*variable that shows if load is success*/
-
-/*split the command and save it into argv[],save numbers into srgc*/
-char* split(char* command,char* argv[],int* argc){
-  *argc=0;
-  char* a = NULL;
-  char* save = NULL;
-  char* token = NULL;
-  a = malloc(strlen(command)+1);                                              /*malloc space for a*/
-  strlcpy(a,command,PGSIZE);                                                  /*copy command to a*/
-  token = strtok_r(a," ",&save);                                              /*get first token*/
-  argv[0] = token;                                                            /*put it in argv[0]*/
-  while (token != NULL) {
-    (*argc)++; //will cause extra +1, need it!
-    token = strtok_r(NULL," ",&save);                                         /*keep splitting*/
-    argv[*argc] = token;                                                      /*put it into argv*/
-  }
-  return a;
-}
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -153,6 +136,24 @@ start_process (void *file_name_)
   NOT_REACHED ();
 }
 
+/*split the command and save it into argv[],save numbers into srgc*/
+char* split(char* command,char* argv[],int* argc){
+  *argc=0;
+  char* a = NULL;
+  char* save = NULL;
+  char* token = NULL;
+  a = malloc(strlen(command)+1);                                              /*malloc space for a*/
+  strlcpy(a,command,PGSIZE);                                                  /*copy command to a*/
+  token = strtok_r(a," ",&save);                                              /*get first token*/
+  argv[0] = token;                                                            /*put it in argv[0]*/
+  while (token != NULL) {
+    (*argc)++; //will cause extra +1, need it!
+    token = strtok_r(NULL," ",&save);                                         /*keep splitting*/
+    argv[*argc] = token;                                                      /*put it into argv*/
+  }
+  return a;
+}
+
 /* Waits for thread TID to die and returns its exit status.  If
    it was terminated by the kernel (i.e. killed due to an
    exception), returns -1.  If TID is invalid or if it was not a
@@ -165,33 +166,24 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid)
 {
-  struct thread *child = NULL;
+  int exit_code;
+  bool in_children_list = false;
   struct list_elem *e;
-  int exit_status = -1;
-  int check = 0;
-  /* Check whether it is in the children list. */
-  for (e = list_begin (&thread_current ()->children);
-        e != list_end (&thread_current ()->children); e = list_next (e))
-  {
-    child = list_entry (e, struct thread, childelem);
-    /* if is found. */
-    if (child->tid == child_tid)
-    {
-      check = 1;
-      sema_down (&child->wait_sema);
-      /* Change the exit status. */
-      exit_status = child->exit_code;
+  for (e = list_begin (&thread_current ()->children);e != list_end (&thread_current ()->children); e = list_next (e)){  /* Check if it is in the children list*/
+    struct thread *child = list_entry (e, struct thread, childelem);
+    if (child->tid == child_tid){                                                                                       /* if it is in the children list*/
+      in_children_list = true;
+      sema_down (&child->wait_sema);                                                                                    /* let child thread wait*/
+      exit_code = child->exit_code;                                                                                     /*allocate child's exit_code to its parent*/
       break;
     }
   }
-  /* if check =0 , which means pid is not in list, return -1. */
-  if (check == 0)
-    return -1;
-
-  /* remove the child process from list. */
-  list_remove (&child->childelem);
-  sema_up (&child->exit_sema);
-  return exit_status;
+  if (!in_children_list){                                                                                               /*if it is not in the children list*/
+    exit_code = -1;
+  }
+  list_remove (&child->childelem);                                                                                      /*reove child from children list*/
+  sema_up (&child->exit_sema);                                                                                          /*awake the child to exit*/
+  return exit_code;
 }
 
 /* Free the current process's resources. */
