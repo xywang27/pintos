@@ -145,12 +145,10 @@ start_process (void *file_name_)
 
   i = argc;
 
-  /* Put argument's address in the reversal order. */
-  while (--i >= 0)
-  {
-    if_.esp = if_.esp - 4;
-    (*(char **) if_.esp) = arg[i];
-  }
+  for(i = argc-1; i >= 0; i = i - 1){                                 /*put address of argv[] into the stack*/
+  if_.esp = if_.esp-4;
+  (*(char **)if_.esp) = arg[i];
+}
 
   if_.esp = if_.esp-4;                                                /*put argv into the stack*/
   (*(char **)if_.esp)=if_.esp+4;
