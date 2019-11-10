@@ -143,8 +143,6 @@ start_process (void *file_name_)
   if_.esp = if_.esp-4;                                                /*put 0 into the stack*/
   (*(int *)if_.esp)=0;
 
-  i = argc;
-
   for(i = argc-1; i >= 0; i = i - 1){                                 /*put address of argv[] into the stack*/
   if_.esp = if_.esp-4;
   (*(char **)if_.esp) = arg[i];
