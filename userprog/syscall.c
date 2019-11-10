@@ -24,7 +24,7 @@ int open (const char *file);
 int filesize (int fd);
 int read (int fd, void *buffer, unsigned size);
 int write (int fd, const void *buffer, unsigned size);
-static void seek (int fd, unsigned position);
+void seek (int fd, unsigned position);
 static unsigned tell (int fd);
 static void close (int fd);
 static bool is_valid_fd (int fd);
@@ -202,11 +202,10 @@ int write (int fd, const void *buffer, unsigned size)
 }
 
 
-static void
-seek (int fd, unsigned position)
+void seek (int fd, unsigned position)
 {
-  struct thread *t = thread_current ();
-  if (is_valid_fd (fd) && t->file[fd] != NULL)
+  struct thread *cur = thread_current ();
+  if (is_valid_fd (fd) && cur->file[fd] != NULL)
   {
     file_seek (t->file[fd], position);
   }
@@ -404,9 +403,7 @@ else if(syscall_num == SYS_WRITE)
       /* Check for validality of the first argument. */
     is_valid_pointer (esp);
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp + 4);
-      /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 7);
+    is_valid_pointer (esp + 3);
     int fd = *((int *) esp);
     unsigned position = *((unsigned *) (esp + 4));
     seek (fd, position);
