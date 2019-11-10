@@ -64,7 +64,7 @@ process_execute (const char *file_name)
   char *argv[128];
   int argc;
   /* To seperate the command name from arguments. */
-  char* command_back = split (file_name, argv, &argc);
+  char* command = split (file_name, argv, &argc);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
@@ -91,7 +91,7 @@ process_execute (const char *file_name)
       }
     }
   }
-  free (command_back);
+  free (command);
   return temp;
 }
 
@@ -106,7 +106,7 @@ start_process (void *file_name_)
 
   char *argv[128];
   int argc;
-  char* command_back = split (file_name, argv, &argc);
+  char* command = split (file_name, argv, &argc);
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
