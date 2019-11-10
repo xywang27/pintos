@@ -21,7 +21,7 @@ int wait (pid_t);
 bool create (const char *file, unsigned initial_size);
 bool remove (const char *file);
 int open (const char *file);
-static int filesize (int);
+int filesize (int fd);
 static int read (int fd, void *buffer, unsigned size);
 static int write (int fd, const void *buffer, unsigned size);
 static void seek (int fd, unsigned position);
@@ -150,16 +150,14 @@ int open (const char *file)
   return i;
 }
 
-static int
-filesize (int fd)
+int filesize (int fd)
 {
-  int file_size = 0;
-  struct thread *t = thread_current ();
-  if (is_valid_fd (fd) && t->file[fd] != NULL)
+  struct thread *cur = thread_current ();
+  if (is_valid_fd (fd) && cur->file[fd] != NULL)
   {
-    file_size = file_length (t->file[fd]);
+    return file_length (cur->file[fd]);
   }
-  return file_size;
+  return -1;
 }
 
 
