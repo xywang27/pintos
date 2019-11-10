@@ -136,13 +136,14 @@ start_process (void *file_name_)
   }
 
   /* Word alignment. */
-  while ((int) if_.esp % 4 != 0)
-    if_.esp = if_.esp - 1;
+  while ((int)if_.esp%4!=0){                                          /*world-align*/
+    if_.esp--;
+  }
+
+  if_.esp = if_.esp-4;                                                /*put 0 into the stack*/
+  (*(int *)if_.esp)=0;
 
   i = argc;
-  /* Put a 0. */
-  if_.esp = if_.esp - 4;
-  (*(int *) if_.esp) = 0;
 
   /* Put argument's address in the reversal order. */
   while (--i >= 0)
@@ -151,20 +152,18 @@ start_process (void *file_name_)
     (*(char **) if_.esp) = arg[i];
   }
 
-  /* Put the address of the first argument. */
-  if_.esp = if_.esp - 4;
-  (*(char **) if_.esp)=if_.esp + 4;
+  if_.esp = if_.esp-4;                                                /*put argv into the stack*/
+  (*(char **)if_.esp)=if_.esp+4;
 
-  /* Put argc. */
-  if_.esp = if_.esp - 4;
-  (*(int *) if_.esp) = argc;
+  if_.esp = if_.esp-4;                                               /*put argc into the stack*/
+  (*(int *)if_.esp)=argc;
 
-  /* Put return address 0. */
-  if_.esp = if_.esp - 4;
-  (*(int *) if_.esp) = 0;
+  if_.esp = if_.esp-4;                                               /*put return address 0 into the stack*/
+  (*(int *)if_.esp)=0;
 
   /* If load failed, quit. */
   free (command_back);
+  palloc_free_page (file_name);
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
