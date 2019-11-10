@@ -15,6 +15,7 @@
 static void syscall_handler (struct intr_frame *);
 
 void halt (void);
+void exit (int status);
 static int open (const char *);
 static int filesize (int);
 static int read (int fd, void *buffer, unsigned size);
@@ -93,6 +94,13 @@ is_valid_pointer (void *pointer)
 // Terminates Pintos by calling shutdown_power_off()
 void halt (void){
   shutdown_power_off();
+}
+
+// Terminates the current user program with thestatus giving
+void exit(int status){
+  struct thread *cur = thread_current ();
+  cur->exit_code = status;                                                 /*set status to exit_code and exit*/
+  thread_exit ();
 }
 
 static int
@@ -271,8 +279,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       /* Make sure that the whole argument is on valid address. */
     is_valid_pointer (esp + 3);
     int status = *((int *) esp);
-    thread_current ()->exit_code = status;
-    thread_exit ();
+    exit(status);
   }
     /* Runs the executable whose name is given in cmd_line, passing any given
     arguments, and returns the new process's program id (pid). */
