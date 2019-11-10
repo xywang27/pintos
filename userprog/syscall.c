@@ -26,7 +26,7 @@ int read (int fd, void *buffer, unsigned size);
 int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
-static void close (int fd);
+void close (int fd);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -222,14 +222,17 @@ unsigned tell (int fd)
     return -1;
 }
 
-static void
-close (int fd)
+void close (int fd)
 {
-  struct thread *t = thread_current ();
-  if (is_valid_fd (fd) && t->file[fd] != NULL)
+  struct thread *cur = thread_current ();
+  if (is_valid_fd (fd) && cur->file[fd] != NULL)
   {
-    file_close (t->file[fd]);
+    file_close (cur->file[fd]);
     t->file[fd] = NULL;
+    return;
+  }
+  else{
+    return -1
   }
 }
 
@@ -420,6 +423,7 @@ else if(syscall_num == SYS_WRITE)
   {
       /* Check for validality of the first argument. */
     is_valid_pointer (esp);
+    is_valid_pointer (esp + 3);
     int fd = *((int *) esp);
     close (fd);
   }
