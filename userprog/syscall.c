@@ -170,11 +170,8 @@ int read (int fd, void *buffer, unsigned size)
   /* standard input. */
   if (fd == 0)
   {
-    for (; size > 0; size = size - 1)
-    {
-      input_getc ();
-      bytes_read = bytes_read + 1;
-    }
+    input_getc();
+    return size;
   }
   /* else */
   else
