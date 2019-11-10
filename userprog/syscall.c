@@ -44,19 +44,19 @@ void
 is_valid_pointer (void *pointer)
 {
   if(pointer == NULL){                                                             /*the pointer can not be NULL*/
-    cur->exit_code = -1;                                                 /*set status to exit_code and exit*/
+    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
     thread_exit ();
   }
   if(is_kernel_vaddr(pointer)){                                                    /*the pointer can not be kernal address*/
-    cur->exit_code = -1;                                                 /*set status to exit_code and exit*/
+    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
     thread_exit ();
   }
   if(!is_user_vaddr(pointer)){                                                     /*the pointer must be user address*/
-    cur->exit_code = -1;                                                 /*set status to exit_code and exit*/
+    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
     thread_exit ();
   }
   if(pagedir_get_page (thread_current ()->pagedir, pointer) == NULL){              /*the pointer must be mapped*/
-    cur->exit_code = -1;                                                 /*set status to exit_code and exit*/
+    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
     thread_exit ();
   }
 }
