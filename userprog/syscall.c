@@ -19,6 +19,7 @@ void exit (int status);
 pid_t exec (const char *file);
 int wait (pid_t);
 bool create (const char *file, unsigned initial_size);
+bool remove (const char *file);
 static int open (const char *);
 static int filesize (int);
 static int read (int fd, void *buffer, unsigned size);
@@ -119,6 +120,11 @@ int wait (pid_t pid){
 // create a new file
 bool create (const char *file, unsigned initial_size){
     return filesys_create(file,initial_size);
+}
+
+// remove the particular file
+bool remove (const char *file){
+  return filesys_remove(file);
 }
 
 static int
@@ -347,7 +353,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
-    f->eax = filesys_remove (file_name);
+    f->eax = remove(file_name);
   }
     /* Opens the file called file. Returns a nonnegative integer handle called
     a "file descriptor" (fd), or -1 if the file could not be opened. */
