@@ -126,8 +126,8 @@ start_process (void *file_name_)
     sema_up (&thread_current ()->load_sema);
     thread_exit ();
   }
-  char *arg[argc];
-  int i;
+  int i = argc;
+  char * addr_arr[argc];
   /* Reverse the list to store argument in a new list because stack grows download. */
   while (--i >= 0)
   {
