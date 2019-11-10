@@ -23,7 +23,7 @@ bool remove (const char *file);
 int open (const char *file);
 int filesize (int fd);
 int read (int fd, void *buffer, unsigned size);
-static int write (int fd, const void *buffer, unsigned size);
+int write (int fd, const void *buffer, unsigned size);
 static void seek (int fd, unsigned position);
 static unsigned tell (int fd);
 static void close (int fd);
@@ -181,32 +181,23 @@ int read (int fd, void *buffer, unsigned size)
   }
 }
 
-static int
-write (int fd, const void *buffer, unsigned size)
+int write (int fd, const void *buffer, unsigned size)
 {
   int buffer_write = 0;
   char *buffChar = NULL;
   buffChar = (char *) buffer;
-  struct thread *t = thread_current ();
+  struct thread *cur = thread_current ();
   /* standard output. */
   if (fd == 1)
   {
-    /* avoid boom. */
-    while (size > BUFFER_SIZE)
-    {
-      putbuf (buffChar, BUFFER_SIZE);
-      size = size - BUFFER_SIZE;
-      buffChar = buffChar + BUFFER_SIZE;
-      buffer_write = buffer_write + BUFFER_SIZE;
-    }
-    putbuf (buffChar, size);
-    buffer_write = buffer_write + size;
+    putbuf(buffer,size);
+    return size;
   }
   /* else */
   else
   {
-    if (is_valid_fd (fd) && t->file[fd] != NULL)
-      buffer_write = file_write (t->file[fd], buffer, size);
+    if (is_valid_fd (fd) && cur->file[fd] != NULL)
+      buffer_write = file_write (cur->file[fd], buffer, size);
     else
       buffer_write = 0;
   }
@@ -398,18 +389,16 @@ else if(syscall_num == SYS_WRITE)
       /* Check for validality of the first argument. */
     is_valid_pointer (esp);
       /* Check for validality of the second argument. */
-    is_valid_pointer (esp + 4);
-      /* Check for validality of the third argument. */
-    is_valid_pointer (esp + 8);
-      /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 11);
+    is_valid_pointer (esp + 3);
     int fd = *((int *) esp);
-    const void *buffer = *((void **) (esp + 4));
+    void *buffer = *((char **) (esp + 4));
     unsigned size = *((unsigned *) (esp + 8));
       /* Check that the given buffer is all valid. */
     is_valid_pointer (buffer);
     is_valid_pointer (buffer + size);
+    lock_acquire(&file_lock);
     f->eax = write (fd, buffer, size);
+    lock_release(&file_lock);
   }
     /* Changes the next byte to be read or written in open file fd
     to position, expressed in bytes from the beginning of the file */
