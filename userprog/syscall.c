@@ -22,7 +22,7 @@ bool create (const char *file, unsigned initial_size);
 bool remove (const char *file);
 int open (const char *file);
 int filesize (int fd);
-static int read (int fd, void *buffer, unsigned size);
+int read (int fd, void *buffer, unsigned size);
 static int write (int fd, const void *buffer, unsigned size);
 static void seek (int fd, unsigned position);
 static unsigned tell (int fd);
@@ -161,8 +161,7 @@ int filesize (int fd)
 }
 
 
-static int
-read (int fd, void *buffer, unsigned size)
+int read (int fd, void *buffer, unsigned size)
 {
   int bytes_read = 0;
   char *bufferChar = NULL;
@@ -385,18 +384,16 @@ else if(syscall_num == SYS_READ)
       /* Check for validality of the first argument. */
     is_valid_pointer (esp);
       /* Check for validality of the second argument. */
-    is_valid_pointer (esp + 4);
-      /* Check for validality of the third argument. */
-    is_valid_pointer (esp + 8);
-      /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 11);
+    is_valid_pointer (esp + 3);
     int fd = *((int *) esp);
-    const void *buffer = *((void **) (esp + 4));
+    void *buffer = *((char **) (esp + 4));
     unsigned size = *((unsigned *) (esp + 8));
       /* Check that the given buffer is all valid. */
     is_valid_pointer (buffer);
     is_valid_pointer (buffer + size);
+    lock_acquire(&file_lock);
     f->eax= read (fd, buffer, size);
+    lock_release(&file_lock);
   }
     /* Writes size bytes from buffer to the open file fd. Returns the number of bytes
     actually written, which may be less than size if some bytes could not be written. */
