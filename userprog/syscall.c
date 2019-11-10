@@ -251,10 +251,14 @@ syscall_handler (struct intr_frame *f UNUSED)
   void *esp = f->esp;
   int syscall_num;
   is_valid_pointer (esp);
-  is_valid_pointer (esp + 4);
+  is_valid_pointer (esp + 3);
   /* Get the name of syscall. */
   syscall_num = *((int *) esp);
   /* Point to the first argument. */
+  if(syscall_num<=0||syscall_num>=20){                                  /*check if systemcall is in the boundary*/
+    thread_current ()->exit_code = -1;
+    thread_exit ();
+  }
   esp = esp + 4;
   if (syscall_num == SYS_HALT){                                         /*sys_halt*/
     halt();
