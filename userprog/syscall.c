@@ -122,10 +122,14 @@ static void syscall_handler (struct intr_frame *f)
     f->eax = exec(file_name);
     lock_release(&file_lock);
   }
-  else if(syscall_num == SYS_WAIT){                                     /*sys_wait*/
-    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
-    int pid = *((int*)ptr+4);                                           /*get pid*/
+    /* Waits for a child process pid and retrieves the child's exit status. */
+  else if(syscall_num == SYS_WAIT)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Make sure that the whole argument is on valid address. */
+    is_valid_ptr (esp + 3);
+    int pid = *((int *) esp);
     f->eax = wait(pid);
   }
     /* Creates a new file called file initially initial_size bytes in size. */
