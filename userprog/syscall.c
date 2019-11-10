@@ -20,7 +20,7 @@ pid_t exec (const char *file);
 int wait (pid_t);
 bool create (const char *file, unsigned initial_size);
 bool remove (const char *file);
-static int open (const char *);
+int open (const char *file);
 static int filesize (int);
 static int read (int fd, void *buffer, unsigned size);
 static int write (int fd, const void *buffer, unsigned size);
@@ -127,27 +127,25 @@ bool remove (const char *file){
   return filesys_remove(file);
 }
 
-static int
-open (const char *file_name)
+int open (const char *file)
 {
-  struct thread *t = thread_current ();
-  struct file *f = filesys_open (file_name);
+  struct file* f = filesys_open(file);
+  struct thread *cur = thread_current();
   if (f == NULL)
     return -1;
   /* Start from 2 , to find next free fd to allocate. */
-  int i;
-  for (i = 2; i < MAX; i = i + 1)
-  {
-    if (t->file[i] == NULL)
-    {
-      t->file[i] = f;
+  int i = 0;
+  while (i < MAX){
+    if (cur->file[i] == NULL){
+      cur->file[i] = f;
       break;
+    }
+    i = i + 1;
+    if (i == MAX){
+      i = -1;
     }
   }
   /* No fd to allocate. */
-  if (i == MAX)
-    i = -1;
-  return i;
 }
 
 static int
@@ -366,7 +364,9 @@ syscall_handler (struct intr_frame *f UNUSED)
     const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
-    f->eax = open (file_name);
+    lock_acquire(&file_lock);
+    f->eax = open(file_name);
+    lock_release(&file_lock);
   }
     /* Returns the size, in bytes, of the file open as fd. */
   else if(syscall_num == SYS_FILESIZE)
