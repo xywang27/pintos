@@ -70,8 +70,6 @@ process_execute (const char *file_name)
     if (find_thread(tid) != NULL){                                          /*if thread with this id can be found*/
       struct thread* child = find_thread(tid);
       sema_down (&child->load_sema);                                        /*let parent thread wait*/
-
-      /* If load success, put it onto the children process list. */
       if(load_success){                                                     /*if load success*/
         list_push_back (&thread_current ()->children, &child->childelem);   /*put child in children list*/
       }
@@ -97,38 +95,33 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-  char *argv[128];
-  int argc;
-  char* command_back = split (file_name, argv, &argc);
-
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
 
+  char *argv[128];
+  int argc;
+  char* command = split (file_name, argv, &argc);
   success = load (argv[0], &if_.eip, &if_.esp);
 
-  if (success)
-    sema_up (&thread_current ()->load_sema);
-  /* If load failed, quit. */
-  else
-  {
-    /* let the load_success be 77 so the parent know load fail. */
+  if (!success){                                                       /*if load fail*/
     load_success = false;
-    sema_up (&thread_current ()->load_sema);
-    thread_exit ();
+    sema_up (&thread_current ()->load_sema);                           /*awake the parent thread*/
+    thread_exit ();                                                    /*exit*/
+  }
+  else{                                                                /*if load success*/
+    sema_up (&thread_current ()->load_sema);                           /*awake the parent thread*/
   }
   char *arg[argc];
   int i;
-  /* Reverse the list to store argument in a new list because stack grows download. */
   for(i = argc-1; i >= 0; i = i - 1){                                 /*put argv[] into the stack and get address of argv[]*/
     if_.esp = if_.esp - sizeof(char)*(strlen(argv[i])+1);
     arg[i]=(char *)if_.esp;
     memcpy(if_.esp,argv[i],strlen(argv[i])+1);
   }
 
-  /* Word alignment. */
   while ((int)if_.esp%4!=0){                                          /*world-align*/
     if_.esp--;
   }
@@ -149,9 +142,7 @@ start_process (void *file_name_)
 
   if_.esp = if_.esp-4;                                               /*put return address 0 into the stack*/
   (*(int *)if_.esp)=0;
-
-  /* If load failed, quit. */
-  free (command_back);
+  free (command);
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
