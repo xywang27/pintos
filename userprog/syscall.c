@@ -9,14 +9,17 @@
 #include "filesys/filesys.h"
 #include "threads/malloc.h"
 #include "threads/synch.h"
-#include "devices/input.h"
-#include "devices/shutdown.h"
-#include "threads/palloc.h"
-#include "userprog/pagedir.h"
 
-typedef int pid_t;
+// struct file_element
+struct file_element{
+  struct file *file;                         /*file's name*/
+  struct list_elem elem;                     /*list member to store all the file opened*/
+  struct list_elem elem_of_thread;           /*list member to store the file that the particular thread hold*/
+  int fd;                                    /*file's id*/
+};
 
 static void syscall_handler (struct intr_frame *);
+typedef int pid_t;
 
 // different kinds of systemcall function that will be used.
 void halt (void);
@@ -32,7 +35,29 @@ int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
-static bool is_valid_fd (int fd);
+
+static struct file *find_file (int fd);
+
+static struct list file_list;       /*list used to store all opened file*/
+
+static temp_fd = 2;                 /*used to generate fd*/
+
+// find the file in the file_list according to fd
+static struct file *find_file (int fd){
+  struct file_element *f;
+  struct list_elem *a;
+  for (a = list_begin (&file_list); a != list_end (&file_list); a = list_next (a)){    /*traverse the file_list*/
+    f = list_entry (a, struct file_element, elem);
+    if(f->fd == fd){                                                                  /*find the file with corresponding fd*/
+      if(!f){
+        return NULL;                                                                   /*return NULL if file dose not exit*/
+      }
+      else{
+        return f->file;
+      }
+    }
+  }
+}
 
 /* Reads a byte at user virtual address UADDR.
    UADDR must be below PHYS_BASE.
@@ -80,7 +105,7 @@ void is_valid_ptr (void *pointer){
 }
 
 // check if the string is valid
-void is_valid_string (const char *str){
+void is_valid_string(char *str){
   char character = get_user(((uint8_t*)str));
   while (character != '\0' && character!=-1){                                      /*loop until error or reach the end of the string*/
     str++;
@@ -120,12 +145,14 @@ static void syscall_handler (struct intr_frame *f){
     f->eax = exec(file_name);
     lock_release(&file_lock);
   }
+
   else if(syscall_num == SYS_WAIT){                                     /*sys_wait*/
     is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
     int pid = *(int*)(ptr+4);                                           /*get pid*/
     f->eax = wait(pid);
   }
+
   else if(syscall_num == SYS_CREATE){                                   /*sys_create*/
     is_valid_ptr (ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr (ptr+7);                                               /*check if the tail of the pointer is valid*/
@@ -216,9 +243,15 @@ void halt (void){
 
 // Terminates the current user program with thestatus giving
 void exit(int status){
-  struct thread *cur = thread_current ();
-  cur->exit_code = status;                                                 /*set status to exit_code and exit*/
-  thread_exit ();
+struct thread *cur = thread_current ();
+struct list_elem *a;
+while (!list_empty (&cur->fd_list))                                      /*loop if current thread still has files unclosed*/
+  {
+    a = list_begin (&cur->fd_list);
+    close (list_entry (a, struct file_element, elem_of_thread)->fd);     /*close this file*/
+  }
+cur->exit_code = status;                                                 /*set status to exit_code and exit*/
+thread_exit ();
 }
 
 //run the excutable with the name given
@@ -243,53 +276,38 @@ bool remove (const char *file){
 
 // Opens the file called file.
 int open (const char *file){
-  struct file* f = filesys_open(file);
-  struct thread *cur = thread_current();
-  if(f == NULL){                                                                        /*return -1 if open fails*/
+    struct file* f = filesys_open(file);
+    struct thread *cur = thread_current();
+    if(f == NULL){                                                                        /*return -1 if open fails*/
       return -1;
-  }
-  int i = 2;
-  while (i < MAX){                                                                      /*loop to find which fd to allocate*/
-    if (cur->file[i] == NULL){
-      cur->file[i] = f;                                                                 /*allocate fd to the file*/
-      break;
     }
-    i = i + 1;
-    if (i == MAX){                                                                      /*check if fd is too big*/
-      i = -1;
-      break;
-    }
-  }
-  return i;
+    struct file_element *a = (struct file_element*)malloc(sizeof(struct file_element));   /*build a new file_element*/
+    list_push_back(&file_list,&a->elem);                                                  /*put newly opened file into file_list*/
+    list_push_back(&cur->fd_list,&a->elem_of_thread);                                     /*put newly opened file into file list of current thread*/
+    a->file = f;
+    a->fd = temp_fd + 1;                                                                  /*give fd to this file*/
+    temp_fd = temp_fd + 1;                                                                /*produce a new fd*/
+    return a->fd;
 }
 
 // Returns the size, in bytes, of the file open as fd.
 int filesize (int fd){
-  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
-    return -1;
-  }
-  struct thread *cur = thread_current ();
-  if (cur->file[fd] != NULL){                                                           /*the file can not be NULL*/
-    return file_length (cur->file[fd]);
-  }
-  return -1;
+  struct file *f = find_file(fd);                                        /*find the file with corresponding fd*/
+  return file_length(f);
 }
 
 // Reads size bytes from the file open as fd into buffer.
 int read (int fd, void *buffer, unsigned size){
-  if (fd < 0 || fd >= MAX){                                                            /*check if fd is valid*/
-    return -1;
-  }
-  struct thread *cur = thread_current ();
-  if(fd == 0){                                                                        /*if it is STDIN*/
+  if(fd == 0){                                                           /*if it is STDIN*/
     input_getc();
     return size;
   }
-  else{                                                                               /*if it is not STDIN*/
-    if(cur->file[fd] != NULL){
-      return file_read (cur->file[fd], buffer, size);
+  else{                                                                 /*if it is not STDIN*/
+    struct file *f = find_file(fd);                                     /*find the file with corresponding fd*/
+    if(f != NULL){
+      return file_read(f,buffer,size);
     }
-    else{                                                                             /*return -1 if read fails*/
+    else{                                                               /*return -1 if read fails*/
       return -1;
     }
   }
@@ -297,71 +315,58 @@ int read (int fd, void *buffer, unsigned size){
 
 // Writes size bytes from buffer to the open file fd
 int write (int fd, const void *buffer, unsigned size){
-  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
-    return -1;
-  }
-  struct thread *cur = thread_current ();
-  if(fd == 1){                                                                          /*if it is STDOUT*/
+  if(fd == 1){                                                          /*if it is STDOUT*/
       putbuf(buffer,size);
       return size;
   }
-  else{                                                                                /*if it is not STDOUT*/
-    if (cur->file[fd] != NULL){
-      return file_write (cur->file[fd], buffer, size);
+  else{                                                                /*if it is not STDOUT*/
+    struct file *f = find_file(fd);                                    /*find the file with corresponding fd*/
+    if(f!=NULL){
+      return file_write(f,buffer,size);
     }
-    else{                                                                              /*return -1 if write fails*/
+    else{                                                              /*return -1 if write fails*/
       return -1;
     }
   }
 }
 
 // Changes the next byte to be read or written in open file fd to position, expressed in bytes from the beginning of the file.
-void seek (int fd, unsigned position)
-{
-  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
-    return -1;
-  }
-  struct thread *cur = thread_current ();
-  if (cur->file[fd] != NULL){                                                           /*file can not be NULL*/
-    file_seek (cur->file[fd], position);
-  }
+void seek (int fd, unsigned position){
+  struct file *f = find_file(fd);                                     /*find the file with corresponding fd*/
+  file_seek(f,position);
 }
 
 // Returns the position of the next byte to be read or written in open file fd, expressed in bytes from the beginning of the file.
-unsigned tell (int fd)
-{
-  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
-    return -1;
-  }
-  struct thread *cur = thread_current ();
-  if (cur->file[fd] != NULL){                                                           /*file can not be NULL*/
-    return file_tell (cur->file[fd]);
-  }
-  else{
-    return -1;
-  }
+unsigned tell (int fd){
+  struct file *f = find_file(fd);                                     /*find the file with corresponding fd*/
+  return file_tell(f);
 }
 
 // close the file with the corresponding fd
-void close (int fd)
-{
-  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
-    return -1;
-  }
+void close (int fd){
+  struct file_element *f;
+  f = NULL;
+  struct file_element *f_temp;
+  struct list_elem *a;
   struct thread *cur = thread_current ();
-  if (cur->file[fd] != NULL){                                                          /*file can not be NULL*/
-    file_close (cur->file[fd]);
-    cur->file[fd] = NULL;
-    return;
+  for (a = list_begin (&cur->fd_list); a != list_end (&cur->fd_list); a = list_next (a)){         /*traverse the file list of the current thread*/
+    f_temp = list_entry (a, struct file_element, elem_of_thread);
+    if (f_temp->fd == fd){                                                                        /*find the file with the corresponding fd*/
+      f = f_temp;
+      file_close (f->file);
+      list_remove (&f->elem);                                                                     /*remove from file_list*/
+      list_remove (&f->elem_of_thread);                                                           /*remove from file list of current thread*/
+      free (f);
+      return;
+    }
   }
-  else{                                                                                /*return -1 if close fail*/
-    return -1;
-  }
+  return -1;
 }
 
 void
-syscall_init (void)
-{
+syscall_init (void){
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+
   lock_init(&file_lock);
+  list_init(&file_list);
 }
