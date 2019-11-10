@@ -147,6 +147,7 @@ int open (const char *file)
     }
   }
   /* No fd to allocate. */
+  return i;
 }
 
 static int
