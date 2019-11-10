@@ -43,22 +43,20 @@ is_valid_string (const char *string)
 void
 is_valid_pointer (void *pointer)
 {
-  /* Check for nullpointer. */
-  if (pointer == NULL)
-  {
-    thread_current ()->exit_code = -1 ;
+  if(pointer == NULL){                                                             /*the pointer can not be NULL*/
+    cur->exit_code = -1;                                                 /*set status to exit_code and exit*/
     thread_exit ();
   }
-  /* Check whether it is on a valid user virtual address. */
-  if (is_user_vaddr (pointer) == false)
-  {
-    thread_current ()->exit_code = -1 ;
+  if(is_kernel_vaddr(pointer)){                                                    /*the pointer can not be kernal address*/
+    cur->exit_code = -1;                                                 /*set status to exit_code and exit*/
     thread_exit ();
   }
-  /* Check whether the pointer is on the valid page. */
-  if (pagedir_get_page (thread_current ()->pagedir, pointer) == NULL)
-  {
-    thread_current ()->exit_code = -1 ;
+  if(!is_user_vaddr(pointer)){                                                     /*the pointer must be user address*/
+    cur->exit_code = -1;                                                 /*set status to exit_code and exit*/
+    thread_exit ();
+  }
+  if(pagedir_get_page (thread_current ()->pagedir, pointer) == NULL){              /*the pointer must be mapped*/
+    cur->exit_code = -1;                                                 /*set status to exit_code and exit*/
     thread_exit ();
   }
 }
@@ -210,6 +208,7 @@ syscall_init (void)
 {
   /* Register and initialize the system call handler. */
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+  lock_init(&file_lock);
 }
 
 static void

@@ -9,5 +9,7 @@ void is_valid_string (const char *string);
 void is_valid_pointer (void *pointer);
 
 void syscall_init (void);
+struct lock file_lock;                      /*lock that systemcall has to protect file reading and writing*/
+
 
 #endif /* userprog/syscall.h */
