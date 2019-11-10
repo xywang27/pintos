@@ -97,7 +97,8 @@ static void syscall_handler (struct intr_frame *f)
   void *ptr = f->esp;
   is_valid_ptr(ptr);                                                    /*check if the head of the pointer is valid*/
   is_valid_ptr(ptr+3);                                                  /*check if the tail of the pointer is valid*/
-  int syscall_num = * (int *)f->esp;                                    /*get which systemcall*/
+  int syscall_num = * (int *)f->esp;
+  void *esp = ptr+4;                                   /*get which systemcall*/
   if(syscall_num<=0||syscall_num>=20){                                  /*check if systemcall is in the boundary*/
     exit(-1);
   }
@@ -145,70 +146,99 @@ static void syscall_handler (struct intr_frame *f)
     is_valid_string(file_name);                                         /*check if file name is valid*/
     f->eax = remove(file_name);
   }
-
-  else if(syscall_num == SYS_OPEN){                                     /*sys_open*/
-    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
-    char *file_name = *(char **)(ptr+4);                                /*get file name*/
-    is_valid_string(file_name);                                         /*check if file name is valid*/
+    /* Opens the file called file. Returns a nonnegative integer handle called
+    a "file descriptor" (fd), or -1 if the file could not be opened. */
+  else if(syscall_num == SYS_OPEN)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Make sure that the whole argument is on valid address. */
+    is_valid_ptr (esp + 3);
+    const char *file_name = *((char **) esp);
+      /* Check for validality of the file_name. */
+    is_valid_string (file_name);
     lock_acquire(&file_lock);
     f->eax = open(file_name);
     lock_release(&file_lock);
   }
-
-  else if(syscall_num == SYS_FILESIZE){                                /*sys_filesize*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    f->eax = filesize(fd);
+    /* Returns the size, in bytes, of the file open as fd. */
+  else if(syscall_num == SYS_FILESIZE)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Make sure that the whole argument is on valid address. */
+    is_valid_ptr (esp + 3);
+    int fd = *((int *) esp);
+    f->eax = filesize (fd);
   }
-
-  else if(syscall_num == SYS_READ){                                    /*sys_read*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    void *buffer = *(char**)(ptr + 8);                                 /*get buffer*/
-    unsigned size = *(unsigned *)(ptr + 12);                           /*get size*/
-    is_valid_ptr (buffer);                                             /*check if buffer is valid*/
-    is_valid_ptr (buffer+size);                                        /*chekc if buffer+size is valid*/
+    /* Reads size bytes from the file open as fd into buffer. Returns the number
+    of bytes actually read, or -1 if the file could not be read. */
+else if(syscall_num == SYS_READ)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Check for validality of the second argument. */
+    is_valid_ptr (esp + 3);
+    int fd = *((int *) esp);
+    void *buffer = *((char **) (esp + 4));
+    unsigned size = *((unsigned *) (esp + 8));
+      /* Check that the given buffer is all valid. */
+    is_valid_ptr (buffer);
+    is_valid_ptr (buffer + size);
     lock_acquire(&file_lock);
-    f->eax = read(fd,buffer,size);
+    f->eax= read (fd, buffer, size);
     lock_release(&file_lock);
   }
-
-  else if(syscall_num == SYS_WRITE){                                   /*sys_write*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    void *buffer = *(char**)(ptr + 8);                                 /*get buffer*/
-    unsigned size = *(unsigned *)(ptr + 12);                           /*get size*/
-    is_valid_ptr (buffer);                                             /*check if buffer is valid*/
-    is_valid_ptr (buffer+size);                                        /*check if buffer+size is valid*/
+    /* Writes size bytes from buffer to the open file fd. Returns the number of bytes
+    actually written, which may be less than size if some bytes could not be written. */
+else if(syscall_num == SYS_WRITE)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Check for validality of the second argument. */
+    is_valid_ptr (esp + 3);
+    int fd = *((int *) esp);
+    void *buffer = *((char **) (esp + 4));
+    unsigned size = *((unsigned *) (esp + 8));
+      /* Check that the given buffer is all valid. */
+    is_valid_ptr (buffer);
+    is_valid_ptr (buffer + size);
     lock_acquire(&file_lock);
-    f->eax = write(fd,buffer,size);
+    f->eax = write (fd, buffer, size);
     lock_release(&file_lock);
   }
-
-  else if(syscall_num == SYS_SEEK){                                    /*sys_seek*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    unsigned pos = *(unsigned *)(ptr + 8);                             /*get pos*/
-    seek(fd,pos);
+    /* Changes the next byte to be read or written in open file fd
+    to position, expressed in bytes from the beginning of the file */
+  else if(syscall_num == SYS_SEEK)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp + 3);
+    int fd = *((int *) esp);
+    unsigned position = *((unsigned *) (esp + 4));
+    seek (fd, position);
   }
-
-  else if(syscall_num == SYS_TELL){                                    /*sys_tell*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    f->eax = tell(fd);
+    /* Returns the position of the next byte to be read or written
+    in open file fd, expressed in bytes from the beginning of the file. */
+  else if(syscall_num == SYS_TELL)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Make sure that the whole argument is on valid address. */
+    is_valid_ptr (esp + 3);
+    int fd = *((int *) esp);
+    f->eax = tell (fd);
   }
-
-  else if(syscall_num == SYS_CLOSE){                                   /*sys_close*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    close(fd);
+    /* Closes file descriptor fd. Exiting or terminating a process implicitly closes
+    all its open file descriptors, as if by calling this function for each one. */
+  else if(syscall_num == SYS_CLOSE)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+    is_valid_ptr (esp + 3);
+    int fd = *((int *) esp);
+    close (fd);
   }
 }
 
