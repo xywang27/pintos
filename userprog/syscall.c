@@ -143,6 +143,7 @@ int open (const char *file)
     i = i + 1;
     if (i == MAX){
       i = -1;
+      break;
     }
   }
   /* No fd to allocate. */
