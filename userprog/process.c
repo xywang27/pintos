@@ -61,27 +61,22 @@ process_execute (const char *file_name)
 
   char *argv[128];
   int argc;
-  char* command = split(file_name,argv,&argc);                           /*split the command*/
+  char* command = split(file_name,argv,&argc);                              /*split the command*/
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);    /*use the first token of command to create thread*/
+  tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);       /*use the first token of command to create thread*/
 
-  tid_t a;
-  if (tid != TID_ERROR){
-    if (find_thread_by_id (tid) != NULL)
-    {
-      struct thread* child = find_thread_by_id (tid);
-      sema_down (&child->load_sema);
+  if (tid != TID_ERROR){                                                    /*if no error*/
+    if (find_thread(tid) != NULL){                                          /*if thread with this id can be found*/
+      struct thread* child = find_thread(tid);
+      sema_down (&child->load_sema);                                        /*let parent thread wait*/
 
       /* If load success, put it onto the children process list. */
-      if(load_success)
-      {
-        a = tid;
-        list_push_back (&thread_current ()->children, &child->childelem);
+      if(load_success){                                                     /*if load success*/
+        list_push_back (&thread_current ()->children, &child->childelem);   /*put child in children list*/
       }
-      else
-      {
-        a=TID_ERROR;
+      else{                                                                 /*if load fail*/
+        tid = TID_ERROR;
         sema_up (&child->exit_sema);
       }
     }
@@ -90,7 +85,7 @@ process_execute (const char *file_name)
     free (fn_copy);
   }
   free (command);
-  return a;
+  return tid;
 }
 
 /* A thread function that loads a user process and starts it

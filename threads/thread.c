@@ -375,6 +375,18 @@ thread_get_recent_cpu (void)
   /* Not yet implemented. */
   return 0;
 }
+
+/*find the particular thread according the thread id given*/
+struct thread* find_thread(tid_t id){
+  struct list_elem *e;
+  for(e = list_begin(&all_list);e!= list_end(&all_list); e=list_next(e)){
+    struct thread *t = list_entry(e,struct thread, allelem);
+    if(t->tid == id){
+      return t;
+    }
+  }
+  return NULL;
+}
 
 /* Idle thread.  Executes when no other thread is ready to run.
 
@@ -592,16 +604,6 @@ allocate_tid (void)
   return tid;
 }
 
-struct thread* find_thread_by_id(tid_t id){
-    struct list_elem *e;
-    for(e = list_begin(&all_list);
-        e!= list_end(&all_list); e=list_next(e))
-    {
-        struct thread *t = list_entry(e,struct thread, allelem);
-        if(t->tid == id) return t;
-    }
-    return NULL;
-}
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
