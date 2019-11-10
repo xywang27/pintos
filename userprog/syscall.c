@@ -18,6 +18,7 @@ void halt (void);
 void exit (int status);
 pid_t exec (const char *file);
 int wait (pid_t);
+bool create (const char *file, unsigned initial_size);
 static int open (const char *);
 static int filesize (int);
 static int read (int fd, void *buffer, unsigned size);
@@ -113,6 +114,11 @@ pid_t exec (const char *file){
 // Wait for a child process
 int wait (pid_t pid){
   return process_wait(pid);
+}
+
+// create a new file
+bool create (const char *file, unsigned initial_size){
+    return filesys_create(file,initial_size);
 }
 
 static int
@@ -324,14 +330,12 @@ syscall_handler (struct intr_frame *f UNUSED)
       /* Check for validality of the first argument. */
     is_valid_pointer (esp);
       /* Check for validality of the second argument. */
-    is_valid_pointer (esp + 4);
-      /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 7);
+    is_valid_pointer (esp + 3);
     const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
-    unsigned size = *((unsigned *) (esp + 4));
-    f->eax = filesys_create (file_name, size);
+    unsigned size = *((int *) (esp + 4));
+    f->eax = create(file_name,size);
   }
     /* Deletes the file called file. Returns true if successful, false otherwise. */
   else if(syscall_num == SYS_REMOVE)
