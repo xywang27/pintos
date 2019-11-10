@@ -134,7 +134,7 @@ int open (const char *file)
   if (f == NULL)
     return -1;
   /* Start from 2 , to find next free fd to allocate. */
-  int i = 0;
+  int i = 2;
   while (i < MAX){
     if (cur->file[i] == NULL){
       cur->file[i] = f;
