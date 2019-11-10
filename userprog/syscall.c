@@ -16,6 +16,7 @@ static void syscall_handler (struct intr_frame *);
 
 void halt (void);
 void exit (int status);
+pid_t exec (const char *file);
 static int open (const char *);
 static int filesize (int);
 static int read (int fd, void *buffer, unsigned size);
@@ -101,6 +102,11 @@ void exit(int status){
   struct thread *cur = thread_current ();
   cur->exit_code = status;                                                 /*set status to exit_code and exit*/
   thread_exit ();
+}
+
+//run the excutable with the name given
+pid_t exec (const char *file){
+  return process_execute(file);
 }
 
 static int
@@ -292,7 +298,9 @@ syscall_handler (struct intr_frame *f UNUSED)
     const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
-    f->eax = process_execute (file_name);
+    lock_acquire(&file_lock);
+    f->eax = exec(file_name);
+    lock_release(&file_lock);
     }
     /* Waits for a child process pid and retrieves the child's exit status. */
   else if(syscall_num == SYS_WAIT)
