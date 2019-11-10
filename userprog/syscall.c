@@ -228,7 +228,7 @@ void close (int fd)
   if (is_valid_fd (fd) && cur->file[fd] != NULL)
   {
     file_close (cur->file[fd]);
-    t->file[fd] = NULL;
+    cur->file[fd] = NULL;
     return;
   }
   else{
