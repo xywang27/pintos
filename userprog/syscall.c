@@ -46,19 +46,19 @@ is_valid_pointer (void *pointer)
   /* Check for nullpointer. */
   if (pointer == NULL)
   {
-    thread_current ()->exit_status = -1 ;
+    thread_current ()->exit_code = -1 ;
     thread_exit ();
   }
   /* Check whether it is on a valid user virtual address. */
   if (is_user_vaddr (pointer) == false)
   {
-    thread_current ()->exit_status = -1 ;
+    thread_current ()->exit_code = -1 ;
     thread_exit ();
   }
   /* Check whether the pointer is on the valid page. */
   if (pagedir_get_page (thread_current ()->pagedir, pointer) == NULL)
   {
-    thread_current ()->exit_status = -1 ;
+    thread_current ()->exit_code = -1 ;
     thread_exit ();
   }
 }
@@ -238,7 +238,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       /* Make sure that the whole argument is on valid address. */
       is_valid_pointer (esp + 3);
       int status = *((int *) esp);
-      thread_current ()->exit_status = status;
+      thread_current ()->exit_code = status;
       thread_exit ();
       break;
     }

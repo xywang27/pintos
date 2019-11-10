@@ -212,7 +212,7 @@ process_wait (tid_t child_tid)
       check = 1;
       sema_down (&child->wait_sema);
       /* Change the exit status. */
-      exit_status = child->exit_status;
+      exit_status = child->exit_code;
       break;
     }
   }
@@ -239,7 +239,7 @@ process_exit (void)
   uint32_t *pd;
 
   /* Print out the exit status. */
-  printf("%s: exit(%d)\n", cur->name, cur->exit_status);
+  printf("%s: exit(%d)\n", cur->name, cur->exit_code);
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
