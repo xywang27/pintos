@@ -14,6 +14,7 @@
 
 static void syscall_handler (struct intr_frame *);
 
+void halt (void);
 static int open (const char *);
 static int filesize (int);
 static int read (int fd, void *buffer, unsigned size);
@@ -87,6 +88,11 @@ is_valid_pointer (void *pointer)
     thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
     thread_exit ();
   }
+}
+
+// Terminates Pintos by calling shutdown_power_off()
+void halt (void){
+  shutdown_power_off();
 }
 
 static int
@@ -250,184 +256,177 @@ syscall_handler (struct intr_frame *f UNUSED)
   syscall_num = *((int *) esp);
   /* Point to the first argument. */
   esp = esp + 4;
-  switch(syscall_num) {
-    /* Terminates Pintos by calling shutdown_power_off(). */
-    case SYS_HALT:
-    {
-      shutdown_power_off();
-      break;
-    }
+  if (syscall_num == SYS_HALT){                                         /*sys_halt*/
+    halt();
+  }
     /* Terminates the current user program, returning status to the kernel. */
-    case SYS_EXIT:
-    {
+  else if(syscall_num == SYS_EXIT)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 3);
-      int status = *((int *) esp);
-      thread_current ()->exit_code = status;
-      thread_exit ();
-      break;
-    }
+    is_valid_pointer (esp + 3);
+    int status = *((int *) esp);
+    thread_current ()->exit_code = status;
+    thread_exit ();
+    break;
+  }
     /* Runs the executable whose name is given in cmd_line, passing any given
     arguments, and returns the new process's program id (pid). */
-    case SYS_EXEC:
-    {
+  else if(syscall_num == SYS_EXEC)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 3);
-      const char *file_name = *((char **) esp);
+    is_valid_pointer (esp + 3);
+    const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
-      is_valid_string (file_name);
-      f->eax = process_execute (file_name);
-      break;
+    is_valid_string (file_name);
+    f->eax = process_execute (file_name);
+    break;
     }
     /* Waits for a child process pid and retrieves the child's exit status. */
-    case SYS_WAIT:
-    {
+  else if(syscall_num == SYS_WAIT)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 3);
-      int pid = *((int *) esp);
-      f->eax = process_wait (pid);
-      break;
-    }
+    is_valid_pointer (esp + 3);
+    int pid = *((int *) esp);
+    f->eax = process_wait (pid);
+    break;
+  }
     /* Creates a new file called file initially initial_size bytes in size. */
-    case SYS_CREATE:
-    {
+  else if(syscall_num == SYS_CREATE)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Check for validality of the second argument. */
-      is_valid_pointer (esp + 4);
+    is_valid_pointer (esp + 4);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 7);
-      const char *file_name = *((char **) esp);
+    is_valid_pointer (esp + 7);
+    const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
-      is_valid_string (file_name);
-      unsigned size = *((unsigned *) (esp + 4));
-      f->eax = filesys_create (file_name, size);
-      break;
-    }
+    is_valid_string (file_name);
+    unsigned size = *((unsigned *) (esp + 4));
+    f->eax = filesys_create (file_name, size);
+    break;
+  }
     /* Deletes the file called file. Returns true if successful, false otherwise. */
-    case SYS_REMOVE:
-    {
+  else if(syscall_num == SYS_REMOVE)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 3);
-      const char *file_name = *((char **) esp);
+    is_valid_pointer (esp + 3);
+    const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
-      is_valid_string (file_name);
-      f->eax = filesys_remove (file_name);
-      break;
-    }
+    is_valid_string (file_name);
+    f->eax = filesys_remove (file_name);
+    break;
+  }
     /* Opens the file called file. Returns a nonnegative integer handle called
     a "file descriptor" (fd), or -1 if the file could not be opened. */
-    case SYS_OPEN:
-    {
+  else if(syscall_num == SYS_OPEN)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 3);
-      const char *file_name = *((char **) esp);
+    is_valid_pointer (esp + 3);
+    const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
-      is_valid_string (file_name);
-      f->eax = open (file_name);
-      break;
-    }
+    is_valid_string (file_name);
+    f->eax = open (file_name);
+    break;
+  }
     /* Returns the size, in bytes, of the file open as fd. */
-    case SYS_FILESIZE:
-    {
+  else if(syscall_num == SYS_FILESIZE)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 3);
-      int fd = *((int *) esp);
-      f->eax = filesize (fd);
-      break;
-    }
+    is_valid_pointer (esp + 3);
+    int fd = *((int *) esp);
+    f->eax = filesize (fd);
+    break;
+  }
     /* Reads size bytes from the file open as fd into buffer. Returns the number
     of bytes actually read, or -1 if the file could not be read. */
-    case SYS_READ:
-    {
+else if(syscall_num == SYS_READ)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Check for validality of the second argument. */
-      is_valid_pointer (esp + 4);
+    is_valid_pointer (esp + 4);
       /* Check for validality of the third argument. */
-      is_valid_pointer (esp + 8);
+    is_valid_pointer (esp + 8);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 11);
-      int fd = *((int *) esp);
-      const void *buffer = *((void **) (esp + 4));
-      unsigned size = *((unsigned *) (esp + 8));
+    is_valid_pointer (esp + 11);
+    int fd = *((int *) esp);
+    const void *buffer = *((void **) (esp + 4));
+    unsigned size = *((unsigned *) (esp + 8));
       /* Check that the given buffer is all valid. */
-      is_valid_pointer (buffer);
-      is_valid_pointer (buffer + size);
-      f->eax= read (fd, buffer, size);
-      break;
-    }
+    is_valid_pointer (buffer);
+    is_valid_pointer (buffer + size);
+    f->eax= read (fd, buffer, size);
+    break;
+  }
     /* Writes size bytes from buffer to the open file fd. Returns the number of bytes
     actually written, which may be less than size if some bytes could not be written. */
-    case SYS_WRITE:
-    {
+else if(syscall_num == SYS_WRITE)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Check for validality of the second argument. */
-      is_valid_pointer (esp + 4);
+    is_valid_pointer (esp + 4);
       /* Check for validality of the third argument. */
-      is_valid_pointer (esp + 8);
+    is_valid_pointer (esp + 8);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 11);
-      int fd = *((int *) esp);
-      const void *buffer = *((void **) (esp + 4));
-      unsigned size = *((unsigned *) (esp + 8));
+    is_valid_pointer (esp + 11);
+    int fd = *((int *) esp);
+    const void *buffer = *((void **) (esp + 4));
+    unsigned size = *((unsigned *) (esp + 8));
       /* Check that the given buffer is all valid. */
-      is_valid_pointer (buffer);
-      is_valid_pointer (buffer + size);
-      f->eax = write (fd, buffer, size);
-      break;
-    }
+    is_valid_pointer (buffer);
+    is_valid_pointer (buffer + size);
+    f->eax = write (fd, buffer, size);
+    break;
+  }
     /* Changes the next byte to be read or written in open file fd
     to position, expressed in bytes from the beginning of the file */
-    case SYS_SEEK:
-    {
+  else if(syscall_num == SYS_SEEK)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp + 4);
+    is_valid_pointer (esp + 4);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 7);
-      int fd = *((int *) esp);
-      unsigned position = *((unsigned *) (esp + 4));
-      seek (fd, position);
-      break;
-    }
+    is_valid_pointer (esp + 7);
+    int fd = *((int *) esp);
+    unsigned position = *((unsigned *) (esp + 4));
+    seek (fd, position);
+    break;
+  }
     /* Returns the position of the next byte to be read or written
     in open file fd, expressed in bytes from the beginning of the file. */
-    case SYS_TELL:
-    {
+  else if(syscall_num == SYS_TELL)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
+    is_valid_pointer (esp);
       /* Make sure that the whole argument is on valid address. */
-      is_valid_pointer (esp + 3);
-      int fd = *((int *) esp);
-      f->eax = tell (fd);
-      break;
-    }
+    is_valid_pointer (esp + 3);
+    int fd = *((int *) esp);
+    f->eax = tell (fd);
+    break;
+  }
     /* Closes file descriptor fd. Exiting or terminating a process implicitly closes
     all its open file descriptors, as if by calling this function for each one. */
-    case SYS_CLOSE:
-    {
+  else if(syscall_num == SYS_CLOSE)
+  {
       /* Check for validality of the first argument. */
-      is_valid_pointer (esp);
-      int fd = *((int *) esp);
-      close (fd);
-      break;
-    }
-    default:
-      break;
+    is_valid_pointer (esp);
+    int fd = *((int *) esp);
+    close (fd);
+    break;
   }
 }
