@@ -27,15 +27,14 @@ static bool is_valid_fd (int fd);
 void
 is_valid_string (const char *string)
 {
-  /* Check one bit at a time. */
-  is_valid_pointer (string);
-  is_valid_pointer (string + 1);
-  /* Check until the end of a string. */
-  while (*string != '\0')
-  {
-    string = string + 1;
-    is_valid_pointer (string + 1);
-    is_valid_pointer (string + 2);
+  char character = get_user(((uint8_t*)str));
+  while (character != '\0' && character!=-1){                                      /*loop until error or reach the end of the string*/
+    str++;
+    character = get_user(((uint8_t*)str));
+  }
+  if(character != '\0'){                                                           /*valid string must end with '\0'*/
+    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
+    thread_exit ();
   }
 }
 
