@@ -98,7 +98,7 @@ static void syscall_handler (struct intr_frame *f)
   is_valid_ptr(ptr);                                                    /*check if the head of the pointer is valid*/
   is_valid_ptr(ptr+3);                                                  /*check if the tail of the pointer is valid*/
   int syscall_num = * (int *)f->esp;
-  void *esp = ptr+4;                                   /*get which systemcall*/
+  void *esp = ptr+4;                                    /*get which systemcall*/
   if(syscall_num<=0||syscall_num>=20){                                  /*check if systemcall is in the boundary*/
     exit(-1);
   }
@@ -113,37 +113,52 @@ static void syscall_handler (struct intr_frame *f)
     exit(status);
   }
 
-  else if(syscall_num == SYS_EXEC){                                     /*sys_exec*/
-    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
-    char *file_name = *(char **)(ptr+4);                                /*get file name*/
-    is_valid_string(file_name);                                         /*check if the file name is valid*/
+  else if(syscall_num == SYS_EXEC)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Make sure that the whole argument is on valid address. */
+    is_valid_ptr (esp + 3);
+    const char *file_name = *((char **) esp);
+      /* Check for validality of the file_name. */
+    is_valid_string (file_name);
     lock_acquire(&file_lock);
     f->eax = exec(file_name);
     lock_release(&file_lock);
-  }
-
-  else if(syscall_num == SYS_WAIT){                                     /*sys_wait*/
-    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
-    int pid = *((int*)ptr+4);                                           /*get pid*/
+    }
+    /* Waits for a child process pid and retrieves the child's exit status. */
+  else if(syscall_num == SYS_WAIT)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Make sure that the whole argument is on valid address. */
+    is_valid_ptr (esp + 3);
+    int pid = *((int *) esp);
     f->eax = wait(pid);
   }
-
-  else if(syscall_num == SYS_CREATE){                                   /*sys_create*/
-    is_valid_ptr (ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr (ptr+7);                                               /*check if the tail of the pointer is valid*/
-    char* file_name = *(char **)(ptr+4);                                /*get file name*/
-    is_valid_string(file_name);                                         /*check if file name is valid*/
-    unsigned size = *(int *)(ptr+8);                                    /*get size*/
+    /* Creates a new file called file initially initial_size bytes in size. */
+  else if(syscall_num == SYS_CREATE)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Check for validality of the second argument. */
+    is_valid_ptr (esp + 3);
+    const char *file_name = *((char **) esp);
+      /* Check for validality of the file_name. */
+    is_valid_string (file_name);
+    unsigned size = *((int *) (esp + 4));
     f->eax = create(file_name,size);
   }
-
-  else if(syscall_num == SYS_REMOVE){                                   /*sys_remove*/
-    is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
-    char *file_name = *(char **)(ptr+4);                                /*get file name*/
-    is_valid_string(file_name);                                         /*check if file name is valid*/
+    /* Deletes the file called file. Returns true if successful, false otherwise. */
+  else if(syscall_num == SYS_REMOVE)
+  {
+      /* Check for validality of the first argument. */
+    is_valid_ptr (esp);
+      /* Make sure that the whole argument is on valid address. */
+    is_valid_ptr (esp + 3);
+    const char *file_name = *((char **) esp);
+      /* Check for validality of the file_name. */
+    is_valid_string (file_name);
     f->eax = remove(file_name);
   }
     /* Opens the file called file. Returns a nonnegative integer handle called
