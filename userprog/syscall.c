@@ -54,7 +54,7 @@ static bool put_user (uint8_t *udst, uint8_t byte){
 
 /* Check whether the string is valid. */
 void
-is_valid_string (const char *string)
+is_valid_string (const char *str)
 {
   char character = get_user(((uint8_t*)str));
   while (character != '\0' && character!=-1){                                      /*loop until error or reach the end of the string*/
