@@ -25,7 +25,7 @@ int filesize (int fd);
 int read (int fd, void *buffer, unsigned size);
 int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
-static unsigned tell (int fd);
+unsigned tell (int fd);
 static void close (int fd);
 static bool is_valid_fd (int fd);
 
@@ -207,24 +207,19 @@ void seek (int fd, unsigned position)
   struct thread *cur = thread_current ();
   if (is_valid_fd (fd) && cur->file[fd] != NULL)
   {
-    file_seek (t->file[fd], position);
+    file_seek (cur->file[fd], position);
   }
 }
 
-static unsigned
-tell (int fd)
+unsigned tell (int fd)
 {
-  unsigned return_value;
-  struct thread *t = thread_current ();
-  if (is_valid_fd (fd) && t->file[fd] != NULL)
+  struct thread *cur = thread_current ();
+  if (is_valid_fd (fd) && cur->file[fd] != NULL)
   {
-    return_value = file_tell (t->file[fd]);
-
+    return file_tell (cur->file[fd]);
   }
   else
-    return_value = -1;
-
-  return return_value;
+    return -1;
 }
 
 static void
