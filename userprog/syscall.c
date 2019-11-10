@@ -92,13 +92,11 @@ void is_valid_string (const char *str){
 }
 
 // function that call different syscalls
-static void syscall_handler (struct intr_frame *f)
-{
+static void syscall_handler (struct intr_frame *f){
   void *ptr = f->esp;
   is_valid_ptr(ptr);                                                    /*check if the head of the pointer is valid*/
   is_valid_ptr(ptr+3);                                                  /*check if the tail of the pointer is valid*/
-  int syscall_num = * (int *)f->esp;
-  void *esp = ptr+4;                                    /*get which systemcall*/
+  int syscall_num = * (int *)f->esp;                                    /*get which systemcall*/
   if(syscall_num<=0||syscall_num>=20){                                  /*check if systemcall is in the boundary*/
     exit(-1);
   }
@@ -211,8 +209,6 @@ static void syscall_handler (struct intr_frame *f)
   }
 }
 
-
-
 // Terminates Pintos by calling shutdown_power_off()
 void halt (void){
   shutdown_power_off();
@@ -245,33 +241,36 @@ bool remove (const char *file){
   return filesys_remove(file);
 }
 
-int open (const char *file)
-{
+// Opens the file called file.
+int open (const char *file){
   struct file* f = filesys_open(file);
   struct thread *cur = thread_current();
-  if (f == NULL)
-    return -1;
-  /* Start from 2 , to find next free fd to allocate. */
+  if(f == NULL){                                                                        /*return -1 if open fails*/
+      return -1;
+  }
   int i = 2;
-  while (i < MAX){
+  while (i < MAX){                                                                      /*loop to find which fd to allocate*/
     if (cur->file[i] == NULL){
-      cur->file[i] = f;
+      cur->file[i] = f;                                                                 /*allocate fd to the file*/
       break;
     }
     i = i + 1;
-    if (i == MAX){
+    if (i == MAX){                                                                      /*check if fd is too big*/
       i = -1;
       break;
     }
   }
-  /* No fd to allocate. */
   return i;
 }
 
-int filesize (int fd)
-{
+// Returns the size, in bytes, of the file open as fd.
+int filesize (int fd){
+  if (fd < 0 || fd >= MAX)                                                             /*check if fd is valid*/
+  {
+    return -1;
+  }
   struct thread *cur = thread_current ();
-  if (is_valid_fd (fd) && cur->file[fd] != NULL)
+  if (cur->file[fd] != NULL)                                                          /*the file can not be NULL*/
   {
     return file_length (cur->file[fd]);
   }
