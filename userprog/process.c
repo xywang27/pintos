@@ -25,30 +25,22 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 /*global var for load status.*/
 static int load_success;
 
-/* A function to separate command and each argument and count the numner of argc. */
-char *
-split_file_name (char *file_name, char *argv[], int *argc)
-{
-  char *command_back = NULL;
-  *argc = 0;
-  /* +1 because of the additional \0*/
-  command_back = malloc (strlen (file_name) + 1);
-  char *save_ptr = NULL;
-  char *temp = NULL;
-  strlcpy (command_back, file_name, PGSIZE);
-
-  temp = strtok_r(command_back, " ", &save_ptr);
-  argv[*argc] = temp;
-  /* To traverse the file_name to separate each argument. */
-  while (temp != NULL)
-  {
-    /* Count the number of argument. */
-    (*argc) = (*argc) + 1;
-    temp = strtok_r (NULL, " ", &save_ptr);
-    /* Store argument in a new list. */
-    argv[*argc] = temp;
+/*split the command and save it into argv[],save numbers into srgc*/
+char* split(char* command,char* argv[],int* argc){
+  *argc=0;
+  char* a = NULL;
+  char* save = NULL;
+  char* token = NULL;
+  a = malloc(strlen(command)+1);                                              /*malloc space for a*/
+  strlcpy(a,command,PGSIZE);                                                  /*copy command to a*/
+  token = strtok_r(a," ",&save);                                              /*get first token*/
+  argv[0] = token;                                                            /*put it in argv[0]*/
+  while (token != NULL) {
+    (*argc)++; //will cause extra +1, need it!
+    token = strtok_r(NULL," ",&save);                                         /*keep splitting*/
+    argv[*argc] = token;                                                      /*put it into argv*/
   }
-  return command_back;
+  return a;
 }
 
 /* Starts a new thread running a user program loaded from
@@ -72,7 +64,7 @@ process_execute (const char *file_name)
   char *argv[100];
   int argc;
   /* To seperate the command name from arguments. */
-  char* command_back = split_file_name (file_name, argv, &argc);
+  char* command_back = split (file_name, argv, &argc);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
@@ -114,7 +106,7 @@ start_process (void *file_name_)
 
   char *argv[100];
   int argc;
-  char* command_back = split_file_name (file_name, argv, &argc);
+  char* command_back = split (file_name, argv, &argc);
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
