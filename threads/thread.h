@@ -8,8 +8,6 @@
 #include "filesys/file.h"
 #include "userprog/syscall.h"
 
-#define MAX 128
-
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -107,14 +105,14 @@ struct thread
     unsigned magic;                     /* Detects stack overflow. */
 
     struct list fd_list;                /* List of all file_descriptor the thread has*/
-    int exit_status;                      /*the exit_code of the thread(-1 means sth wrong with it)*/
-    struct semaphore load_sema;         /* notify parent process whether the child process is loaded. */
-    struct semaphore exit_sema;         /* The exit semaphore. */
-    struct semaphore wait_sema;         /* parent process wait for its child process's exit. */
+    int exit_code;                      /*the exit_code of the thread(-1 means sth wrong with it)*/
     struct list_elem childelem;         /* List element for children processes list. */
     struct list children;               /* List of children processes. */
     struct file* exec_file;             /* Executable file. */
     struct file* file[MAX];             /* All files */
+    struct semaphore load_sema;         /* notify parent process whether the child process is loaded. */
+    struct semaphore exit_sema;         /* The exit semaphore. */
+    struct semaphore wait_sema;         /* parent process wait for its child process's exit. */
   };
 
 /* If false (default), use round-robin scheduler.

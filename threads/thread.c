@@ -464,15 +464,16 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->exec_file = NULL;
+
   sema_init (&t->wait_sema, 0);
   sema_init (&t->load_sema, 0);
   sema_init (&t->exit_sema, 0);
+
+  t->exit_code = -1;
   list_init (&t->children);
+
   for (int i = 0; i < MAX; i = i + 1)
       t->file[i] = NULL;
-
-
-  t->exit_status = -1;
 
 
   list_init(&(t->fd_list));
