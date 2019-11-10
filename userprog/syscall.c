@@ -1,21 +1,24 @@
+#include "userprog/syscall.h"
 #include <stdio.h>
 #include <syscall-nr.h>
-#include "devices/input.h"
-#include "devices/shutdown.h"
-#include "filesys/filesys.h"
 #include "threads/interrupt.h"
-#include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-#include "threads/synch.h"
-#include "userprog/pagedir.h"
 #include "userprog/process.h"
-#include "userprog/syscall.h"
+#include "filesys/file.h"
+#include "filesys/filesys.h"
+#include "threads/malloc.h"
+#include "threads/synch.h"
+#include "devices/input.h"
+#include "devices/shutdown.h"
+#include "threads/palloc.h"
+#include "userprog/pagedir.h"
 
 typedef int pid_t;
 
 static void syscall_handler (struct intr_frame *);
 
+// different kinds of systemcall function that will be used.
 void halt (void);
 void exit (int status);
 pid_t exec (const char *file);
@@ -60,42 +63,35 @@ static bool put_user (uint8_t *udst, uint8_t byte){
   return error_code != -1;
 }
 
-/* Check whether the string is valid. */
-void
-is_valid_string (const char *str)
-{
+// check if the pointer is valid
+void is_valid_ptr (void *pointer){
+  if(pointer == NULL){                                                             /*the pointer can not be NULL*/
+    exit(-1);
+  }
+  if(is_kernel_vaddr(pointer)){                                                    /*the pointer can not be kernal address*/
+    exit(-1);
+  }
+  if(!is_user_vaddr(pointer)){                                                     /*the pointer must be user address*/
+    exit(-1);
+  }
+  if(pagedir_get_page (thread_current ()->pagedir, pointer) == NULL){              /*the pointer must be mapped*/
+    exit(-1);
+  }
+}
+
+// check if the string is valid
+void is_valid_string (const char *str){
   char character = get_user(((uint8_t*)str));
   while (character != '\0' && character!=-1){                                      /*loop until error or reach the end of the string*/
     str++;
     character = get_user(((uint8_t*)str));
   }
   if(character != '\0'){                                                           /*valid string must end with '\0'*/
-    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
-    thread_exit ();
+    exit(-1);
   }
 }
 
-/* Check whether the pointer is valid. */
-void
-is_valid_ptr (void *pointer)
-{
-  if(pointer == NULL){                                                             /*the pointer can not be NULL*/
-    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
-    thread_exit ();
-  }
-  if(is_kernel_vaddr(pointer)){                                                    /*the pointer can not be kernal address*/
-    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
-    thread_exit ();
-  }
-  if(!is_user_vaddr(pointer)){                                                     /*the pointer must be user address*/
-    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
-    thread_exit ();
-  }
-  if(pagedir_get_page (thread_current ()->pagedir, pointer) == NULL){              /*the pointer must be mapped*/
-    thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
-    thread_exit ();
-  }
-}
+
 
 // Terminates Pintos by calling shutdown_power_off()
 void halt (void){
