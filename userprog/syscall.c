@@ -269,7 +269,6 @@ syscall_handler (struct intr_frame *f UNUSED)
     int status = *((int *) esp);
     thread_current ()->exit_code = status;
     thread_exit ();
-    break;
   }
     /* Runs the executable whose name is given in cmd_line, passing any given
     arguments, and returns the new process's program id (pid). */
@@ -283,7 +282,6 @@ syscall_handler (struct intr_frame *f UNUSED)
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
     f->eax = process_execute (file_name);
-    break;
     }
     /* Waits for a child process pid and retrieves the child's exit status. */
   else if(syscall_num == SYS_WAIT)
@@ -294,7 +292,6 @@ syscall_handler (struct intr_frame *f UNUSED)
     is_valid_pointer (esp + 3);
     int pid = *((int *) esp);
     f->eax = process_wait (pid);
-    break;
   }
     /* Creates a new file called file initially initial_size bytes in size. */
   else if(syscall_num == SYS_CREATE)
@@ -310,7 +307,6 @@ syscall_handler (struct intr_frame *f UNUSED)
     is_valid_string (file_name);
     unsigned size = *((unsigned *) (esp + 4));
     f->eax = filesys_create (file_name, size);
-    break;
   }
     /* Deletes the file called file. Returns true if successful, false otherwise. */
   else if(syscall_num == SYS_REMOVE)
@@ -323,7 +319,6 @@ syscall_handler (struct intr_frame *f UNUSED)
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
     f->eax = filesys_remove (file_name);
-    break;
   }
     /* Opens the file called file. Returns a nonnegative integer handle called
     a "file descriptor" (fd), or -1 if the file could not be opened. */
@@ -337,7 +332,6 @@ syscall_handler (struct intr_frame *f UNUSED)
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
     f->eax = open (file_name);
-    break;
   }
     /* Returns the size, in bytes, of the file open as fd. */
   else if(syscall_num == SYS_FILESIZE)
@@ -348,7 +342,6 @@ syscall_handler (struct intr_frame *f UNUSED)
     is_valid_pointer (esp + 3);
     int fd = *((int *) esp);
     f->eax = filesize (fd);
-    break;
   }
     /* Reads size bytes from the file open as fd into buffer. Returns the number
     of bytes actually read, or -1 if the file could not be read. */
@@ -369,7 +362,6 @@ else if(syscall_num == SYS_READ)
     is_valid_pointer (buffer);
     is_valid_pointer (buffer + size);
     f->eax= read (fd, buffer, size);
-    break;
   }
     /* Writes size bytes from buffer to the open file fd. Returns the number of bytes
     actually written, which may be less than size if some bytes could not be written. */
@@ -390,7 +382,6 @@ else if(syscall_num == SYS_WRITE)
     is_valid_pointer (buffer);
     is_valid_pointer (buffer + size);
     f->eax = write (fd, buffer, size);
-    break;
   }
     /* Changes the next byte to be read or written in open file fd
     to position, expressed in bytes from the beginning of the file */
@@ -405,7 +396,6 @@ else if(syscall_num == SYS_WRITE)
     int fd = *((int *) esp);
     unsigned position = *((unsigned *) (esp + 4));
     seek (fd, position);
-    break;
   }
     /* Returns the position of the next byte to be read or written
     in open file fd, expressed in bytes from the beginning of the file. */
@@ -417,7 +407,6 @@ else if(syscall_num == SYS_WRITE)
     is_valid_pointer (esp + 3);
     int fd = *((int *) esp);
     f->eax = tell (fd);
-    break;
   }
     /* Closes file descriptor fd. Exiting or terminating a process implicitly closes
     all its open file descriptors, as if by calling this function for each one. */
@@ -427,6 +416,5 @@ else if(syscall_num == SYS_WRITE)
     is_valid_pointer (esp);
     int fd = *((int *) esp);
     close (fd);
-    break;
   }
 }
