@@ -232,7 +232,7 @@ void close (int fd)
     return;
   }
   else{
-    return -1
+    return -1;
   }
 }
 
