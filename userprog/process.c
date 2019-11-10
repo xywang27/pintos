@@ -166,7 +166,6 @@ char* split(char* command,char* argv[],int* argc){
 int
 process_wait (tid_t child_tid)
 {
-  int exit_code;
   bool in_children_list = false;
   struct thread *child;
   struct list_elem *e;
@@ -175,16 +174,15 @@ process_wait (tid_t child_tid)
     if (child->tid == child_tid){                                                                                       /* if it is in the children list*/
       in_children_list = true;
       sema_down (&child->wait_sema);                                                                                    /* let child thread wait*/
-      exit_code = child->exit_code;                                                                                     /*allocate child's exit_code to its parent*/
       break;
     }
   }
   if (!in_children_list){                                                                                               /*if it is not in the children list*/
-    exit_code = -1;
+    return -1;
   }
   list_remove (&child->childelem);                                                                                      /*reove child from children list*/
   sema_up (&child->exit_sema);                                                                                          /*awake the child to exit*/
-  return exit_code;
+  return child->exit_code;
 }
 
 /* Free the current process's resources. */
