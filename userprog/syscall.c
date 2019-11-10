@@ -265,109 +265,103 @@ int open (const char *file){
 
 // Returns the size, in bytes, of the file open as fd.
 int filesize (int fd){
-  if (fd < 0 || fd >= MAX)                                                             /*check if fd is valid*/
-  {
+  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
     return -1;
   }
   struct thread *cur = thread_current ();
-  if (cur->file[fd] != NULL)                                                          /*the file can not be NULL*/
-  {
+  if (cur->file[fd] != NULL){                                                           /*the file can not be NULL*/
     return file_length (cur->file[fd]);
   }
   return -1;
 }
 
-
-int read (int fd, void *buffer, unsigned size)
-{
+// Reads size bytes from the file open as fd into buffer.
+int read (int fd, void *buffer, unsigned size){
+  if (fd < 0 || fd >= MAX){                                                            /*check if fd is valid*/
+    return -1;
+  }
   struct thread *cur = thread_current ();
-  /* standard input. */
-  if (fd == 0)
-  {
+  if(fd == 0){                                                                        /*if it is STDIN*/
     input_getc();
     return size;
   }
-  /* else */
-  else
-  {
-    if (is_valid_fd (fd) && cur->file[fd] != NULL)
+  else{                                                                               /*if it is not STDIN*/
+    if(cur->file[fd] != NULL){
       return file_read (cur->file[fd], buffer, size);
-    else{
+    }
+    else{                                                                             /*return -1 if read fails*/
       return -1;
     }
   }
 }
 
-int write (int fd, const void *buffer, unsigned size)
-{
+// Writes size bytes from buffer to the open file fd
+int write (int fd, const void *buffer, unsigned size){
+  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
+    return -1;
+  }
   struct thread *cur = thread_current ();
-  /* standard output. */
-  if (fd == 1)
-  {
-    putbuf(buffer,size);
-    return size;
+  if(fd == 1){                                                                          /*if it is STDOUT*/
+      putbuf(buffer,size);
+      return size;
   }
-  /* else */
-  else
-  {
-    if (is_valid_fd (fd) && cur->file[fd] != NULL)
+  else{                                                                                /*if it is not STDOUT*/
+    if (cur->file[fd] != NULL){
       return file_write (cur->file[fd], buffer, size);
-    else{
+    }
+    else{                                                                              /*return -1 if write fails*/
       return -1;
     }
   }
 }
 
-
+// Changes the next byte to be read or written in open file fd to position, expressed in bytes from the beginning of the file.
 void seek (int fd, unsigned position)
 {
+  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
+    return -1;
+  }
   struct thread *cur = thread_current ();
-  if (is_valid_fd (fd) && cur->file[fd] != NULL)
-  {
+  if (cur->file[fd] != NULL){                                                           /*file can not be NULL*/
     file_seek (cur->file[fd], position);
   }
 }
 
+// Returns the position of the next byte to be read or written in open file fd, expressed in bytes from the beginning of the file.
 unsigned tell (int fd)
 {
-  struct thread *cur = thread_current ();
-  if (is_valid_fd (fd) && cur->file[fd] != NULL)
-  {
-    return file_tell (cur->file[fd]);
-  }
-  else
+  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
     return -1;
-}
-
-void close (int fd)
-{
+  }
   struct thread *cur = thread_current ();
-  if (is_valid_fd (fd) && cur->file[fd] != NULL)
-  {
-    file_close (cur->file[fd]);
-    cur->file[fd] = NULL;
-    return;
+  if (cur->file[fd] != NULL){                                                           /*file can not be NULL*/
+    return file_tell (cur->file[fd]);
   }
   else{
     return -1;
   }
 }
 
-/* Check the validality of the fd number. */
-static bool
-is_valid_fd (int fd)
+// close the file with the corresponding fd
+void close (int fd)
 {
-  if (fd >= 0 && fd < MAX)
-  {
-    return true;
+  if (fd < 0 || fd >= MAX){                                                             /*check if fd is valid*/
+    return -1;
   }
-  return false;
+  struct thread *cur = thread_current ();
+  if (cur->file[fd] != NULL){                                                          /*file can not be NULL*/
+    file_close (cur->file[fd]);
+    cur->file[fd] = NULL;
+    return;
+  }
+  else{                                                                                /*return -1 if close fail*/
+    return -1;
+  }
 }
 
 void
 syscall_init (void)
 {
-  /* Register and initialize the system call handler. */
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   lock_init(&file_lock);
 }
