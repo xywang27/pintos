@@ -183,9 +183,6 @@ int read (int fd, void *buffer, unsigned size)
 
 int write (int fd, const void *buffer, unsigned size)
 {
-  int buffer_write = 0;
-  char *buffChar = NULL;
-  buffChar = (char *) buffer;
   struct thread *cur = thread_current ();
   /* standard output. */
   if (fd == 1)
@@ -197,11 +194,11 @@ int write (int fd, const void *buffer, unsigned size)
   else
   {
     if (is_valid_fd (fd) && cur->file[fd] != NULL)
-      buffer_write = file_write (cur->file[fd], buffer, size);
-    else
-      buffer_write = 0;
+      return file_write (cur->file[fd], buffer, size);
+    else{
+      return -1;
+    }
   }
-  return buffer_write;
 }
 
 
