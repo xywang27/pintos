@@ -163,7 +163,6 @@ start_process (void *file_name_)
 
   /* If load failed, quit. */
   free (command_back);
-  palloc_free_page (file_name);
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
