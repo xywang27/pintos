@@ -61,7 +61,7 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, strlen (file_name) + 1);
 
-  char *argv[100];
+  char *argv[128];
   int argc;
   /* To seperate the command name from arguments. */
   char* command_back = split (file_name, argv, &argc);
@@ -104,7 +104,7 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-  char *argv[100];
+  char *argv[128];
   int argc;
   char* command_back = split (file_name, argv, &argc);
 
@@ -114,7 +114,7 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
 
-  success = load (file_name, &if_.eip, &if_.esp);
+  success = load (argv[0], &if_.eip, &if_.esp);
 
   if (success)
     sema_up (&thread_current ()->load_sema);
@@ -126,47 +126,38 @@ start_process (void *file_name_)
     sema_up (&thread_current ()->load_sema);
     thread_exit ();
   }
-  int i = argc;
-  char * addr_arr[argc];
+  char *arg[argc];
+  int i;
   /* Reverse the list to store argument in a new list because stack grows download. */
-  while (--i >= 0)
-  {
-    /* +1 because of the additional \0*/
-    if_.esp = if_.esp - sizeof (char) *(strlen (argv[i]) + 1);
-    addr_arr[i]=(char *)if_.esp;
-    memcpy (if_.esp, argv[i], strlen (argv[i]) + 1);
+  for(i = argc-1; i >= 0; i = i - 1){                                 /*put argv[] into the stack and get address of argv[]*/
+    if_.esp = if_.esp - sizeof(char)*(strlen(argv[i])+1);
+    arg[i]=(char *)if_.esp;
+    memcpy(if_.esp,argv[i],strlen(argv[i])+1);
   }
 
   /* Word alignment. */
-  while ((int) if_.esp % 4 != 0)
-    if_.esp = if_.esp - 1;
-
-  i = argc;
-  /* Put a 0. */
-  if_.esp = if_.esp - 4;
-  (*(int *) if_.esp) = 0;
-
-  /* Put argument's address in the reversal order. */
-  while (--i >= 0)
-  {
-    if_.esp = if_.esp - 4;
-    (*(char **) if_.esp) = addr_arr[i];
+  while ((int)if_.esp%4!=0){                                          /*world-align*/
+    if_.esp--;
   }
 
-  /* Put the address of the first argument. */
-  if_.esp = if_.esp - 4;
-  (*(char **) if_.esp)=if_.esp + 4;
+  if_.esp = if_.esp-4;                                                /*put 0 into the stack*/
+  (*(int *)if_.esp)=0;
 
-  /* Put argc. */
-  if_.esp = if_.esp - 4;
-  (*(int *) if_.esp) = argc;
+  for(i = argc-1; i >= 0; i = i - 1){                                 /*put address of argv[] into the stack*/
+    if_.esp = if_.esp-4;
+    (*(char **)if_.esp) = arg[i];
+  }
 
-  /* Put return address 0. */
-  if_.esp = if_.esp - 4;
-  (*(int *) if_.esp) = 0;
+  if_.esp = if_.esp-4;                                                /*put argv into the stack*/
+  (*(char **)if_.esp)=if_.esp+4;
 
-  /* If load failed, quit. */
-  free (command_back);
+  if_.esp = if_.esp-4;                                               /*put argc into the stack*/
+  (*(int *)if_.esp)=argc;
+
+  if_.esp = if_.esp-4;                                               /*put return address 0 into the stack*/
+  (*(int *)if_.esp)=0;
+  free(command);
+  palloc_free_page (file_name);
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
