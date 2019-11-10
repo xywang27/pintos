@@ -168,9 +168,10 @@ process_wait (tid_t child_tid)
 {
   int exit_code;
   bool in_children_list = false;
+  struct thread *child;
   struct list_elem *e;
   for (e = list_begin (&thread_current ()->children);e != list_end (&thread_current ()->children); e = list_next (e)){  /* Check if it is in the children list*/
-    struct thread *child = list_entry (e, struct thread, childelem);
+    child = list_entry (e, struct thread, childelem);
     if (child->tid == child_tid){                                                                                       /* if it is in the children list*/
       in_children_list = true;
       sema_down (&child->wait_sema);                                                                                    /* let child thread wait*/
