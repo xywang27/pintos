@@ -163,10 +163,7 @@ int filesize (int fd)
 
 int read (int fd, void *buffer, unsigned size)
 {
-  int bytes_read = 0;
-  char *bufferChar = NULL;
-  bufferChar = (char *) buffer;
-  struct thread *t = thread_current ();
+  struct thread *cur = thread_current ();
   /* standard input. */
   if (fd == 0)
   {
@@ -176,10 +173,12 @@ int read (int fd, void *buffer, unsigned size)
   /* else */
   else
   {
-    if (is_valid_fd (fd) && t->file[fd] != NULL)
-      bytes_read = file_read (t->file[fd], buffer, size);
+    if (is_valid_fd (fd) && cur->file[fd] != NULL)
+      return file_read (cur->file[fd], buffer, size);
+    else{
+      return -1;
+    }
   }
-  return bytes_read;
 }
 
 static int
