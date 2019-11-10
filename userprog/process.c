@@ -190,8 +190,8 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
-  struct thread *child
-  struct list_elem *e ;
+  struct thread *child;
+  struct list_elem *e;
   uint32_t *pd;
   printf("%s: exit(%d)\n", cur->name, cur->exit_code);
 
