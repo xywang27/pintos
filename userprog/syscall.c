@@ -17,6 +17,7 @@ static void syscall_handler (struct intr_frame *);
 void halt (void);
 void exit (int status);
 pid_t exec (const char *file);
+int wait (pid_t);
 static int open (const char *);
 static int filesize (int);
 static int read (int fd, void *buffer, unsigned size);
@@ -107,6 +108,11 @@ void exit(int status){
 //run the excutable with the name given
 pid_t exec (const char *file){
   return process_execute(file);
+}
+
+// Wait for a child process
+int wait (pid_t pid){
+  return process_wait(pid);
 }
 
 static int
@@ -310,7 +316,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       /* Make sure that the whole argument is on valid address. */
     is_valid_pointer (esp + 3);
     int pid = *((int *) esp);
-    f->eax = process_wait (pid);
+    f->eax = wait(pid);
   }
     /* Creates a new file called file initially initial_size bytes in size. */
   else if(syscall_num == SYS_CREATE)
