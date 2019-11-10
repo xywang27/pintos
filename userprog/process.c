@@ -52,13 +52,13 @@ process_execute (const char *file_name)
   if (tid != TID_ERROR){                                                    /*if no error*/
     if (find_thread(tid) != NULL){                                          /*if thread with this id can be found*/
       struct thread* child = find_thread(tid);
-      sema_down (&child->load_sema);                                        /*let parent thread wait*/
+      sema_down (&child->sema1);                                            /*let parent thread wait*/
       if(load_success){                                                     /*if load success*/
         list_push_back (&thread_current ()->children, &child->childelem);   /*put child in children list*/
       }
       else{                                                                 /*if load fail*/
         tid = TID_ERROR;
-        sema_up (&child->exit_sema);
+        sema_up (&child->sema2);
       }
     }
   }
@@ -91,11 +91,11 @@ start_process (void *file_name_)
 
   if (!success){                                                       /*if load fail*/
     load_success = false;
-    sema_up (&thread_current ()->load_sema);                           /*awake the parent thread*/
+    sema_up (&thread_current ()->sema1);                               /*awake the parent thread*/
     thread_exit ();                                                    /*exit*/
   }
   else{                                                                /*if load success*/
-    sema_up (&thread_current ()->load_sema);                           /*awake the parent thread*/
+    sema_up (&thread_current ()->sema1);                               /*awake the parent thread*/
   }
   char *arg[argc];
   int i;
@@ -173,7 +173,7 @@ process_wait (tid_t child_tid)
     child = list_entry (e, struct thread, childelem);
     if (child->tid == child_tid){                                                                                       /* if it is in the children list*/
       in_children_list = true;
-      sema_down (&child->wait_sema);                                                                                    /* let child thread wait*/
+      sema_down (&child->sema3);                                                                                        /* let parent thread wait*/
       break;
     }
   }
@@ -181,7 +181,7 @@ process_wait (tid_t child_tid)
     return -1;
   }
   list_remove (&child->childelem);                                                                                      /*reove child from children list*/
-  sema_up (&child->exit_sema);                                                                                          /*awake the child to exit*/
+  sema_up (&child->sema2);                                                                                              /*awake the child to exit*/
   return child->exit_code;
 }
 
@@ -189,21 +189,15 @@ process_wait (tid_t child_tid)
 void
 process_exit (void)
 {
-  int i;
   struct thread *cur = thread_current ();
-  struct thread *child = NULL;
+  struct thread *child
   struct list_elem *e ;
-  struct list_elem *next;
-
   uint32_t *pd;
-
-  /* Print out the exit status. */
   printf("%s: exit(%d)\n", cur->name, cur->exit_code);
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
-
   if (pd != NULL)
   {
     /* Correct ordering here is crucial.  We must set
@@ -214,30 +208,21 @@ process_exit (void)
        directory, or our active page directory will be one
        that's been freed (and cleared). */
 
-    /* close the open file */
-    while(i < MAX)
-    {
-      if(cur->file[i] != NULL)
-        file_close (cur->file[i]);
-      i = i + 1;
-    }
-    /* The executable file. */
-    if(cur->exec_file)
-    {
+    if(cur->exec_file){                                             /*cancel deny_writing*/
       file_allow_write (cur->exec_file);
       file_close (cur->exec_file);
     }
-    /* if its parent is waiting, wake up the parent process. */
-    sema_up (&cur->wait_sema);
-    for (e = list_begin (&cur->children);
-          e != list_end (&cur->children); e = list_next (e))
-    {
-      child = list_entry (e, struct thread, childelem);
-      /* parent process is dead, no need to wait. */
-      sema_up (&child->exit_sema);
+    for (int i = 0; i < MAX; i++){                                   /* close all open files */
+      if(cur->file[i] != NULL){
+        file_close (cur->file[i]);
+      }
     }
-    /* exit. */
-    sema_down (&cur->exit_sema);
+    sema_up (&cur->sema3);                                           /*awake the parent thread*/
+    for (e = list_begin (&cur->children);e != list_end (&cur->children); e = list_next (e)){
+      child = list_entry (e, struct thread, childelem);
+      sema_up (&child->sema2);                                       /*awake all the children of current thread to exit */
+    }
+    sema_down (&cur->sema2);                                         /*let thread wait to exit*/
 
     cur->pagedir = NULL;
     pagedir_activate (NULL);
@@ -436,13 +421,13 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   done:
   /* We arrive here whether the load is successful or not. */
-  if(success)
-  {
+  if(success){
     t->exec_file = file;
     file_deny_write (file);
   }
-  else
+  else{
     file_close (file);
+  }
   return success;
 }
 /* load() helpers. */

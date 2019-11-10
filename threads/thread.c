@@ -478,8 +478,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->exec_file = NULL;
 
   sema_init (&t->wait_sema, 0);
-  sema_init (&t->load_sema, 0);
-  sema_init (&t->exit_sema, 0);
+  sema_init (&t->sema1, 0);
+  sema_init (&t->sema2, 0);
 
   t->exit_code = -1;
   list_init (&t->children);
