@@ -22,8 +22,8 @@
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
-/*global var for load status.*/
-static int load_success;
+
+static bool load_success = true;                                              /*variable that shows if load is success*/
 
 /*split the command and save it into argv[],save numbers into srgc*/
 char* split(char* command,char* argv[],int* argc){
@@ -52,8 +52,6 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-  tid_t temp;
-  struct thread* child = NULL;
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = malloc (strlen (file_name) + 1);
@@ -63,23 +61,20 @@ process_execute (const char *file_name)
 
   char *argv[128];
   int argc;
-  /* To seperate the command name from arguments. */
-  char* command_back = split (file_name, argv, &argc);
+  char* command = split(file_name,argv,&argc);                           /*split the command*/
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (argv[0], PRI_DEFAULT, start_process, fn_copy);    /*use the first token of command to create thread*/
 
-  if (tid == TID_ERROR)
-    free (fn_copy);
-  else
-  {
+  tid_t a;
+  if (tid != TID_ERROR){
     if (find_thread_by_id (tid) != NULL)
     {
-      child = find_thread_by_id (tid);
+      struct thread* child = find_thread_by_id (tid);
       sema_down (&child->load_sema);
 
       /* If load success, put it onto the children process list. */
-      if(load_success != 77)
+      if(load_success)
       {
         temp = tid;
         list_push_back (&thread_current ()->children, &child->childelem);
@@ -91,7 +86,10 @@ process_execute (const char *file_name)
       }
     }
   }
-  free (command_back);
+  else{
+    free (fn_copy);
+  }
+  free (command);
   return temp;
 }
 
@@ -122,7 +120,7 @@ start_process (void *file_name_)
   else
   {
     /* let the load_success be 77 so the parent know load fail. */
-    load_success = 77;
+    load_success = false;
     sema_up (&thread_current ()->load_sema);
     thread_exit ();
   }
