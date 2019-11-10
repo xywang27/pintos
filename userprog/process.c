@@ -76,12 +76,12 @@ process_execute (const char *file_name)
       /* If load success, put it onto the children process list. */
       if(load_success)
       {
-        temp = tid;
+        a = tid;
         list_push_back (&thread_current ()->children, &child->childelem);
       }
       else
       {
-        temp=TID_ERROR;
+        a=TID_ERROR;
         sema_up (&child->exit_sema);
       }
     }
@@ -90,7 +90,7 @@ process_execute (const char *file_name)
     free (fn_copy);
   }
   free (command);
-  return temp;
+  return a;
 }
 
 /* A thread function that loads a user process and starts it
