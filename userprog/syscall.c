@@ -12,6 +12,8 @@
 #include "userprog/process.h"
 #include "userprog/syscall.h"
 
+typedef int pid_t;
+
 static void syscall_handler (struct intr_frame *);
 
 void halt (void);
@@ -75,7 +77,7 @@ is_valid_string (const char *str)
 
 /* Check whether the pointer is valid. */
 void
-is_valid_pointer (void *pointer)
+is_valid_ptr (void *pointer)
 {
   if(pointer == NULL){                                                             /*the pointer can not be NULL*/
     thread_current ()->exit_code = -1;                                                 /*set status to exit_code and exit*/
@@ -260,8 +262,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 {
   void *esp = f->esp;
   int syscall_num;
-  is_valid_pointer (esp);
-  is_valid_pointer (esp + 3);
+  is_valid_ptr (esp);
+  is_valid_ptr (esp + 3);
   /* Get the name of syscall. */
   syscall_num = *((int *) esp);
   /* Point to the first argument. */
@@ -277,9 +279,9 @@ syscall_handler (struct intr_frame *f UNUSED)
   else if(syscall_num == SYS_EXIT)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     int status = *((int *) esp);
     exit(status);
   }
@@ -288,9 +290,9 @@ syscall_handler (struct intr_frame *f UNUSED)
   else if(syscall_num == SYS_EXEC)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
@@ -302,9 +304,9 @@ syscall_handler (struct intr_frame *f UNUSED)
   else if(syscall_num == SYS_WAIT)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     int pid = *((int *) esp);
     f->eax = wait(pid);
   }
@@ -312,9 +314,9 @@ syscall_handler (struct intr_frame *f UNUSED)
   else if(syscall_num == SYS_CREATE)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Check for validality of the second argument. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
@@ -325,9 +327,9 @@ syscall_handler (struct intr_frame *f UNUSED)
   else if(syscall_num == SYS_REMOVE)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
@@ -338,9 +340,9 @@ syscall_handler (struct intr_frame *f UNUSED)
   else if(syscall_num == SYS_OPEN)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     const char *file_name = *((char **) esp);
       /* Check for validality of the file_name. */
     is_valid_string (file_name);
@@ -352,9 +354,9 @@ syscall_handler (struct intr_frame *f UNUSED)
   else if(syscall_num == SYS_FILESIZE)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     int fd = *((int *) esp);
     f->eax = filesize (fd);
   }
@@ -363,15 +365,15 @@ syscall_handler (struct intr_frame *f UNUSED)
 else if(syscall_num == SYS_READ)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Check for validality of the second argument. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     int fd = *((int *) esp);
     void *buffer = *((char **) (esp + 4));
     unsigned size = *((unsigned *) (esp + 8));
       /* Check that the given buffer is all valid. */
-    is_valid_pointer (buffer);
-    is_valid_pointer (buffer + size);
+    is_valid_ptr (buffer);
+    is_valid_ptr (buffer + size);
     lock_acquire(&file_lock);
     f->eax= read (fd, buffer, size);
     lock_release(&file_lock);
@@ -381,15 +383,15 @@ else if(syscall_num == SYS_READ)
 else if(syscall_num == SYS_WRITE)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Check for validality of the second argument. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     int fd = *((int *) esp);
     void *buffer = *((char **) (esp + 4));
     unsigned size = *((unsigned *) (esp + 8));
       /* Check that the given buffer is all valid. */
-    is_valid_pointer (buffer);
-    is_valid_pointer (buffer + size);
+    is_valid_ptr (buffer);
+    is_valid_ptr (buffer + size);
     lock_acquire(&file_lock);
     f->eax = write (fd, buffer, size);
     lock_release(&file_lock);
@@ -399,9 +401,9 @@ else if(syscall_num == SYS_WRITE)
   else if(syscall_num == SYS_SEEK)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     int fd = *((int *) esp);
     unsigned position = *((unsigned *) (esp + 4));
     seek (fd, position);
@@ -411,9 +413,9 @@ else if(syscall_num == SYS_WRITE)
   else if(syscall_num == SYS_TELL)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
+    is_valid_ptr (esp);
       /* Make sure that the whole argument is on valid address. */
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp + 3);
     int fd = *((int *) esp);
     f->eax = tell (fd);
   }
@@ -422,8 +424,8 @@ else if(syscall_num == SYS_WRITE)
   else if(syscall_num == SYS_CLOSE)
   {
       /* Check for validality of the first argument. */
-    is_valid_pointer (esp);
-    is_valid_pointer (esp + 3);
+    is_valid_ptr (esp);
+    is_valid_ptr (esp + 3);
     int fd = *((int *) esp);
     close (fd);
   }
