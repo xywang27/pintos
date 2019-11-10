@@ -105,10 +105,10 @@ struct thread
     unsigned magic;                     /* Detects stack overflow. */
 
     int exit_code;                      /*the exit_code of the thread(-1 means sth wrong with it)*/
+    struct file* file[MAX];             /* All files that the thread open*/
     struct list_elem childelem;         /* List element for children list */
     struct list children;               /* List of all children*/
     struct file* exec_file;             /* Executable file. */
-    struct file* file[MAX];             /* All files that the thread open*/
     struct semaphore sema1;             /* semaphare used to let parent wait while child is loading */
     struct semaphore sema2;             /* the semaphore used to exit*/
     struct semaphore sema3;             /* the semaphare used to wait*/
