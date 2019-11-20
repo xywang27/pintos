@@ -375,6 +375,18 @@ thread_get_recent_cpu (void)
   /* Not yet implemented. */
   return 0;
 }
+
+/*find the particular thread according the thread id given*/
+struct thread* find_thread(tid_t id){
+  struct list_elem *e;
+  for(e = list_begin(&all_list);e!= list_end(&all_list); e=list_next(e)){
+    struct thread *t = list_entry(e,struct thread, allelem);
+    if(t->tid == id){
+      return t;
+    }
+  }
+  return NULL;
+}
 
 /* Idle thread.  Executes when no other thread is ready to run.
 
@@ -463,14 +475,17 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-
-  t->parent = running_thread();
-
+  t->exec_file = NULL;
+  int i = 0;
+  while(i < 128){
+    t->file[i] = NULL;
+    i = i + 1;
+  }
+  sema_init (&t->sema3, 0);
+  sema_init (&t->sema1, 0);
+  sema_init (&t->sema2, 0);
   t->exit_code = -1;
-
-  sema_init(&t->sema1,0);
-
-  list_init(&(t->fd_list));
+  list_init (&t->children);
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
@@ -585,6 +600,7 @@ allocate_tid (void)
 
   return tid;
 }
+
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
