@@ -32,5 +32,6 @@ bool frame_table_full (void);
 void* frame_get (bool,void* upage);
 void frame_free (void *);
 struct frame* frame_find (void *);
-
+struct frame* LRU(void);
+void changerec(void);
 #endif /* vm/frame.h */

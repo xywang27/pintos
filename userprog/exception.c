@@ -19,6 +19,7 @@ static void page_fault (struct intr_frame *);
 bool is_stack(void* faultaddr, void *esp, bool user);
 bool more_stack(void* fault_addr);
 bool load_from_file(struct list_elem* spte,void *upage);
+bool load_from_swap(void *upage);
 
 
 /* Registers handlers for interrupts that can be caused by user
@@ -162,7 +163,7 @@ page_fault (struct intr_frame *f)
   void *pfupage = pg_round_down(fault_addr);
   struct list_elem *e = page_find (pfupage);
   /* not found */
-  if (e == NULL){
+  if (e == NULL&& e2==NULL){
     if(is_stack(fault_addr,f->esp,user))
     {
       if(more_stack(fault_addr)){
@@ -171,8 +172,19 @@ page_fault (struct intr_frame *f)
     }
   }
   else{
-    if (load_from_file(e,pfupage))
+    /* load sth from file/stack/etc */
+    /* l: add your swap code here */
+    if(e!=NULL)
+    {
+    if(load_from_file(e,pfupage))
       return;
+    }
+    //[X]在swap分区则写回
+    if(e2!=NULL)
+    {
+    if(load_from_swap(pfupage))
+	  return;
+    }
   }
 
   /* To implement virtual memory, delete the rest of the function

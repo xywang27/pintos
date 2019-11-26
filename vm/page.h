@@ -8,6 +8,7 @@
 #include <list.h>
 #include "filesys/file.h"
 #include "vm/frame.h"
+#include "vm/swap.h"
 
 /* L: a basic page elem, more vars is needed */
 struct spt_elem{

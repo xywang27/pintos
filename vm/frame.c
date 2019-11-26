@@ -5,6 +5,7 @@
 
 #include "vm/frame.h"
 #include "vm/page.h"
+#include "vm/swap.h"
 
 #include "threads/palloc.h"
 #include "threads/thread.h"
@@ -30,14 +31,23 @@ void* frame_get(bool zeroflag,void* upage){
   lock_acquire(&frame_list_lock);
   void *kpage = palloc_get_page (zeroflag?PAL_USER | PAL_ZERO:PAL_USER );
   /* No pages are available. */
+  if (kpage == NULL){
+    /* some frame should be swaped */
+    full=1;
+    kpage=evict(upage,thread_current());
+	lock_release (&frame_list_lock);
+    return kpage;
+  }
+  else{
     /* add new page & frame into frame table */
-  struct frame* f;
-  f=(struct frame *) malloc (sizeof(struct frame));
-  f->recent=0;
-  f->paddr=kpage;
-  f->upage=upage;
-  f->owner=thread_current();
-  list_push_front(&frame_list, &f->elem);
+    struct frame* f;
+    f=(struct frame *) malloc (sizeof(struct frame));
+    f->recent=0;
+    f->paddr=kpage;
+    f->upage=upage;
+    f->owner=thread_current();
+    list_push_front(&frame_list, &f->elem);
+  }
   lock_release (&frame_list_lock);
   return kpage;
 }
@@ -82,4 +92,54 @@ struct frame* frame_find (void *kpage){
 bool frame_table_full (void){
   size_t s=list_size(&frame_list);
   return s;
+}
+
+//[X]随时间改变recent的值
+void changerec(void)
+{
+  if(full)
+  {
+  struct list_elem *e;
+  struct frame* fp;
+  for (e = list_begin (&frame_list); e != list_end (&frame_list);
+				e = list_next (e))
+  {
+	fp=list_entry (e, struct frame, elem);
+	if(fp->owner->pagedir!=NULL)
+	{
+	if(pagedir_is_accessed (fp->owner->pagedir, fp->upage))
+	{
+	  pagedir_set_accessed (fp->owner->pagedir, fp->upage, false);
+	  fp->recent=0;
+	}
+	else
+	   fp->recent++;
+   }
+  }
+  }
+}
+
+//[X]替换算法
+struct frame* LRU(void)
+{
+    struct list_elem *e;
+    struct frame* fp;
+    struct frame* tar;
+    int max=-1;
+    for(e=list_begin(&frame_list);e!=list_end(&frame_list);e=list_next(e))
+    {
+		fp=list_entry (e, struct frame, elem);
+		//printf("%d ",fp->recent);
+		if(max<fp->recent)
+		{
+			max=fp->recent;
+			tar=fp;
+		}
+	}
+	tar->recent=0;
+    return tar;
+    /*
+    e=list_begin(&frame_list);
+	return list_entry(e,struct frame,elem);
+	*/
 }
