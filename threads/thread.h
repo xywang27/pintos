@@ -4,16 +4,9 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-#include "threads/synch.h"
-//L:
-struct file_desc
-{
-int fd;  /* L:file descriptor */
-struct file *file;
-struct list_elem elem;
-};
-
-
+#include <threads/synch.h>
+#include "filesys/file.h"
+#include "userprog/syscall.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -99,38 +92,28 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
-    struct list_elem child_elem;        /*[X] List element for child threads */
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-    struct list fd_list;
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
-    int ret_status;  
-    //[X]sema to avoid busy wait
-    struct semaphore tsem,wsem;
-    //[X]store child threads' information
-    struct list child_list;
-    //[X]store the file* to avoid write in the elf file
-    struct file* elffile;
-    //[X] whether the thread has already been waited
-    bool alwaited;
 #endif
-#ifdef VM
-    /* L: everyone get his own SPT mmok? */
-    struct list spt;
-    /* L: remember the end of the stack */
-    void* stacklow;
-    //[X]swap表
-    struct list swapt;
-    //[X]awapt锁
-    struct lock swap_list_lock;
-    //[X]spt锁
-    struct lock spt_list_lock;
-#endif
+
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+
+    int exit_code;                      /*the exit_code of the thread(-1 means sth wrong with it)*/
+    struct file* file[MAX];             /* All files that the thread open*/
+    struct list_elem childelem;         /* List element for children list */
+    struct list children;               /* List of all children*/
+    struct file* exec_file;             /* Executable file. */
+    struct semaphore sema1;             /* semaphare used to let parent wait while child is loading */
+    struct semaphore sema2;             /* the semaphore used to exit*/
+    struct semaphore sema3;             /* the semaphare used to wait*/
+    struct list spt;
+    void* stacklow;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -168,10 +151,6 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
-bool is_tid_valid(tid_t tid);
-struct list_elem* get_thread_by_tid (tid_t);
-void ready_list_dump(void);
+struct thread* find_thread(tid_t id);
 
 #endif /* threads/thread.h */
-
-
