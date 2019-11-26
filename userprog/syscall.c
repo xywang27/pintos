@@ -148,7 +148,7 @@ static void syscall_handler (struct intr_frame *f){
 		{
 			spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
       char *file_name = *(char **)(ptr+4);
-			if(spte->fileptr==filename)
+			if(spte->fileptr==file_name)
 			{
 				//暂时不关闭
 				spte->needremove=true;
