@@ -16,6 +16,8 @@ static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
+bool is_stack(void* faultaddr, void *esp, bool user);
+bool more_stack(void* fault_addr);
 bool load_from_file(struct list_elem* spte,void *upage);
 
 
@@ -160,9 +162,18 @@ page_fault (struct intr_frame *f)
   void *pfupage = pg_round_down(fault_addr);
   struct list_elem *e = page_find (pfupage);
   /* not found */
-  if (load_from_file(e,pfupage))
-    return;
-
+  if (e == NULL){
+    if(is_stack(fault_addr,f->esp,user))
+    {
+      if(more_stack(fault_addr)){
+        return;
+      }
+    }
+  }
+  else{
+    if (load_from_file(e,pfupage))
+      return;
+  }
 
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
@@ -173,6 +184,46 @@ page_fault (struct intr_frame *f)
           write ? "writing" : "reading",
           user ? "user" : "kernel");
   kill (f);
+}
+
+bool is_stack(void* fault_addr, void *esp, bool user){
+  struct thread * cur = thread_current();
+  void * pfupage = pg_round_down(fault_addr);
+  if(fault_addr > PHYS_BASE)
+    return false;
+
+  if(user){
+    cur->stacklow = esp;
+    if(
+    PHYS_BASE - STACK_LIMIT<fault_addr
+    && (fault_addr>=esp
+        ||(esp-fault_addr)==32
+        ||(esp-fault_addr)==4)){
+          return true;
+        }
+    else
+      return false;
+    }
+  else{
+    /* L:PF in a syscall */
+    if(fault_addr >= cur->stacklow)
+      return true;
+    }
+    return false;
+  }
+
+/* L: alloc more stack for current */
+bool more_stack(void *fault_addr){
+  if(!is_user_vaddr (fault_addr))
+    return false;
+  void *upage = pg_round_down(fault_addr);
+  void *kpage = frame_get(true,upage);
+
+  if(!process_install_page (upage, kpage, true)){
+    frame_free(kpage);
+    return false;
+  }
+  return true;
 }
 
 bool load_from_file(struct list_elem* e,void *upage){
