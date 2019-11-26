@@ -30,23 +30,14 @@ void* frame_get(bool zeroflag,void* upage){
   lock_acquire(&frame_list_lock);
   void *kpage = palloc_get_page (zeroflag?PAL_USER | PAL_ZERO:PAL_USER );
   /* No pages are available. */
-  if (kpage == NULL){
-    /* some frame should be swaped */
-    full=1;
-    kpage=evict(upage,thread_current());
-	lock_release (&frame_list_lock);
-    return kpage;
-  }
-  else{
     /* add new page & frame into frame table */
-    struct frame* f;
-    f=(struct frame *) malloc (sizeof(struct frame));
-    f->recent=0;
-    f->paddr=kpage;
-    f->upage=upage;
-    f->owner=thread_current();
-    list_push_front(&frame_list, &f->elem);
-  }
+  struct frame* f;
+  f=(struct frame *) malloc (sizeof(struct frame));
+  f->recent=0;
+  f->paddr=kpage;
+  f->upage=upage;
+  f->owner=thread_current();
+  list_push_front(&frame_list, &f->elem);
   lock_release (&frame_list_lock);
   return kpage;
 }
