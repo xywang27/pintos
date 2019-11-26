@@ -4,12 +4,20 @@
 #include "userprog/gdt.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/synch.h"
+#include "vm/page.h"
+#include "vm/frame.h"
+#include "threads/vaddr.h"
+#include "userprog/process.h"
+#define STACK_LIMIT (8 * 1024 * 1024)
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
+bool load_from_file(struct list_elem* spte,void *upage);
+
 
 /* Registers handlers for interrupts that can be caused by user
    programs.
@@ -148,6 +156,14 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
+  struct thread* cur=thread_current();
+  void *pfupage = pg_round_down(fault_addr);
+  struct list_elem *e = page_find (pfupage);
+  /* not found */
+  if (load_from_file(e,pfupage))
+    return;
+
+
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
      which fault_addr refers. */
@@ -157,4 +173,31 @@ page_fault (struct intr_frame *f)
           write ? "writing" : "reading",
           user ? "user" : "kernel");
   kill (f);
+}
+
+bool load_from_file(struct list_elem* e,void *upage){
+  void* kpage=frame_get(true,upage);
+  struct spt_elem* spte= (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+  /* load file to upage/frame */
+  /* Load this page. */
+  if (file_read_at (spte->fileptr, kpage, spte->read_bytes,spte->ofs) != (int) spte->read_bytes){
+    /* using my frame free er */
+    frame_free(kpage);
+    PANIC("[!!FILE READ_BYTES ERROR!!]\n");
+    return false;
+  }
+  memset (kpage + spte->read_bytes, 0, spte->zero_bytes);
+  /* Add the page to the process's address space. */
+  if (!process_install_page (spte->upage, kpage, spte->writable)){
+    frame_free(kpage);
+    PANIC("[!!INSTALL_PAGE ERROR!!]\n");
+    return false;
+  }
+  /* remove this spt */
+  //[X]有内存映射文件的表项不去删除
+  if(spte->mapid==0)
+  list_remove(e);
+  /* continue program run */
+
+  return true;
 }
