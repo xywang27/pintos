@@ -225,7 +225,24 @@ static void syscall_handler (struct intr_frame *f){
   else if(syscall_num == SYS_CLOSE){                                   /*sys_close*/
     is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    int fd = *(int *)(ptr + 4);
+#ifdef VM
+			deny=false;
+			for(se=list_begin(&thread_current()->spt);
+			se!=list_end(&thread_current()->spt);se=list_next(se))
+			{
+				spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
+				if(spte->fileptr==thread_current()->file[fd])
+				{
+					//暂时不关闭
+					spte->needclose=true;
+					deny=true;
+					break;
+				}
+			}
+			if(deny)
+			return;
+#endif                                       /*get fd*/
     close(fd);
   }
 }
@@ -373,23 +390,6 @@ void close (int fd)
     return -1;
   }
   struct thread *cur = thread_current ();
-#ifdef VM
-			deny=false;
-			for(se=list_begin(&thread_current()->spt);
-			se!=list_end(&thread_current()->spt);se=list_next(se))
-			{
-				spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-				if(spte->fileptr==cur->file[fd])
-				{
-					//暂时不关闭
-					spte->needclose=true;
-					deny=true;
-					break;
-				}
-			}
-			if(deny)
-			return;
-#endif
   if (cur->file[fd] != NULL){                                                          /*file can not be NULL*/
     file_close (cur->file[fd]);
     cur->file[fd] = NULL;
