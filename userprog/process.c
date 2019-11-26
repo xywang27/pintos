@@ -19,6 +19,7 @@
 #include "userprog/process.h"
 #include "userprog/syscall.h"
 #include "userprog/tss.h"
+#include "vm/page.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -523,7 +524,6 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
           * the page content later in PF handler. */
          char ch;
          //[X]加锁
-         lock_acquire(&thread_current()->spt_list_lock);
          struct spt_elem *spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
          /* L: which upage this spt entry is descripting */
          spte->upage=upage;
@@ -539,7 +539,6 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
          //printf("[spte added:u%p,f%p,w(%d),RB(%d),ZB(%d)]\n",upage,file,writable,page_read_bytes,page_zero_bytes);
          list_push_back (&thread_current()->spt, &spte->elem);
          //[X]解锁
-         lock_release(&thread_current()->spt_list_lock);
    #else
          /* L: Original load_seg used in no VM situation */
          /* Get a page of memory. */
