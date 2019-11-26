@@ -21,6 +21,11 @@ struct spt_elem{
   uint32_t read_bytes;
   uint32_t zero_bytes;
   bool writable;
+  void *kpage;
+
+  bool needclose;
+  bool needremove;
+  int mapid;
 
 
   /* a swap slot */
