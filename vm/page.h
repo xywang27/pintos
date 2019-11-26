@@ -7,7 +7,6 @@
 
 #include <list.h>
 #include "filesys/file.h"
-#include "vm/swap.h"
 #include "vm/frame.h"
 
 /* L: a basic page elem, more vars is needed */
@@ -22,7 +21,7 @@ struct spt_elem{
   uint32_t read_bytes;
   uint32_t zero_bytes;
   bool writable;
-  
+
 
   /* a swap slot */
 
