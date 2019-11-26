@@ -175,14 +175,6 @@ page_fault (struct intr_frame *f)
       return;
   }
 
-  f->eip = f->eax;
-  f->eax = (uint32_t) 0xffffffff;
-  //printf("[Killing]\n");
-  printf ("%s: exit(%d)\n", thread_name(),-1);
-  thread_current()->exit_code=-1;
-  thread_exit();
-  return;
-
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
      which fault_addr refers. */
@@ -254,7 +246,6 @@ bool load_from_file(struct list_elem* e,void *upage){
   }
   /* remove this spt */
   //[X]有内存映射文件的表项不去删除
-  if(spte->mapid==0)
   list_remove(e);
   /* continue program run */
 
