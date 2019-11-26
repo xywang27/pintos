@@ -114,6 +114,11 @@ struct thread
     struct semaphore sema3;             /* the semaphare used to wait*/
     struct list spt;
     void* stacklow;
+    struct list swapt;
+    //[X]awapt锁
+    struct lock swap_list_lock;
+    //[X]spt锁
+    struct lock spt_list_lock;
   };
 
 /* If false (default), use round-robin scheduler.
