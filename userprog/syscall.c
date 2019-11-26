@@ -379,7 +379,7 @@ void close (int fd)
 			se!=list_end(&thread_current()->spt);se=list_next(se))
 			{
 				spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-				if(spte->fileptr==file_d->file)
+				if(spte->fileptr==cur->file[fd])
 				{
 					//暂时不关闭
 					spte->needclose=true;
