@@ -113,6 +113,7 @@ struct thread
     struct semaphore sema2;             /* the semaphore used to exit*/
     struct semaphore sema3;             /* the semaphare used to wait*/
     struct list spt;
+    void* stacklow;
   };
 
 /* If false (default), use round-robin scheduler.
