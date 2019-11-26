@@ -7,6 +7,7 @@
 #include "threads/synch.h"
 #include "vm/page.h"
 #include "vm/frame.h"
+#include "vm/swap.h"
 #include "threads/vaddr.h"
 #include "userprog/process.h"
 #define STACK_LIMIT (8 * 1024 * 1024)
@@ -263,4 +264,9 @@ bool load_from_file(struct list_elem* e,void *upage){
   /* continue program run */
 
   return true;
+}
+bool load_from_swap(void *upage)
+{
+	void* fp=frame_get(0,upage);
+	return readback(upage,fp);
 }
