@@ -192,7 +192,7 @@ page_fault (struct intr_frame *f)
   f->eip = f->eax;
   f->eax = (uint32_t) 0xffffffff;
   //printf("[Killing]\n");
-  printf ("%s: exit(%d)\n", thread_name(),-1);
+  //printf ("%s: exit(%d)\n", thread_name(),-1);
   thread_current()->exit_code=-1;
   thread_exit();
   return;
