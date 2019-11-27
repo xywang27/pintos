@@ -140,24 +140,26 @@ static void syscall_handler (struct intr_frame *f){
   }
 
   else if(syscall_num == SYS_REMOVE){                                   /*sys_remove*/
-    // #ifdef VM
-    //         struct list_elem *se;
-    //         struct spt_elem *spte;
-    //         bool deny;
-    // 		deny=false;
-    // 		for(se=list_begin(&thread_current()->spt);
-    // 		se!=list_end(&thread_current()->spt);se=list_next(se))
-    // 		{
-    // 			spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-    // 			if(spte->fileptr==*(pp+1))
-    // 			{
-    // 				//暂时不关闭
-    // 				spte->needremove=true;
-    // 				deny=true;
-    // 				break;
-    // 			}
-    // 		}
-    // #endif
+    #ifdef VM
+        struct list_elem *se;
+        struct spt_elem *spte;
+        bool deny;
+    		deny=false;
+    		for(se=list_begin(&thread_current()->spt);
+    		se!=list_end(&thread_current()->spt);se=list_next(se))
+    		{
+    			spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
+    			if(spte->fileptr==*(pp+1))
+    			{
+    				//暂时不关闭
+    				spte->needremove=true;
+    				deny=true;
+    				break;
+    			}
+    		}
+        if(deny)
+		      return;
+    #endif
     is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
     char *file_name = *(char **)(ptr+4);                                /*get file name*/
@@ -228,113 +230,108 @@ static void syscall_handler (struct intr_frame *f){
     is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    // #ifdef VM
-    //       bool deny;
-    //       struct list_elem *e;
-    //       struct list_elem *se;
-    //       struct file_desc *file_d;
-    //       struct spt_elem *spte;
-    // 			deny=false;
-    // 			for(se=list_begin(&thread_current()->spt);
-    // 			se!=list_end(&thread_current()->spt);se=list_next(se))
-    // 			{
-    // 				spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-    // 				if(spte->fileptr==file_d->file)
-    // 				{
-    // 					//暂时不关闭
-    // 					spte->needclose=true;
-    // 					deny=true;
-    // 					break;
-    // 				}
-    // 			}
-    // #endif
+    #ifdef VM
+          bool deny;
+          struct list_elem *se;
+          struct spt_elem *spte;
+    			deny=false;
+    			for(se=list_begin(&thread_current()->spt);
+    			se!=list_end(&thread_current()->spt);se=list_next(se))
+    			{
+    				spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
+    				if(spte->fileptr==thread_current()->file[fd])
+    				{
+    					//暂时不关闭
+    					spte->needclose=true;
+    					deny=true;
+    					break;
+    				}
+    			}
+          if(deny)
+          return;
+    #endif
     close(fd);
   }
   else if(syscall_num == SYS_MMAP){
-    struct list_elem *e;
     struct list_elem *se;
     struct list_elem *te;
-    struct file_desc *file_d;
-    struct list* fd_list = &thread_current()->fd_list;
+    struct thread *cur = thread_current ();\
+    int fd = *(pp+1);
     bool findornot=false;
     // [X]spt指针
     struct spt_elem *spte;
     struct spt_elem *spte2;
     off_t filesize;
-    for (e = list_begin (fd_list); e != list_end (fd_list);
-        e = list_next (e))
-        {
-        file_d = list_entry (e, struct file_desc, elem);
         //[X]找到文件描述符为fd的文件
-        if (file_d->fd == *(pp+1)){
+    if (cur->file[fd] != NULL){
      findornot=true;
-           filesize= file_length (file_d->file);
+     filesize= file_length (cur->file[fd]);
            //[X]因为一个文件可能占有多个
-           int mapped_page=0;
+     int mapped_page=0;
      off_t fileoff=0;
      //检查了测试，初始地址都是页面对齐的，所以不用处理第一次映射的不对齐问题
      uint32_t upage=*(pp+2);
      //[X]不合要求的虚存地址不能被映射
      if(upage==0||(pg_round_down(upage)!=upage)||upage+PGSIZE>f->esp
      ||upage<0x08050000)
-    {
+     {
         f->eax=-1;
         return;
-    }
-    lock_acquire(&thread_current()->spt_list_lock);
-           while(filesize>0)
-           {
-      spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
-      spte->upage=upage;
-      for (se = list_begin (&thread_current()->spt); se != list_end (&thread_current()->spt);
-      se = list_next (se))
+      }
+      lock_acquire(&thread_current()->spt_list_lock);
+      while(filesize>0)
       {
-        spte2=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-        //[X]不能重叠映射
-        if(spte2->upage==spte->upage)
+        spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
+        spte->upage=upage;
+        for (se = list_begin (&thread_current()->spt); se != list_end (&thread_current()->spt);
+        se = list_next (se))
         {
-          f->eax=-1;
-          return;
+          spte2=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
+        //[X]不能重叠映射
+          if(spte2->upage==spte->upage)
+          {
+            f->eax=-1;
+            return;
+          }
         }
-      }
       //[X]虚存空间的下一页
-      upage=upage+(uint32_t)PGSIZE;
-      spte->fileptr=file_d->file;
+        upage=upage+(uint32_t)PGSIZE;
+        spte->fileptr=cur->file[fd];
       //[X]修改文件指针使
-      spte->ofs=mapped_page * (uint32_t)PGSIZE;
-      mapped_page++;
+        spte->ofs=mapped_page * (uint32_t)PGSIZE;
+        mapped_page++;
       //[X]标记mapid
-      spte->mapid=mapid;
+        spte->mapid=mapid;
       //[X]处理边界的最后一页
-      if(filesize>=PGSIZE)
-      {
-        spte->read_bytes=PGSIZE;
-        spte->zero_bytes=0;
-      }
-      else
-      {
-        spte->read_bytes=filesize;
-        spte->zero_bytes=PGSIZE-filesize;
-      }
-      spte->writable=true;
-      list_push_back (&thread_current()->spt, &spte->elem);
+        if(filesize>=PGSIZE)
+        {
+          spte->read_bytes=PGSIZE;
+          spte->zero_bytes=0;
+        }
+        else
+        {
+          spte->read_bytes=filesize;
+          spte->zero_bytes=PGSIZE-filesize;
+        }
+        spte->writable=true;
+        list_push_back (&thread_current()->spt, &spte->elem);
       //表示一段已经映射进去了
-      filesize=filesize-PGSIZE;
-    }
-    lock_release(&thread_current()->spt_list_lock);
+        filesize=filesize-PGSIZE;
+      }
+      lock_release(&thread_current()->spt_list_lock);
     //[X]退出for循环
-    break;
-         }
-  }
+    }
   //[X]mapid作为返回值
-  if(findornot)
-  {
-  f->eax=mapid;
-  mapid++;
+    if(findornot)
+    {
+      f->eax=mapid;
+      mapid++;
+    }
+    else
+    f->eax=-1;
   }
-  else
-  f->eax=-1;
-  }
+
+
   else if(syscall_num == SYS_MUNMAP){
     int mip=*(pp+1);
 		struct thread* t=thread_current();
@@ -343,16 +340,16 @@ static void syscall_handler (struct intr_frame *f){
 		struct list_elem *e2;
 		//[X]找到相应mip的对应的页面表项spte
 		lock_acquire(&thread_current()->spt_list_lock);
-          e = list_begin (&t->spt);
-          while(e!=list_end(&t->spt))
-          {
+    e = list_begin (&t->spt);
+    while(e!=list_end(&t->spt))
+    {
 			  spte=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
 			  if(spte->mapid==mip)
 			  {
 				  //[X]该页是目标页,脏页面要写回
 				  if(pagedir_is_dirty(t->pagedir,spte->upage))
 				  {
-					file_write_at(spte->fileptr,spte->upage,PGSIZE,spte->ofs);
+					   file_write_at(spte->fileptr,spte->upage,PGSIZE,spte->ofs);
 				  }
 				  e2=e;
 				  e = list_next (e);
