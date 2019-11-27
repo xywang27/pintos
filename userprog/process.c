@@ -192,7 +192,9 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   struct thread *child;
+  struct spt_elem *spte;
   struct list_elem *e;
+  struct list_elem *se;
   uint32_t *pd;
   printf("%s: exit(%d)\n", cur->name, cur->exit_code);
 
@@ -206,7 +208,7 @@ process_exit (void)
 			if(pagedir_is_dirty(thread_current()->pagedir,spte->upage))
 			{
 				file_write_at(spte->fileptr,spte->upage,PGSIZE,spte->ofs);
-			}	
+			}
 		}
 	}
 	//[X]退出时该删除的文件要删除，该关闭的文件要删除,后面资源统一关闭这里只做删除
