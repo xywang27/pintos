@@ -268,8 +268,8 @@ bool load_from_file(struct list_elem* e,void *upage){
   }
   /* remove this spt */
   //[X]有内存映射文件的表项不去删除
-  if(spte->mapid==0)
-  list_remove(e);
+  // if(spte->mapid==0)
+  // list_remove(e);
   /* continue program run */
 
   return true;
