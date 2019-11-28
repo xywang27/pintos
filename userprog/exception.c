@@ -218,7 +218,7 @@ bool is_stack(void* fault_addr, void *esp, bool user){
     cur->stacklow = esp;
     if(
     PHYS_BASE - STACK_LIMIT<fault_addr
-    && (fault_addr>=esp
+    && (fault_addr>=esp-32
         ||(esp-fault_addr)==32
         ||(esp-fault_addr)==4)){
           return true;
