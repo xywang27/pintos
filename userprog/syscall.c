@@ -192,6 +192,9 @@ static void syscall_handler (struct intr_frame *f){
     unsigned size = *(unsigned *)(ptr + 12);                           /*get size*/
     is_valid_ptr (buffer);                                             /*check if buffer is valid*/
     is_valid_ptr (buffer+size);                                        /*chekc if buffer+size is valid*/
+    if(buffer < f->esp){
+      exit(-1);
+    }
     lock_acquire(&file_lock);
     f->eax = read(fd,buffer,size);
     lock_release(&file_lock);
