@@ -567,13 +567,13 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
      ASSERT (pg_ofs (upage) == 0);
      ASSERT (ofs % PGSIZE == 0);
 
-   #ifdef VM
+   // #ifdef VM
      /* L: we have to keep the absolute read offset, we did not read the
       * file continueously */
      uint32_t readed_page = 0;
-   #else
-     file_seek (file, ofs);
-   #endif
+   // #else
+   //   file_seek (file, ofs);
+   // #endif
 
      while (read_bytes > 0 || zero_bytes > 0)
        {
@@ -583,7 +583,7 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
          size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
          size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
-   #ifdef VM
+   // #ifdef VM
          /* L: we do not load file to page here, we will load it
           * when PF happends. Add an elem to spt, so we can find where is
           * the page content later in PF handler. */
@@ -606,35 +606,35 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
          list_push_back (&thread_current()->spt, &spte->elem);
          lock_release(&thread_current()->spt_list_lock);
          //[X]解锁
-   #else
-         /* L: Original load_seg used in no VM situation */
-         /* Get a page of memory. */
-         //uint8_t *kpage = palloc_get_page (PAL_USER);
-         /* L: using frame allocator in frame.c */
-         uint8_t *kpage =frame_get(false,upage);
-
-         if (kpage == NULL)
-           return false;
-
-         /* Load this page. */
-         if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
-           {
-             /*
-             palloc_free_page (kpage);
-             * using my frame free er */
-             frame_free(kpage);
-             return false;
-           }
-         memset (kpage + page_read_bytes, 0, page_zero_bytes);
-
-         /* Add the page to the process's address space. */
-         if (!install_page (upage, kpage, writable))
-           {
-             //palloc_free_page (kpage);
-             frame_free(kpage);
-             return false;
-           }
-   #endif
+   // #else
+   //       /* L: Original load_seg used in no VM situation */
+   //       /* Get a page of memory. */
+   //       //uint8_t *kpage = palloc_get_page (PAL_USER);
+   //       /* L: using frame allocator in frame.c */
+   //       uint8_t *kpage =frame_get(false,upage);
+   //
+   //       if (kpage == NULL)
+   //         return false;
+   //
+   //       /* Load this page. */
+   //       if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
+   //         {
+   //           /*
+   //           palloc_free_page (kpage);
+   //           * using my frame free er */
+   //           frame_free(kpage);
+   //           return false;
+   //         }
+   //       memset (kpage + page_read_bytes, 0, page_zero_bytes);
+   //
+   //       /* Add the page to the process's address space. */
+   //       if (!install_page (upage, kpage, writable))
+   //         {
+   //           //palloc_free_page (kpage);
+   //           frame_free(kpage);
+   //           return false;
+   //         }
+   // #endif
          /* Advance. */
          read_bytes -= page_read_bytes;
          zero_bytes -= page_zero_bytes;
