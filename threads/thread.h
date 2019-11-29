@@ -113,7 +113,6 @@ struct thread
     struct semaphore sema2;             /* the semaphore used to exit*/
     struct semaphore sema3;             /* the semaphare used to wait*/
     struct list spt;                    /*the spt list of the thread*/
-    void* stacklow;
     struct list swapt;
     //[X]awapt锁
     struct lock swap_list_lock;

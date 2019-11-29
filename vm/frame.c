@@ -1,8 +1,3 @@
-//      frame.c
-//
-//      Copyright 2011 mayli <mayli.he@gmail.com>,sneakerkg<xiaotj1990327@gmail.com>
-//
-
 #include "vm/frame.h"
 #include "vm/page.h"
 
@@ -70,75 +65,75 @@ void frame_free (void *kpage){
   ASSERT(0);
 }
 
-struct frame* frame_find (void *kpage){
-  struct list *l = &frame_list;
-  struct list_elem *e;
-  struct frame *f = NULL;
-  lock_acquire(&frame_list_lock);
-  for(e=list_begin(l); e!=list_end(l); e=list_next(e))
-  {
-    f = list_entry(e, struct frame, elem);
-    if(kpage==f->paddr)
-    {
-	  lock_release (&frame_list_lock);
-      return f;
-	}
-  }
-  lock_release (&frame_list_lock);
-  return NULL;
-}
-
-bool frame_table_full (void){
-  size_t s=list_size(&frame_list);
-  return s;
-}
+// struct frame* frame_find (void *kpage){
+//   struct list *l = &frame_list;
+//   struct list_elem *e;
+//   struct frame *f = NULL;
+//   lock_acquire(&frame_list_lock);
+//   for(e=list_begin(l); e!=list_end(l); e=list_next(e))
+//   {
+//     f = list_entry(e, struct frame, elem);
+//     if(kpage==f->paddr)
+//     {
+// 	  lock_release (&frame_list_lock);
+//       return f;
+// 	}
+//   }
+//   lock_release (&frame_list_lock);
+//   return NULL;
+// }
+//
+// bool frame_table_full (void){
+//   size_t s=list_size(&frame_list);
+//   return s;
+// }
 
 //[X]随时间改变recent的值
-void changerec(void)
-{
-  if(full)
-  {
-  struct list_elem *e;
-  struct frame* fp;
-  for (e = list_begin (&frame_list); e != list_end (&frame_list);
-				e = list_next (e))
-  {
-	fp=list_entry (e, struct frame, elem);
-	if(fp->owner->pagedir!=NULL)
-	{
-	if(pagedir_is_accessed (fp->owner->pagedir, fp->upage))
-	{
-	  pagedir_set_accessed (fp->owner->pagedir, fp->upage, false);
-	  fp->recent=0;
-	}
-	else
-	   fp->recent++;
-   }
-  }
-  }
-}
-
-//[X]替换算法
-struct frame* LRU(void)
-{
-    struct list_elem *e;
-    struct frame* fp;
-    struct frame* tar;
-    int max=-1;
-    for(e=list_begin(&frame_list);e!=list_end(&frame_list);e=list_next(e))
-    {
-		fp=list_entry (e, struct frame, elem);
-		//printf("%d ",fp->recent);
-		if(max<fp->recent)
-		{
-			max=fp->recent;
-			tar=fp;
-		}
-	}
-	tar->recent=0;
-    return tar;
-    /*
-    e=list_begin(&frame_list);
-	return list_entry(e,struct frame,elem);
-	*/
-}
+// void changerec(void)
+// {
+//   if(full)
+//   {
+//   struct list_elem *e;
+//   struct frame* fp;
+//   for (e = list_begin (&frame_list); e != list_end (&frame_list);
+// 				e = list_next (e))
+//   {
+// 	fp=list_entry (e, struct frame, elem);
+// 	if(fp->owner->pagedir!=NULL)
+// 	{
+// 	if(pagedir_is_accessed (fp->owner->pagedir, fp->upage))
+// 	{
+// 	  pagedir_set_accessed (fp->owner->pagedir, fp->upage, false);
+// 	  fp->recent=0;
+// 	}
+// 	else
+// 	   fp->recent++;
+//    }
+//   }
+//   }
+// }
+//
+// //[X]替换算法
+// struct frame* LRU(void)
+// {
+//     struct list_elem *e;
+//     struct frame* fp;
+//     struct frame* tar;
+//     int max=-1;
+//     for(e=list_begin(&frame_list);e!=list_end(&frame_list);e=list_next(e))
+//     {
+// 		fp=list_entry (e, struct frame, elem);
+// 		//printf("%d ",fp->recent);
+// 		if(max<fp->recent)
+// 		{
+// 			max=fp->recent;
+// 			tar=fp;
+// 		}
+// 	}
+// 	tar->recent=0;
+//     return tar;
+//     /*
+//     e=list_begin(&frame_list);
+// 	return list_entry(e,struct frame,elem);
+// 	*/
+// }
