@@ -195,25 +195,24 @@ page_fault (struct intr_frame *f)
 /*grow stack function*/
 bool grow_stack(void *upage){
   bool success = false;
-  void *kpage = frame_get_page(upage);
+  void *kpage = frame_get_page(upage);                                        /*get new page*/
   if (kpage != NULL){
-    success = install_page (upage, kpage, true);
+    success = install_page (upage, kpage, true);                              /*adds a mapping from user virtual address  to kernel virtual address*/
     if(!success){
-      frame_free_page(kpage);
+      frame_free_page(kpage);                                                 /*free if fail*/
       return false;
     }
   }
   return true;
 }
 
+/*lazy load function*/
 bool load_file(struct spt_elem* spte,void *upage){
   void* kpage=frame_get_page(upage);
   if (kpage == NULL)
       return false;
-  /* load file to upage/frame */
   /* Load this page. */
   if (file_read_at (spte->file, kpage, spte->read_bytes,spte->ofs) != (int) spte->read_bytes){
-    /* using my frame free er */
     frame_free_page(kpage);
     return false;
   }
