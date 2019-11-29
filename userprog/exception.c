@@ -9,14 +9,12 @@
 #include "vm/frame.h"
 #include "threads/vaddr.h"
 #include "userprog/process.h"
-#define STACK_LIMIT (8 * 1024 * 1024)
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
-bool is_stack(void* faultaddr, void *esp, bool user);
 bool more_stack(void* fault_addr);
 bool load_from_file(struct list_elem* spte,void *upage);
 bool load_from_swap(void *upage);
@@ -162,9 +160,7 @@ page_fault (struct intr_frame *f)
   void *page_boundary = pg_round_down(fault_addr);                             /*round up to the nearest page boundary*/
   struct list_elem *e = find_page (page_boundary);                             /*find if is in the spt*/
   if (!e){
-    if(fault_addr>=f->esp-32
-        ||(f->esp-fault_addr)==32
-        ||(f->esp-fault_addr)==4)
+    if(fault_addr>=f->esp||(f->esp==(fault_addr+32)||(f->esp=fault_addr+4))
     {
       if(more_stack(fault_addr)){
         return;
@@ -204,41 +200,19 @@ page_fault (struct intr_frame *f)
   kill (f);
 }
 
-bool is_stack(void* fault_addr, void *esp, bool user){
-  struct thread * cur = thread_current();
-  void * page_boundary = pg_round_down(fault_addr);
-  // if(fault_addr > PHYS_BASE)
-  //   return false;
-
-  if(user){
-    cur->stacklow = esp;
-    if(
-    (fault_addr>=esp-32
-        ||(esp-fault_addr)==32
-        ||(esp-fault_addr)==4)){
-          return true;
-        }
-    else
-      return false;
-    }
-  // else{
-  //   /* L:PF in a syscall */
-  //   if(fault_addr >= cur->stacklow)
-  //     return true;
-  //   }
-  //   return false;
-  }
-
 /* L: alloc more stack for current */
 bool more_stack(void *fault_addr){
-  if(!is_user_vaddr (fault_addr))
-    return false;
+  // if(!is_user_vaddr (fault_addr))
+  //   return false;
+  bool success = false;
   void *upage = pg_round_down(fault_addr);
   void *kpage = frame_get(true,upage);
-
-  if(!install_page (upage, kpage, true)){
-    frame_free(kpage);
-    return false;
+  if (kpage != NULL){
+    success = install_page (upage, kpage, true);
+    if(!success){
+      frame_free(kpage);
+      return false;
+    }
   }
   return true;
 }
