@@ -16,7 +16,7 @@ static long long page_fault_cnt;
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
 bool grow_stack(void* upage);
-bool load_from_file(struct list_elem* spte,void *upage);
+bool load_file(struct list_elem* spte,void *upage);
 bool load_from_swap(void *upage);
 
 
@@ -169,7 +169,8 @@ page_fault (struct intr_frame *f)
     }
   }
   else{
-    if(load_from_file(e,page_boundary))
+    struct spt_elem* spte= (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+    if(load_file(spte,page_boundary))
       return;
   }
 
@@ -204,11 +205,11 @@ bool grow_stack(void *upage){
   return true;
 }
 
-bool load_from_file(struct list_elem* e,void *upage){
+bool load_file(struct spt_elem* spte,void *upage){
   void* kpage=frame_get(true,upage);
   if (kpage == NULL)
       return false;
-  struct spt_elem* spte= (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+  // struct spt_elem* spte= (struct spt_elem *)list_entry (e, struct spt_elem, elem);
   /* load file to upage/frame */
   /* Load this page. */
   if (file_read_at (spte->file, kpage, spte->read_bytes,spte->ofs) != (int) spte->read_bytes){
