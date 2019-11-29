@@ -470,12 +470,13 @@ bool check_overlap(void *addr){
 void munmap (mapid_t mapping){
   struct spt_elem *spte;
   struct list_elem *e;
+  struct list_elem *e2;
   lock_acquire(&thread_current()->spt_list_lock);
   e = list_begin (&t->spt);
   while(e!=list_end(&t->spt))
   {
 			spte=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
-			if(spte->mapid==mip)
+			if(spte->mapid==mapping)
 			{
 				  //[X]该页是目标页,脏页面要写回
 			 if(pagedir_is_dirty(t->pagedir,spte->upage))
