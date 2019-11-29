@@ -15,7 +15,7 @@ static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
-bool more_stack(void* fault_addr);
+bool grow_stack(void* upage);
 bool load_from_file(struct list_elem* spte,void *upage);
 bool load_from_swap(void *upage);
 
@@ -160,10 +160,12 @@ page_fault (struct intr_frame *f)
   void *page_boundary = pg_round_down(fault_addr);                             /*round up to the nearest page boundary*/
   struct list_elem *e = find_page (page_boundary);                             /*find if is in the spt*/
   if (!e){
-    if(fault_addr>=f->esp||f->esp==(fault_addr+32)||f->esp==(fault_addr+4))
-    {
-      if(more_stack(fault_addr))
-        return;
+    if(fault_addr>=f->esp||f->esp==(fault_addr+32)||f->esp==(fault_addr+4)){
+      if(is_user_vaddr (fault_addr)){
+        if (grow_stack(page_boundary)){
+          return;
+        }
+      }
     }
   }
   else{
@@ -200,9 +202,9 @@ page_fault (struct intr_frame *f)
 }
 
 /* L: alloc more stack for current */
-bool more_stack(void *fault_addr){
-   if(!is_user_vaddr (fault_addr))
-     return false;
+bool more_stack(void *upage){
+   // if(!is_user_vaddr (fault_addr))
+   //   return false;
   bool success = false;
   void *upage = pg_round_down(fault_addr);
   void *kpage = frame_get(true,upage);
