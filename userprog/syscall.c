@@ -39,7 +39,7 @@ void close (int fd);
 mapid_t mmap (int fd, void *addr);
 bool check_overlap(void *addr);
 void munmap (mapid_t mapping);
-struct list_elem *find_mapid (mapid_t mapping)
+struct list_elem *find_mapid (mapid_t mapping);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
