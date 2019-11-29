@@ -162,7 +162,9 @@ page_fault (struct intr_frame *f)
   void *page_boundary = pg_round_down(fault_addr);                             /*round up to the nearest page boundary*/
   struct list_elem *e = find_page (page_boundary);                             /*find if is in the spt*/
   if (!e){
-    if(is_stack(fault_addr,f->esp,user))
+    if(fault_addr>=f->esp-32
+        ||(f->esp-fault_addr)==32
+        ||(f->esp-fault_addr)==4))
     {
       if(more_stack(fault_addr)){
         return;
