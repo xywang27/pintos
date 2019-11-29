@@ -246,7 +246,7 @@ static void syscall_handler (struct intr_frame *f){
     int fd = *(int *)(ptr + 4);
     uint32_t addr = *(ptr+8);
     if(addr==0||(pg_round_down(addr)!=addr)||addr+PGSIZE>f->esp
-    ||upage<0x08050000)
+    ||addr<0x08050000)
     {
        f->eax=-1;
        return;
