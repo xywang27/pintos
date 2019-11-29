@@ -215,10 +215,15 @@ process_exit (void)
 	   se!=list_end(&thread_current()->spt);se=list_next(se))
 	{
 		spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-		if(spte->mapid&&spte->needremove)
-		{
-			filesys_remove(spte->file);
-		}
+    if(spte->mapid){
+      if(pagedir_is_dirty(thread_current()->pagedir,spte->upage))
+    	 		{
+    				file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
+    			}
+      if(spte->needremove){
+        filesys_remove(spte->file)
+      }
+    }
 	}
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
