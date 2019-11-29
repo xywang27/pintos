@@ -39,7 +39,7 @@ void close (int fd);
 mapid_t mmap (int fd, void *addr);
 bool check_overlap(void *addr);
 void munmap (mapid_t mapping);
-struct spt_elem *find_mapid (mapid_t mapping);
+struct list_elem *find_mapid (mapid_t mapping);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -483,7 +483,8 @@ void munmap (mapid_t mapping){
 	// 	e = list_next (e);
  // }
  //  lock_release(&thread_current()->spt_lock);
- struct spt_elem *a = find_mapid(mapping);
+ struct list_elem *e = find_mapid(mapping);
+ struct spt_elem *a = list_entry (e, struct spt_elem, elem);
  if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){        /*if it is dirty, it needs to write back*/
  		  file_write_at(a->file,a->upage,PGSIZE,a->ofs);
  }
@@ -491,14 +492,14 @@ void munmap (mapid_t mapping){
 }
 
 //find the spt_elem with the given mapping
-struct spt_elem *find_mapid (mapid_t mapping){
+struct list_elem *find_mapid (mapid_t mapping){
   struct thread* cur=thread_current();
   struct spt_elem* a;
   struct list_elem *e;
   for (e = list_begin (&cur->spt); e != list_end (&cur->spt);e = list_next (e)){    /*traverse the spt list*/
     a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
     if(a->mapid == mapping){
-      return a;
+      return e;
     }
   }
   return 0;
