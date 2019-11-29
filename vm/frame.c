@@ -22,26 +22,26 @@ void* frame_get_page(void* upage){
   frame->paddr=kpage;
   frame->upage=upage;
   frame->holder=thread_current();
-  list_push_front(&frame_table, &frame->elem);
+  list_push_back(&frame_table, &frame->elem);                                    /*push the frame into frame table*/
   return kpage;
 }
-/* L:free a frame.
-   frame table entry & page must both be freed. */
+
+/* a litle change from palloc free page */
 void frame_free_page (void *kpage){
-  struct frame* f;
-  struct list_elem *e = find_frame (kpage);
+  struct frame* frame;
+  struct list_elem *e = find_frame (kpage);                                      /*find the corresponding frame*/
   palloc_free_page(kpage);
-  f = list_entry(e, struct frame, elem);
-  list_remove (&f->elem);
+  frame = list_entry(e, struct frame, elem);
+  list_remove (&frame->elem);                                                    /*remove the frame from frame table*/
 }
 
+/* find the frame with given kpage*/
 struct list_elem *find_frame (void *kpage){
-  struct frame* f;
+  struct frame* frame;
   struct list_elem *e;
-  struct list *l = &frame_table;
-  for(e=list_begin(l); e!=list_end(l); e=list_next(e)){
-    f = list_entry(e, struct frame, elem);
-    if(kpage==f->paddr){
+  for(e=list_begin(&frame_table); e!=list_end(&frame_table); e=list_next(e)){
+    frame = list_entry(e, struct frame, elem);
+    if(frame->paddr == kpage){
       return e;
     }
   }
