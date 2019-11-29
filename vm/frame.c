@@ -20,8 +20,11 @@ void* frame_get_page(void* upage){
   /* L;sync */
   lock_acquire(&frame_list_lock);
   void *kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  struct frame* f;
-  f=(struct frame *) malloc (sizeof(struct frame));
+  struct frame* f = (struct frame *) malloc (sizeof(struct frame));
+  if(!f){
+    palloc_free_page(kpage);
+    return NULL;
+  }
   f->recent=0;
   f->paddr=kpage;
   f->upage=upage;
@@ -34,21 +37,27 @@ void* frame_get_page(void* upage){
 /* L:free a frame.
    frame table entry & page must both be freed. */
 void frame_free_page (void *kpage){
-  struct list *l = &frame_list;
-  struct list_elem *e;
-  struct frame *f = NULL;
-
+  struct frame* f;
   lock_acquire(&frame_list_lock);
+  struct list_elem *e = find_frame (kpage);
+  palloc_free_page(kpage);
+  f = list_entry(e, struct frame, elem);
+  list_remove (&f->elem);
+  lock_release (&frame_list_lock);
+  // ASSERT(0);
+}
+
+struct list_elem *find_frame (void *kpage){
+  struct frame* f;
+  struct list_elem *e;
+  struct list *l = &frame_list;
   for(e=list_begin(l); e!=list_end(l); e=list_next(e)){
     f = list_entry(e, struct frame, elem);
     if(kpage==f->paddr){
-      palloc_free_page(kpage);
-      list_remove (&f->elem);
-      lock_release (&frame_list_lock);
-      return;
+      return e;
     }
   }
-  ASSERT(0);
+  return 0;
 }
 
 // struct frame* frame_find (void *kpage){

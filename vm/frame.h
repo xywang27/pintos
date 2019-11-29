@@ -27,6 +27,7 @@ void frame_table_init(void);
 /* L: frame_get must be called with an upage */
 void* frame_get_page (void* upage);
 void frame_free_page (void *);
+struct list_elem *find_frame (void *kpage);
 // struct frame* frame_find (void *);
 // struct frame* LRU(void);
 // void changerec(void);
