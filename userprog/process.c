@@ -25,6 +25,7 @@ static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 char* split(char* command,char* argv[],int* argc);
 
+static bool load_success = true;                                              /*variable that shows if load is success*/
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -53,7 +54,7 @@ process_execute (const char *file_name)
     if (find_thread(tid) != NULL){                                          /*if thread with this id can be found*/
       struct thread* child = find_thread(tid);
       sema_down (&child->sema1);                                            /*let parent thread wait*/
-      if(thread_current()->load_success){                                   /*if load success*/
+      if(load_success){                                                     /*if load success*/
         list_push_back (&thread_current ()->children, &child->childelem);   /*put child in children list*/
       }
       else{                                                                 /*if load fail*/
@@ -90,7 +91,7 @@ start_process (void *file_name_)
   success = load (argv[0], &if_.eip, &if_.esp);
 
   if (!success){                                                       /*if load fail*/
-    thread_current ()->load_success = false;
+    load_success = false;
     sema_up (&thread_current ()->sema1);                               /*awake the parent thread*/
     thread_exit ();                                                    /*exit*/
   }

@@ -486,11 +486,8 @@ init_thread (struct thread *t, const char *name, int priority)
   sema_init (&t->sema1, 0);
   sema_init (&t->sema2, 0);
   t->exit_code = -1;
-  t->load_success = true;
   list_init (&t->children);
   list_init(&t->spt);
-  list_init(&t->swapt);
-  lock_init(&t->swap_list_lock);
   lock_init(&t->spt_list_lock);
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

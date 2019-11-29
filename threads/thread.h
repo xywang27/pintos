@@ -109,16 +109,11 @@ struct thread
     struct list_elem childelem;         /* List element for children list */
     struct list children;               /* List of all children*/
     struct file* exec_file;             /* Executable file. */
-    bool load_success;                  /*variable that shows if load is success*/
     struct semaphore sema1;             /* semaphare used to let parent wait while child is loading */
     struct semaphore sema2;             /* the semaphore used to exit*/
     struct semaphore sema3;             /* the semaphare used to wait*/
     struct list spt;                    /*the spt list of the thread*/
-    struct list swapt;
-    //[X]awapt锁
-    struct lock swap_list_lock;
-    //[X]spt锁
-    struct lock spt_list_lock;
+    struct lock spt_list_lock;          /*the lock used in spt*/
   };
 
 /* If false (default), use round-robin scheduler.
