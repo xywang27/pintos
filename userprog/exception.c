@@ -169,19 +169,8 @@ page_fault (struct intr_frame *f)
     }
   }
   else{
-    /* load sth from file/stack/etc */
-    /* l: add your swap code here */
-    // if(e!=NULL)
-    // {
-    if(load_from_file(find_page (page_boundary),page_boundary))
+    if(load_from_file(e,page_boundary))
       return;
-    // }
-    //[X]在swap分区则写回
-    // if(e2!=NULL)
-    // {
-    // if(load_from_swap(page_boundary))
-	  // return;
-    // }
   }
 
   f->eip = f->eax;
@@ -201,12 +190,9 @@ page_fault (struct intr_frame *f)
   kill (f);
 }
 
-/* L: alloc more stack for current */
+/*grow stack function*/
 bool grow_stack(void *upage){
-   // if(!is_user_vaddr (fault_addr))
-   //   return false;
   bool success = false;
-  // void *upage = pg_round_down(fault_addr);
   void *kpage = frame_get(true,upage);
   if (kpage != NULL){
     success = install_page (upage, kpage, true);
@@ -220,32 +206,29 @@ bool grow_stack(void *upage){
 
 bool load_from_file(struct list_elem* e,void *upage){
   void* kpage=frame_get(true,upage);
+  if (kpage == NULL)
+      return false;
   struct spt_elem* spte= (struct spt_elem *)list_entry (e, struct spt_elem, elem);
   /* load file to upage/frame */
   /* Load this page. */
   if (file_read_at (spte->file, kpage, spte->read_bytes,spte->ofs) != (int) spte->read_bytes){
     /* using my frame free er */
     frame_free(kpage);
-    PANIC("[!!FILE READ_BYTES ERROR!!]\n");
+    // PANIC("[!!FILE READ_BYTES ERROR!!]\n");
     return false;
   }
   memset (kpage + spte->read_bytes, 0, spte->zero_bytes);
   /* Add the page to the process's address space. */
   if (!install_page (spte->upage, kpage, spte->writable)){
     frame_free(kpage);
-    PANIC("[!!INSTALL_PAGE ERROR!!]\n");
+    // PANIC("[!!INSTALL_PAGE ERROR!!]\n");
     return false;
   }
   /* remove this spt */
   //[X]有内存映射文件的表项不去删除
-  if(spte->mapid==0)
-  list_remove(e);
+  // if(spte->mapid==0)
+  // list_remove(e);
   /* continue program run */
 
   return true;
 }
-// bool load_from_swap(void *upage)
-// {
-// 	void* fp=frame_get(0,upage);
-// 	return readback(upage,fp);
-// }
