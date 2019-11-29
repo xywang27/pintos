@@ -160,7 +160,7 @@ page_fault (struct intr_frame *f)
   void *page_boundary = pg_round_down(fault_addr);                             /*round up to the nearest page boundary*/
   struct list_elem *e = find_page (page_boundary);                             /*find if is in the spt*/
   if (!e){
-    if(fault_addr>=f->esp||(f->esp==(fault_addr+32)||(f->esp=fault_addr+4))
+    if(fault_addr>=f->esp||f->esp==(fault_addr+32)||f->esp==(fault_addr+4))
     {
       if(more_stack(fault_addr))
         return;
@@ -203,14 +203,15 @@ page_fault (struct intr_frame *f)
 bool more_stack(void *fault_addr){
   // if(!is_user_vaddr (fault_addr))
   //   return false;
-  if(!is_user_vaddr (fault_addr))
-    return false;
+  bool success = false;
   void *upage = pg_round_down(fault_addr);
   void *kpage = frame_get(true,upage);
-
-  if(!process_install_page (upage, kpage, true)){
-    frame_free(kpage);
-    return false;
+  if (kpage != NULL){
+    success = install_page (upage, kpage, true);
+    if(!success){
+      frame_free(kpage);
+      return false;
+    }
   }
   return true;
 }
