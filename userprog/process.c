@@ -530,89 +530,89 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
    load_segment (struct file *file, off_t ofs, uint8_t *upage,
                  uint32_t read_bytes, uint32_t zero_bytes, bool writable)
    {
-    //  ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
-    // ASSERT (pg_ofs (upage) == 0);
-    // ASSERT (ofs % PGSIZE == 0);
-    //
-    // file_seek (file, ofs);
-    // while (read_bytes > 0 || zero_bytes > 0)
-    // {
-    //   /* Calculate how to fill this page.
-    //      We will read PAGE_READ_BYTES bytes from FILE
-    //      and zero the final PAGE_ZERO_BYTES bytes. */
-    //   size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
-    //   size_t page_zero_bytes = PGSIZE - page_read_bytes;
-    //
-    //   /* Get a page of memory. */
-    //   uint8_t *kpage = palloc_get_page (PAL_USER);
-    //   if (kpage == NULL)
-    //     return false;
-    //
-    //   /* Load this page. */
-    //   if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
-    //   {
-    //     palloc_free_page (kpage);
-    //     return false;
-    //   }
-    //   memset (kpage + page_read_bytes, 0, page_zero_bytes);
-    //
-    //   /* Add the page to the process's address space. */
-    //   if (!install_page (upage, kpage, writable))
-    //   {
-    //     palloc_free_page (kpage);
-    //     return false;
-    //   }
-    //
-    //   /* Advance. */
-    //   read_bytes -= page_read_bytes;
-    //   zero_bytes -= page_zero_bytes;
-    //   upage += PGSIZE;
-    // }
-    // return true;
-     ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
-     ASSERT (pg_ofs (upage) == 0);
-     ASSERT (ofs % PGSIZE == 0);
-     /* L: we have to keep the absolute read offset, we did not read the
-      * file continueously */
-     uint32_t readed_page = 0;
+    ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
+    ASSERT (pg_ofs (upage) == 0);
+    ASSERT (ofs % PGSIZE == 0);
 
-     while (read_bytes > 0 || zero_bytes > 0)
-       {
-         /* Calculate how to fill this page.
-            We will read PAGE_READ_BYTES bytes from FILE
-            and zero the final PAGE_ZERO_BYTES bytes. */
-         size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
-         size_t page_zero_bytes = PGSIZE - page_read_bytes;
+    file_seek (file, ofs);
+    while (read_bytes > 0 || zero_bytes > 0)
+    {
+      /* Calculate how to fill this page.
+         We will read PAGE_READ_BYTES bytes from FILE
+         and zero the final PAGE_ZERO_BYTES bytes. */
+      size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
+      size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
-         /* L: we do not load file to page here, we will load it
-          * when PF happends. Add an elem to spt, so we can find where is
-          * the page content later in PF handler. */
-         char ch;
-         //[X]加锁
-         lock_acquire(&thread_current()->spt_list_lock);
-         struct spt_elem *spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
-         /* L: which upage this spt entry is descripting */
-         spte->upage=upage;
-         /* L: fill the entry to record the load-file infomation */
-         spte->file=file;
-         /* L: we need a abs ofs of the file */
-         spte->holder=thread_current();
-         spte->ofs=(uint32_t)ofs + (readed_page * (uint32_t)PGSIZE);;
-         readed_page++;
+      /* Get a page of memory. */
+      uint8_t *kpage = palloc_get_page (PAL_USER);
+      if (kpage == NULL)
+        return false;
 
-         spte->read_bytes=page_read_bytes;
-         spte->zero_bytes=page_zero_bytes;
-         spte->writable=writable;
-         //printf("[spte added:u%p,f%p,w(%d),RB(%d),ZB(%d)]\n",upage,file,writable,page_read_bytes,page_zero_bytes);
-         list_push_back (&thread_current()->spt, &spte->elem);
-         lock_release(&thread_current()->spt_list_lock);
-         //[X]解锁
-         /* Advance. */
-         read_bytes -= page_read_bytes;
-         zero_bytes -= page_zero_bytes;
-         upage += PGSIZE;
-       }
-     return true;
+      /* Load this page. */
+      if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
+      {
+        palloc_free_page (kpage);
+        return false;
+      }
+      memset (kpage + page_read_bytes, 0, page_zero_bytes);
+
+      /* Add the page to the process's address space. */
+      if (!install_page (upage, kpage, writable))
+      {
+        palloc_free_page (kpage);
+        return false;
+      }
+
+      /* Advance. */
+      read_bytes -= page_read_bytes;
+      zero_bytes -= page_zero_bytes;
+      upage += PGSIZE;
+    }
+    return true;
+     // ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
+     // ASSERT (pg_ofs (upage) == 0);
+     // ASSERT (ofs % PGSIZE == 0);
+     // /* L: we have to keep the absolute read offset, we did not read the
+     //  * file continueously */
+     // uint32_t readed_page = 0;
+     //
+     // while (read_bytes > 0 || zero_bytes > 0)
+     //   {
+     //     /* Calculate how to fill this page.
+     //        We will read PAGE_READ_BYTES bytes from FILE
+     //        and zero the final PAGE_ZERO_BYTES bytes. */
+     //     size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
+     //     size_t page_zero_bytes = PGSIZE - page_read_bytes;
+     //
+     //     /* L: we do not load file to page here, we will load it
+     //      * when PF happends. Add an elem to spt, so we can find where is
+     //      * the page content later in PF handler. */
+     //     char ch;
+     //     //[X]加锁
+     //     lock_acquire(&thread_current()->spt_list_lock);
+     //     struct spt_elem *spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
+     //     /* L: which upage this spt entry is descripting */
+     //     spte->upage=upage;
+     //     /* L: fill the entry to record the load-file infomation */
+     //     spte->file=file;
+     //     /* L: we need a abs ofs of the file */
+     //     spte->holder=thread_current();
+     //     spte->ofs=(uint32_t)ofs + (readed_page * (uint32_t)PGSIZE);;
+     //     readed_page++;
+     //
+     //     spte->read_bytes=page_read_bytes;
+     //     spte->zero_bytes=page_zero_bytes;
+     //     spte->writable=writable;
+     //     //printf("[spte added:u%p,f%p,w(%d),RB(%d),ZB(%d)]\n",upage,file,writable,page_read_bytes,page_zero_bytes);
+     //     list_push_back (&thread_current()->spt, &spte->elem);
+     //     lock_release(&thread_current()->spt_list_lock);
+     //     //[X]解锁
+     //     /* Advance. */
+     //     read_bytes -= page_read_bytes;
+     //     zero_bytes -= page_zero_bytes;
+     //     upage += PGSIZE;
+     //   }
+     // return true;
    }
 
 /* Create a minimal stack by mapping a zeroed page at the top of
