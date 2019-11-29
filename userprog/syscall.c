@@ -146,15 +146,15 @@ static void syscall_handler (struct intr_frame *f){
   else if(syscall_num == SYS_REMOVE){                                   /*sys_remove*/
     is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
-    struct list_elem *se;
-    struct spt_elem *spte;
+    struct list_elem *e;
+    struct spt_elem *a;
     char *file_name = *(char **)(ptr+4);                                /*get file name*/
     is_valid_string(file_name);                                         /*check if file name is valid*/
-    for(se=list_begin(&thread_current()->spt);
-    se!=list_end(&thread_current()->spt);se=list_next(se)){
-      spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-      if(spte->file==file_name){
-        spte->remove = true;
+    /*if the remove is called when the file is mapped, we should wait and remove when thread exit.*/
+    for(e = list_begin(&thread_current()->spt);e != list_end(&thread_current()->spt); e = list_next(e)){
+      a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+      if(a->file==file_name){
+        a->remove = true;
         return;
       }
     }
@@ -186,9 +186,6 @@ static void syscall_handler (struct intr_frame *f){
     unsigned size = *(unsigned *)(ptr + 12);                           /*get size*/
     is_valid_ptr (buffer);                                             /*check if buffer is valid*/
     is_valid_ptr (buffer+size);                                        /*chekc if buffer+size is valid*/
-    // if(buffer < f->esp){
-    //   exit(-1);
-    // }
     lock_acquire(&file_lock);
     f->eax = read(fd,buffer,size);
     lock_release(&file_lock);
@@ -223,35 +220,32 @@ static void syscall_handler (struct intr_frame *f){
   }
 
   else if(syscall_num == SYS_CLOSE){                                   /*sys_close*/
-
     is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    struct list_elem *se;
-    struct spt_elem *spte;
-    for(se=list_begin(&thread_current()->spt);
-    			se!=list_end(&thread_current()->spt);se=list_next(se)){
-    	  spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-    		if(spte->file==thread_current()->file[fd])
-    				{
-    					spte->close=true;
-    					return;
-    				}
-    			}
+    struct list_elem *e;
+    struct spt_elem *a;
+    /*if the close is called when the file is mapped, we should wait and close when thread exit.*/
+    for(e = list_begin(&thread_current()->spt);e != list_end(&thread_current()->spt);e = list_next(e)){
+    	a=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
+    	if(a->file==thread_current()->file[fd]){
+    		a->close=true;
+    		return;
+    	}
+    }
     close(fd);
   }
 
-  else if(syscall_num == SYS_MMAP){
+  else if(syscall_num == SYS_MMAP){                                    /*sys_mmap*/
     is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);
-    uint32_t addr = *(uint32_t *)(ptr+8);
-    if(addr==0||(pg_round_down(addr)!=addr)||addr+PGSIZE>f->esp||addr<0x08050000)
-    {
+    int fd = *(int *)(ptr + 4);                                        /*get fd*/
+    uint32_t addr = *(uint32_t *)(ptr+8);                              /*get addr*/
+    if(addr==0||(pg_round_down(addr)!=addr)||addr+PGSIZE>f->esp||addr<0x08050000){    /*some situations that may fail*/
        f->eax=-1;
        return;
-     }
-    if(!check_overlap(addr)){
+    }
+    if(!check_overlap(addr)){                                           /*it may fail when the range of pages mapped overlaps any existing set of mapped pages*/
       f->eax=-1;
       return;
     }
@@ -259,10 +253,10 @@ static void syscall_handler (struct intr_frame *f){
   }
 
 
-  else if(syscall_num == SYS_MUNMAP){
+  else if(syscall_num == SYS_MUNMAP){                                  /*sys_munmap*/
     is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int mapping=*(int *)(ptr + 4);
+    int mapping=*(int *)(ptr + 4);                                     /*get mapping*/
     munmap(mapping);
   }
 }
@@ -417,75 +411,72 @@ void close (int fd)
   }
 }
 
+//Maps the file open as fd into the process's virtual address space.
 mapid_t mmap (int fd, void *addr){
   struct thread *cur = thread_current ();
   int temp;
   int filesize;
-  struct spt_elem *spte;
-  if (cur->file[fd] != NULL){
-    filesize = file_length (cur->file[fd]);
-   if(filesize == 0){
+  struct spt_elem *a;
+  if (cur->file[fd] != NULL){                                                          /*the file can not be NULL*/
+    filesize = file_length (cur->file[fd]);                                            /*get file length*/
+   if(filesize == 0){                                                                  /*file length can not be 0*/
      return -1;
    }
-   int i=0;
-    lock_acquire(&thread_current()->spt_lock);
-    while(filesize>0)
-    {
-      spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
-      spte->holder = cur;
-      spte->upage=addr;
-      spte->file=cur->file[fd];
-      spte->ofs=i * (uint32_t)PGSIZE;
-      spte->mapid=mapid;
-      spte->read_bytes = filesize>=PGSIZE? PGSIZE : filesize;
-      spte->zero_bytes = filesize>=PGSIZE? 0 : PGSIZE-filesize;
-      spte->writable=true;
-      list_push_back (&thread_current()->spt, &spte->elem);
-      addr=addr+(uint32_t)PGSIZE;
+   int i=0;                                                                            /*record how much page it needs*/
+   lock_acquire(&cur->spt_lock);
+   while(filesize>0){
+      a=(struct spt_elem *)malloc(sizeof(struct spt_elem));                            /*generate a new spt_elem*/
+      a->holder = cur;
+      a->upage = addr;
+      a->file = cur->file[fd];
+      a->ofs = i * PGSIZE;
+      a->writable = true;
+      a->mapid = mapid;
+      a->read_bytes = filesize>=PGSIZE? PGSIZE : filesize;
+      a->zero_bytes = filesize>=PGSIZE? 0 : PGSIZE-filesize;
+      list_push_back (&cur->spt, &a->elem);
+      addr = addr + PGSIZE;
       i++;
-      filesize=filesize-PGSIZE;
-    }
-    lock_release(&thread_current()->spt_lock);
-    temp=mapid;
-    mapid++;
-    return temp;
-  }
-  return -1;
+      filesize = filesize-PGSIZE;
+   }
+   lock_release(&cur->spt_lock);
+   temp = mapid;
+   mapid++;
+   return temp;
+   }
+   return -1;
 }
 
+//function that checks if there are any overlaps
 bool check_overlap(void *addr){
-  struct list_elem *se;
-  struct spt_elem *spte;
-  for (se = list_begin (&thread_current()->spt); se != list_end (&thread_current()->spt);
-  se = list_next (se))
-  {
-    spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-    if(spte->upage==addr)
+  struct list_elem *e;
+  struct spt_elem *a;
+  for (e = list_begin (&thread_current()->spt);e != list_end (&thread_current()->spt); e = list_next (e)){
+    a = (struct spt_elem *)list_entry (se, struct spt_elem, elem);
+    if(a->upage == addr)
     {
       return false;
     }
   }
 }
 
+//Unmaps the mapping designated by mapping
 void munmap (mapid_t mapping){
-  struct spt_elem *spte;
+  struct spt_elem *a;
   struct list_elem *e;
   struct list_elem *temp;
   lock_acquire(&thread_current()->spt_lock);
   e = list_begin (&thread_current()->spt);
-  while(e!=list_end(&thread_current()->spt))
+  while(e!=list_end(&thread_current()->spt))                              /*traverse the spt_list*/
   {
-		spte=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
-	  if(spte->mapid==mapping)
-		{
-				  //[X]该页是目标页,脏页面要写回
-			if(pagedir_is_dirty(thread_current()->pagedir,spte->upage))
-				{
-			     file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
-				}
+		a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+	  if(a->mapid == mapping){                                              /*find the element need to be unmapped*/
+			if(pagedir_is_dirty(thread_current()->pagedir,spte->upage)){        /*if it is dirty, it needs to write back*/
+			  file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
+			}
 			temp=e;
 			e = list_next (e);
-			list_remove(temp);
+			list_remove(temp);                                                  /*remove the spt_elem from the spt_list*/
       continue;
 		}
 		e = list_next (e);

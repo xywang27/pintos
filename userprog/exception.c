@@ -17,7 +17,6 @@ static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
 bool grow_stack(void* upage);
 bool load_file(struct spt_elem* spte,void *upage);
-bool load_from_swap(void *upage);
 
 
 /* Registers handlers for interrupts that can be caused by user
