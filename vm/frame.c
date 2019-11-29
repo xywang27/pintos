@@ -19,9 +19,9 @@ void* frame_get_page(void* upage){
     palloc_free_page(kpage);
     return NULL;
   }
-  f->paddr=kpage;
-  f->upage=upage;
-  f->holder=thread_current();
+  frame->paddr=kpage;
+  frame->upage=upage;
+  frame->holder=thread_current();
   list_push_front(&frame_table, &f->elem);
   return kpage;
 }
