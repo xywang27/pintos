@@ -483,7 +483,7 @@ void munmap (mapid_t mapping){
 	// 	e = list_next (e);
  // }
  //  lock_release(&thread_current()->spt_lock);
- struct list_elem *e = find_mapid(mapping)
+ struct list_elem *e = find_mapid(mapping);
  struct spt_elem *a;
  a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
  if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){        /*if it is dirty, it needs to write back*/
