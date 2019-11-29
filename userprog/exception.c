@@ -214,7 +214,7 @@ bool load_file(struct spt_elem* spte,void *upage){
   /* Load this page. */
   if (file_read_at (spte->file, kpage, spte->read_bytes,spte->ofs) != (int) spte->read_bytes){
     /* using my frame free er */
-    frame_free(kpage);
+    frame_free_page(kpage);
     // PANIC("[!!FILE READ_BYTES ERROR!!]\n");
     return false;
   }
