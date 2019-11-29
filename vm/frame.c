@@ -12,11 +12,11 @@ uint32_t frame_list_length;
 static int full;
 
 void frame_table_init(void){
-  extern size_t user_page_cnt; /* palloc.c */
-  frame_list_length = user_page_cnt;
+  // extern size_t user_page_cnt; /* palloc.c */
+  // frame_list_length = user_page_cnt;
   list_init (&frame_list);
   lock_init(&frame_list_lock);
-  full=false;
+  // full=false;
 }
 
 /* L:this func is just like a normal palloc */
