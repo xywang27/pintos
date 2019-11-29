@@ -245,8 +245,7 @@ static void syscall_handler (struct intr_frame *f){
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     int fd = *(int *)(ptr + 4);
     uint32_t addr = *(uint32_t *)(ptr+8);
-    if(addr==0||(pg_round_down(addr)!=addr)||addr+PGSIZE>f->esp
-    ||addr<0x08050000)
+    if(addr==0||(pg_round_down(addr)!=addr)||addr+PGSIZE>f->esp||addr<0x08050000)
     {
        f->eax=-1;
        return;
@@ -441,12 +440,12 @@ mapid_t mmap (int fd, void *addr){
   struct thread *cur = thread_current ();
   int temp;
   int filesize;
-  filesize = file_length (cur->file[fd]);
   // [X]spt指针
   struct spt_elem *spte;
   struct spt_elem *spte2;
       //[X]找到文件描述符为fd的文件
   if (cur->file[fd] != NULL){
+    filesize = file_length (cur->file[fd]);
    if(filesize == 0){
      return -1;
    }
