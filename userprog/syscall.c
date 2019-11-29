@@ -154,7 +154,7 @@ static void syscall_handler (struct intr_frame *f){
     se!=list_end(&thread_current()->spt);se=list_next(se)){
       spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
       if(spte->file==file_name){
-        spte->needremove = true;
+        spte->remove = true;
         return;
       }
     }
@@ -234,7 +234,7 @@ static void syscall_handler (struct intr_frame *f){
     	  spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
     		if(spte->file==thread_current()->file[fd])
     				{
-    					spte->needclose=true;
+    					spte->close=true;
     					return;
     				}
     			}

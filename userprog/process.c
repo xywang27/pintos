@@ -202,10 +202,10 @@ process_exit (void)
       if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){                                                       /*if the page is modified*/
         file_write_at(a->file,a->upage,PGSIZE,a->ofs);                                                                /*write back*/
     	}
-      if(a->needremove){                                                                                              /*if need remove when mapped*/
+      if(a->remove){                                                                                              /*if need remove when mapped*/
         filesys_remove(a->file);
       }
-      if(a->needclose){                                                                                               /*id need close when mapped*/
+      if(a->close){                                                                                               /*id need close when mapped*/
         file_close(a->file);
       }
     }
