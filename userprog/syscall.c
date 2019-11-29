@@ -503,7 +503,7 @@ bool check_overlap(void *addr){
   {
     spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
   //[X]不能重叠映射
-    if(spte2->upage==addr)
+    if(spte->upage==addr)
     {
       return false;
     }
