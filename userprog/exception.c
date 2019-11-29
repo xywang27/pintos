@@ -201,8 +201,8 @@ page_fault (struct intr_frame *f)
 
 /* L: alloc more stack for current */
 bool more_stack(void *fault_addr){
-  // if(!is_user_vaddr (fault_addr))
-  //   return false;
+   if(!is_user_vaddr (fault_addr))
+     return false;
   bool success = false;
   void *upage = pg_round_down(fault_addr);
   void *kpage = frame_get(true,upage);
