@@ -23,7 +23,6 @@ void* frame_get_page(void* upage){
     palloc_free_page(kpage);
     return NULL;
   }
-  f->recent=0;
   f->paddr=kpage;
   f->upage=upage;
   f->holder=thread_current();
