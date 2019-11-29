@@ -1,7 +1,3 @@
-//      frame.h
-//
-//      Copyright 2011 mayli <mayli.he@gmail.com>
-//
 #ifndef VM_FRAME_H
 #define VM_FRAME_H
 
@@ -27,11 +23,11 @@ struct frame{
 /* L: a list init, should be called at system start */
 void frame_table_init(void);
 /* L: etc */
-bool frame_table_full (void);
+// bool frame_table_full (void);
 /* L: frame_get must be called with an upage */
 void* frame_get (bool,void* upage);
 void frame_free (void *);
-struct frame* frame_find (void *);
-struct frame* LRU(void);
-void changerec(void);
+// struct frame* frame_find (void *);
+// struct frame* LRU(void);
+// void changerec(void);
 #endif /* vm/frame.h */
