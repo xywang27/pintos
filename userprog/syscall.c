@@ -449,8 +449,7 @@ mapid_t mmap (int fd, void *addr){
    findornot=true;
    filesize= file_length (cur->file[fd]);
    if(filesize == 0){
-     f->eax=-1;
-     return;
+     return -1;
    }
          //[X]因为一个文件可能占有多个
    int mapped_page=0;
@@ -467,8 +466,7 @@ mapid_t mmap (int fd, void *addr){
       //[X]不能重叠映射
         if(spte2->upage==spte->upage)
         {
-          f->eax=-1;
-          return;
+          return -1;
         }
       }
     //[X]虚存空间的下一页
@@ -497,12 +495,12 @@ mapid_t mmap (int fd, void *addr){
     }
     lock_release(&thread_current()->spt_list_lock);
   //[X]退出for循环
-    f->eax=mapid;
+    temp=mapid;
     mapid++;
-    return;
+    return temp;
   }
 //[X]mapid作为返回值
-  f->eax=-1;
+  return -1;
 }
 
 void
