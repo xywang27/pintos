@@ -39,6 +39,7 @@ void close (int fd);
 mapid_t mmap (int fd, void *addr);
 bool check_overlap(void *addr);
 void munmap (mapid_t mapping);
+struct list_elem *find_mapid (mapid_t mapping);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -256,7 +257,7 @@ static void syscall_handler (struct intr_frame *f){
       return;
     }
     f->eax = mmap (fd, addr);
-    }
+  }
 
 
   else if(syscall_num == SYS_MUNMAP){
@@ -265,7 +266,7 @@ static void syscall_handler (struct intr_frame *f){
     int mapping=*(int *)(ptr + 4);
     munmap(mapping);
   }
-
+}
 
 // Terminates Pintos by calling shutdown_power_off()
 void halt (void){
@@ -421,15 +422,12 @@ mapid_t mmap (int fd, void *addr){
   struct thread *cur = thread_current ();
   int temp;
   int filesize;
-  // [X]spt指针
   struct spt_elem *spte;
-      //[X]找到文件描述符为fd的文件
   if (cur->file[fd] != NULL){
     filesize = file_length (cur->file[fd]);
    if(filesize == 0){
      return -1;
    }
-         //[X]因为一个文件可能占有多个
    int i=0;
     lock_acquire(&thread_current()->spt_list_lock);
     while(filesize>0)
@@ -437,29 +435,22 @@ mapid_t mmap (int fd, void *addr){
       spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
       spte->holder = cur;
       spte->upage=addr;
-    //[X]虚存空间的下一页
       spte->file=cur->file[fd];
-    //[X]修改文件指针使
       spte->ofs=i * (uint32_t)PGSIZE;
-    //[X]标记mapid
       spte->mapid=mapid;
-    //[X]处理边界的最后一页
       spte->read_bytes = filesize>=PGSIZE? PGSIZE : filesize;
       spte->zero_bytes = filesize>=PGSIZE? 0 : PGSIZE-filesize;
       spte->writable=true;
       list_push_back (&thread_current()->spt, &spte->elem);
-    //表示一段已经映射进去了
       addr=addr+(uint32_t)PGSIZE;
       i++;
       filesize=filesize-PGSIZE;
     }
     lock_release(&thread_current()->spt_list_lock);
-  //[X]退出for循环
     temp=mapid;
     mapid++;
     return temp;
   }
-//[X]mapid作为返回值
   return -1;
 }
 
@@ -470,7 +461,6 @@ bool check_overlap(void *addr){
   se = list_next (se))
   {
     spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-  //[X]不能重叠映射
     if(spte->upage==addr)
     {
       return false;
@@ -479,33 +469,30 @@ bool check_overlap(void *addr){
 }
 
 void munmap (mapid_t mapping){
-  struct thread* t=thread_current();
   struct spt_elem *spte;
   struct list_elem *e;
-  struct list_elem *e2;
-  //[X]找到相应mip的对应的页面表项spte
   lock_acquire(&thread_current()->spt_list_lock);
-  e = list_begin (&t->spt);
-  while(e!=list_end(&t->spt))
+  e = find_mapid(mapping);
+  spte=list_entry (e, struct spt_elem, elem);
+  if(pagedir_is_dirty(&thread_current()->pagedir,spte->upage))
   {
-      spte=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
-      if(spte->mapid==mapping)
-      {
-        //[X]该页是目标页,脏页面要写回
-        if(pagedir_is_dirty(t->pagedir,spte->upage))
-        {
-           file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
-        }
-        e2=e;
-        e = list_next (e);
-        list_remove(e2);
-      }
-      else
-      e = list_next (e);
-    }
+    file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
+  }
+  list_remove(e);
   lock_release(&thread_current()->spt_list_lock);
 }
 
+struct list_elem *find_mapid (mapid_t mapping){
+  struct spt_elem *spte;
+  struct list_elem *e;
+  for(e=list_begin(&thread_current()->spt); e!=list_end(&thread_current()->spt); e=list_next(e)){
+    spte = list_entry(e, struct spt_elem, elem);
+    if(spte->mapid == mapping){
+      return e;
+    }
+  }
+  return 0;
+}
 
 void
 syscall_init (void)
