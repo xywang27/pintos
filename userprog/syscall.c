@@ -38,7 +38,8 @@ unsigned tell (int fd);
 void close (int fd);
 mapid_t mmap (int fd, void *addr);
 bool check_overlap(void *addr);
-// void munmap (mapid_t mapping);
+void munmap (mapid_t mapping);
+struct list_elem *find_mapid (mapid_t mapping)
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -260,34 +261,11 @@ static void syscall_handler (struct intr_frame *f){
 
 
   else if(syscall_num == SYS_MUNMAP){
-    int mip=*(pp+1);
-		struct thread* t=thread_current();
-		struct spt_elem *spte;
-		struct list_elem *e;
-		struct list_elem *e2;
-		//[X]找到相应mip的对应的页面表项spte
-		lock_acquire(&thread_current()->spt_list_lock);
-    e = list_begin (&t->spt);
-    while(e!=list_end(&t->spt))
-    {
-			  spte=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
-			  if(spte->mapid==mip)
-			  {
-				  //[X]该页是目标页,脏页面要写回
-				  if(pagedir_is_dirty(t->pagedir,spte->upage))
-				  {
-					   file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
-				  }
-				  e2=e;
-				  e = list_next (e);
-				  list_remove(e2);
-			  }
-			  else
-				e = list_next (e);
-		  }
-		lock_release(&thread_current()->spt_list_lock);
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int mapping=*(int *)(ptr + 4);
+    munmap(mapping);
   }
-}
 
 // Terminates Pintos by calling shutdown_power_off()
 void halt (void){
@@ -440,14 +418,11 @@ void close (int fd)
 }
 
 mapid_t mmap (int fd, void *addr){
-  struct list_elem *se;
-  struct list_elem *te;
   struct thread *cur = thread_current ();
   int temp;
   int filesize;
   // [X]spt指针
   struct spt_elem *spte;
-  struct spt_elem *spte2;
       //[X]找到文件描述符为fd的文件
   if (cur->file[fd] != NULL){
     filesize = file_length (cur->file[fd]);
@@ -501,6 +476,34 @@ bool check_overlap(void *addr){
       return false;
     }
   }
+}
+
+void munmap (mapid_t mapping){
+  struct spt_elem *spte;
+  struct list_elem *e;
+  //[X]找到相应mip的对应的页面表项spte
+  lock_acquire(&thread_current()->spt_list_lock);
+  e = find_mapid(mapping);
+  spte=list_entry (e, struct spt_elem, elem);
+  //[X]该页是目标页,脏页面要写回
+  if(pagedir_is_dirty(&thread_current()->pagedir,spte->upage))
+  {
+    file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
+  }
+  list_remove(e);
+  lock_release(&thread_current()->spt_list_lock);
+}
+
+struct list_elem *find_mapid (mapid_t mapping){
+  struct spt_elem *spte;
+  struct list_elem *e;
+  for(e=list_begin(&thread_current()->spt); e!=list_end(&thread_current()->spt); e=list_next(&thread_current()->spt)){
+    spte = list_entry(e, struct spt_elem, elem);
+    if(spte->mapid == mapping){
+      return e;
+    }
+  }
+  return 0;
 }
 
 void
