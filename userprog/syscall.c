@@ -471,6 +471,7 @@ void munmap (mapid_t mapping){
   struct spt_elem *spte;
   struct list_elem *e;
   struct list_elem *e2;
+  struct thread* t=thread_current();
   lock_acquire(&thread_current()->spt_list_lock);
   e = list_begin (&t->spt);
   while(e!=list_end(&t->spt))
@@ -481,7 +482,7 @@ void munmap (mapid_t mapping){
 				  //[X]该页是目标页,脏页面要写回
 			 if(pagedir_is_dirty(t->pagedir,spte->upage))
 				{
-			       file_write_at(spte->fileptr,spte->upage,PGSIZE,spte->ofs);
+			       file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
 				}
 				  e2=e;
 				  e = list_next (e);
