@@ -34,14 +34,14 @@ void* frame_get(bool zeroflag,void* upage){
   // }
   // else{
     /* add new page & frame into frame table */
-    struct frame* f;
-    f=(struct frame *) malloc (sizeof(struct frame));
-    f->recent=0;
-    f->paddr=kpage;
-    f->upage=upage;
-    f->owner=thread_current();
-    list_push_front(&frame_list, &f->elem);
-  }
+  struct frame* f;
+  f=(struct frame *) malloc (sizeof(struct frame));
+  f->recent=0;
+  f->paddr=kpage;
+  f->upage=upage;
+  f->owner=thread_current();
+  list_push_front(&frame_list, &f->elem);
+
   lock_release (&frame_list_lock);
   return kpage;
 }
