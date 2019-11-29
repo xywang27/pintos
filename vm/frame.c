@@ -5,7 +5,6 @@
 
 #include "vm/frame.h"
 #include "vm/page.h"
-#include "vm/swap.h"
 
 #include "threads/palloc.h"
 #include "threads/thread.h"

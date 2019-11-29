@@ -128,7 +128,6 @@ main (void)
 #endif
 
 #ifdef VM
-  /* L: init my frame table*/
   frame_table_init();
 #endif
 

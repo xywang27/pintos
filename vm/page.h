@@ -4,7 +4,7 @@
 #include <list.h>
 #include "filesys/file.h"
 #include "vm/frame.h"
-#include "vm/swap.h"
+
 
 /* a new struct to realize spt */
 struct spt_elem{

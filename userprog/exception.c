@@ -7,7 +7,6 @@
 #include "threads/synch.h"
 #include "vm/page.h"
 #include "vm/frame.h"
-#include "vm/swap.h"
 #include "threads/vaddr.h"
 #include "userprog/process.h"
 #define STACK_LIMIT (8 * 1024 * 1024)
@@ -163,9 +162,9 @@ page_fault (struct intr_frame *f)
   struct thread* cur=thread_current();
   void *pfupage = pg_round_down(fault_addr);
   struct list_elem *e = find_page (pfupage);
-  struct list_elem *e2 = swap_find (pfupage);
+  // struct list_elem *e2 = swap_find (pfupage);
   /* not found */
-  if (e == NULL&& e2==NULL){
+  if (e == NULL){
     if(is_stack(fault_addr,f->esp,user))
     {
       if(more_stack(fault_addr)){
@@ -176,23 +175,21 @@ page_fault (struct intr_frame *f)
   else{
     /* load sth from file/stack/etc */
     /* l: add your swap code here */
-    if(e!=NULL)
-    {
+    // if(e!=NULL)
+    // {
     if(load_from_file(e,pfupage))
       return;
-    }
+    // }
     //[X]在swap分区则写回
-    if(e2!=NULL)
-    {
-    if(load_from_swap(pfupage))
-	  return;
-    }
+    // if(e2!=NULL)
+    // {
+    // if(load_from_swap(pfupage))
+	  // return;
+    // }
   }
 
   f->eip = f->eax;
   f->eax = (uint32_t) 0xffffffff;
-  //printf("[Killing]\n");
-  //printf ("%s: exit(%d)\n", thread_name(),-1);
   thread_current()->exit_code=-1;
   thread_exit();
   return;
