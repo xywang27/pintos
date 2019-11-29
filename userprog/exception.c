@@ -194,11 +194,11 @@ page_fault (struct intr_frame *f)
 /*grow stack function*/
 bool grow_stack(void *upage){
   bool success = false;
-  void *kpage = frame_get(true,upage);
+  void *kpage = frame_get_page(true,upage);
   if (kpage != NULL){
     success = install_page (upage, kpage, true);
     if(!success){
-      frame_free(kpage);
+      frame_free_page(kpage);
       return false;
     }
   }
@@ -206,7 +206,7 @@ bool grow_stack(void *upage){
 }
 
 bool load_file(struct spt_elem* spte,void *upage){
-  void* kpage=frame_get(true,upage);
+  void* kpage=frame_get_page(true,upage);
   if (kpage == NULL)
       return false;
   // struct spt_elem* spte= (struct spt_elem *)list_entry (e, struct spt_elem, elem);
@@ -221,7 +221,7 @@ bool load_file(struct spt_elem* spte,void *upage){
   memset (kpage + spte->read_bytes, 0, spte->zero_bytes);
   /* Add the page to the process's address space. */
   if (!install_page (spte->upage, kpage, spte->writable)){
-    frame_free(kpage);
+    frame_free_page(kpage);
     // PANIC("[!!INSTALL_PAGE ERROR!!]\n");
     return false;
   }

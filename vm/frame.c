@@ -16,20 +16,10 @@ void frame_table_init(void){
 }
 
 /* L:this func is just like a normal palloc */
-void* frame_get(bool zeroflag,void* upage){
+void* frame_get_page(bool zeroflag,void* upage){
   /* L;sync */
   lock_acquire(&frame_list_lock);
-  void *kpage = palloc_get_page (zeroflag?PAL_USER | PAL_ZERO:PAL_USER );
-  /* No pages are available. */
-  // if (kpage == NULL){
-  //   /* some frame should be swaped */
-  //   full=1;
-  //   kpage=evict(upage,thread_current());
-	// lock_release (&frame_list_lock);
-  //   return kpage;
-  // }
-  // else{
-    /* add new page & frame into frame table */
+  void *kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   struct frame* f;
   f=(struct frame *) malloc (sizeof(struct frame));
   f->recent=0;
@@ -43,7 +33,7 @@ void* frame_get(bool zeroflag,void* upage){
 }
 /* L:free a frame.
    frame table entry & page must both be freed. */
-void frame_free (void *kpage){
+void frame_free_page (void *kpage){
   struct list *l = &frame_list;
   struct list_elem *e;
   struct frame *f = NULL;
