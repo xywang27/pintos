@@ -1,34 +1,24 @@
 #ifndef VM_FRAME_H
 #define VM_FRAME_H
 
-#include <list.h>
 #include "threads/thread.h"
+#include <list.h>
 
-/* L: a basic frame elem, need more vars. */
+
+/*a new structure to realize frame table*/
 struct frame{
-  /* physics address */
-  void* paddr;
-  /* current working @some user page(virtual addr) */
-  void* upage;
-  /* the owner thread */
-  struct thread* owner;
-  /* protect bytes
-   * char flag;*/
-  //[X]记录最近使用装况
-  int recent;
+  void* paddr;                                          /*physical address*/
+  void* upage;                                          /*virtual address*/
+  struct thread* holder;                                /*the thread that holds the frame*/
+  struct list_elem elem;                                /*list element*/
+};
 
-  struct list_elem elem;
-  };
+struct list frame_table;                                /*frame table*/
 
-/* L: a list init, should be called at system start */
 void frame_table_init(void);
-/* L: etc */
-// bool frame_table_full (void);
-/* L: frame_get must be called with an upage */
 void* frame_get_page (void* upage);
 void frame_free_page (void *);
 struct list_elem *find_frame (void *kpage);
-// struct frame* frame_find (void *);
-// struct frame* LRU(void);
-// void changerec(void);
+
+
 #endif /* vm/frame.h */

@@ -2,8 +2,9 @@
 #define VM_PAGE_H
 
 #include <list.h>
-#include "filesys/file.h"
 #include "vm/frame.h"
+#include "filesys/file.h"
+
 
 
 /* a new struct to realize spt */
