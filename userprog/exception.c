@@ -209,27 +209,18 @@ bool load_file(struct spt_elem* spte,void *upage){
   void* kpage=frame_get_page(upage);
   if (kpage == NULL)
       return false;
-  // struct spt_elem* spte= (struct spt_elem *)list_entry (e, struct spt_elem, elem);
   /* load file to upage/frame */
   /* Load this page. */
   if (file_read_at (spte->file, kpage, spte->read_bytes,spte->ofs) != (int) spte->read_bytes){
     /* using my frame free er */
     frame_free_page(kpage);
-    // PANIC("[!!FILE READ_BYTES ERROR!!]\n");
     return false;
   }
   memset (kpage + spte->read_bytes, 0, spte->zero_bytes);
   /* Add the page to the process's address space. */
   if (!install_page (spte->upage, kpage, spte->writable)){
     frame_free_page(kpage);
-    // PANIC("[!!INSTALL_PAGE ERROR!!]\n");
     return false;
   }
-  /* remove this spt */
-  //[X]有内存映射文件的表项不去删除
-  // if(spte->mapid==0)
-  // list_remove(e);
-  /* continue program run */
-
   return true;
 }
