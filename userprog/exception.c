@@ -226,7 +226,7 @@ bool is_stack(void* fault_addr, void *esp, bool user){
   //     return true;
   //   }
   //   return false;
-  // }
+  }
 
 /* L: alloc more stack for current */
 bool more_stack(void *fault_addr){
