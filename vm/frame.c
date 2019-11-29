@@ -16,7 +16,7 @@ void frame_table_init(void){
 }
 
 /* L:this func is just like a normal palloc */
-void* frame_get_page(bool zeroflag,void* upage){
+void* frame_get_page(void* upage){
   /* L;sync */
   lock_acquire(&frame_list_lock);
   void *kpage = palloc_get_page (PAL_USER | PAL_ZERO);

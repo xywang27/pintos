@@ -194,7 +194,7 @@ page_fault (struct intr_frame *f)
 /*grow stack function*/
 bool grow_stack(void *upage){
   bool success = false;
-  void *kpage = frame_get_page(true,upage);
+  void *kpage = frame_get_page(upage);
   if (kpage != NULL){
     success = install_page (upage, kpage, true);
     if(!success){
@@ -206,7 +206,7 @@ bool grow_stack(void *upage){
 }
 
 bool load_file(struct spt_elem* spte,void *upage){
-  void* kpage=frame_get_page(true,upage);
+  void* kpage=frame_get_page(upage);
   if (kpage == NULL)
       return false;
   // struct spt_elem* spte= (struct spt_elem *)list_entry (e, struct spt_elem, elem);
