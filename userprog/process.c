@@ -221,7 +221,7 @@ process_exit (void)
     				file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
     			}
       if(spte->needremove){
-        filesys_remove(spte->file)
+        filesys_remove(spte->file);
       }
     }
 	}
