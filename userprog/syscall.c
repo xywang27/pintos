@@ -470,27 +470,26 @@ bool check_overlap(void *addr){
 void munmap (mapid_t mapping){
   struct spt_elem *spte;
   struct list_elem *e;
-  struct list_elem *e2;
-  struct thread* t=thread_current();
+  struct list_elem *temp;
   lock_acquire(&thread_current()->spt_list_lock);
-  e = list_begin (&t->spt);
-  while(e!=list_end(&t->spt))
+  e = list_begin (&thread_current()->spt);
+  while(e!=list_end(&thread_current()->spt))
   {
-			spte=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
-			if(spte->mapid==mapping)
-			{
+		spte=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
+	  if(spte->mapid==mapping)
+		{
 				  //[X]该页是目标页,脏页面要写回
-			 if(pagedir_is_dirty(t->pagedir,spte->upage))
+			if(pagedir_is_dirty(t->pagedir,spte->upage))
 				{
-			       file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
+			     file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
 				}
-				  e2=e;
-				  e = list_next (e);
-				  list_remove(e2);
-			  }
-			  else
-				e = list_next (e);
-		  }
+			temp=e;
+			e = list_next (e);
+			list_remove(temp);
+      continue;
+		}
+		e = list_next (e);
+ }
   lock_release(&thread_current()->spt_list_lock);
 }
 
