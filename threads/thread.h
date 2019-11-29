@@ -113,7 +113,7 @@ struct thread
     struct semaphore sema2;             /* the semaphore used to exit*/
     struct semaphore sema3;             /* the semaphare used to wait*/
     struct list spt;                    /*the spt list of the thread*/
-    struct lock spt_list_lock;          /*the lock used in spt*/
+    struct lock spt_lock;          /*the lock used in spt*/
   };
 
 /* If false (default), use round-robin scheduler.

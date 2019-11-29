@@ -428,7 +428,7 @@ mapid_t mmap (int fd, void *addr){
      return -1;
    }
    int i=0;
-    lock_acquire(&thread_current()->spt_list_lock);
+    lock_acquire(&thread_current()->spt_lock);
     while(filesize>0)
     {
       spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
@@ -445,7 +445,7 @@ mapid_t mmap (int fd, void *addr){
       i++;
       filesize=filesize-PGSIZE;
     }
-    lock_release(&thread_current()->spt_list_lock);
+    lock_release(&thread_current()->spt_lock);
     temp=mapid;
     mapid++;
     return temp;
@@ -471,7 +471,7 @@ void munmap (mapid_t mapping){
   struct spt_elem *spte;
   struct list_elem *e;
   struct list_elem *temp;
-  lock_acquire(&thread_current()->spt_list_lock);
+  lock_acquire(&thread_current()->spt_lock);
   e = list_begin (&thread_current()->spt);
   while(e!=list_end(&thread_current()->spt))
   {
@@ -490,7 +490,7 @@ void munmap (mapid_t mapping){
 		}
 		e = list_next (e);
  }
-  lock_release(&thread_current()->spt_list_lock);
+  lock_release(&thread_current()->spt_lock);
 }
 
 
