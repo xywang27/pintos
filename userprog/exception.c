@@ -164,7 +164,7 @@ page_fault (struct intr_frame *f)
   if (!e){
     if(fault_addr>=f->esp-32
         ||(f->esp-fault_addr)==32
-        ||(f->esp-fault_addr)==4))
+        ||(f->esp-fault_addr)==4)
     {
       if(more_stack(fault_addr)){
         return;
