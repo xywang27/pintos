@@ -479,7 +479,7 @@ void munmap (mapid_t mapping){
 	  if(spte->mapid==mapping)
 		{
 				  //[X]该页是目标页,脏页面要写回
-			if(pagedir_is_dirty(t->pagedir,spte->upage))
+			if(pagedir_is_dirty(thread_current()->pagedir,spte->upage))
 				{
 			     file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
 				}
