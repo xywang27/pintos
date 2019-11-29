@@ -590,7 +590,7 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
          /* L: fill the entry to record the load-file infomation */
          spte->file=file;
          /* L: we need a abs ofs of the file */
-         sptr->holder=thread_current();
+         spte->holder=thread_current();
          spte->ofs=(uint32_t)ofs + (readed_page * (uint32_t)PGSIZE);;
          readed_page++;
 
