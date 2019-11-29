@@ -162,7 +162,7 @@ page_fault (struct intr_frame *f)
 
   struct thread* cur=thread_current();
   void *pfupage = pg_round_down(fault_addr);
-  struct list_elem *e = page_find (pfupage);
+  struct list_elem *e = find_page (pfupage);
   struct list_elem *e2 = swap_find (pfupage);
   /* not found */
   if (e == NULL&& e2==NULL){

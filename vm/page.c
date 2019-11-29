@@ -1,22 +1,20 @@
-//      page.c
-//
-//      Copyright 2011 mayli <mayli.he@gmail.com>
-//
 #include "vm/page.h"
 #include "threads/thread.h"
-struct list_elem *page_find (void *upage){
+
+
+
+
+
+/*find the corresponding spt with the given upage*/
+struct list_elem *find_page (void *upage){
   struct thread* cur=thread_current();
-  struct spt_elem* spte;
+  struct spt_elem* a;
   struct list_elem *e;
-  /* L: load page according to the spt, if not in spt, do nothing */
-  for (e = list_begin (&cur->spt); e != list_end (&cur->spt);
-         e = list_next (e))
-      {
-        spte = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
-        if(upage==spte->upage){
-          return e;
-        }
-      }
-  /* l: not found */
+  for (e = list_begin (&cur->spt); e != list_end (&cur->spt);e = list_next (e)){
+    a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+    if(upage==a->upage){
+      return e;
+    }
+  }
   return 0;
 }

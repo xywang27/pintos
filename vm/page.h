@@ -12,23 +12,15 @@ struct spt_elem{
   uint8_t *upage;                                              /*the upage the spt stands for*/
 
   struct file *file;                                           /*in order to track the file*/
-  off_t ofs;
+  off_t ofs;                                                   /*offset*/
   uint32_t read_bytes;
   uint32_t zero_bytes;
-  bool writable;                                               /*if it if writable*/
-  // void *kpage;
-
-  bool needclose;
-  bool needremove;
-  int mapid;
-
-
-  /* a swap slot */
-
-  /* a list elem */
-  struct list_elem elem;
+  bool writable;                                               /*if it is writable*/
+  bool needclose;                                              /*record if it needs close after unmapped*/
+  bool needremove;                                             /*record if it needs remove after unmapped*/
+  int mapid;                                                   /*corresponding map id*/
+  struct list_elem elem;                                       /*list element*/
 };
 
-/* L: look up the spt to find a entry or return null */
-struct list_elem *page_find (void *upage);
+struct list_elem *find_page (void *upage);
 #endif /* vm/page.h */
