@@ -37,6 +37,7 @@ void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
 mapid_t mmap (int fd, void *addr);
+bool check_overlap(void *addr)
 // void munmap (mapid_t mapping);
 static bool is_valid_fd (int fd);
 
@@ -250,6 +251,10 @@ static void syscall_handler (struct intr_frame *f){
        f->eax=-1;
        return;
      }
+    if(!check_overlap(addr)){
+      f->eax=-1;
+      return;
+    }
     f->eax = mmap (fd, addr);
     }
 
@@ -451,22 +456,11 @@ mapid_t mmap (int fd, void *addr){
    }
          //[X]因为一个文件可能占有多个
    int i=0;
-   off_t fileoff=0;
     lock_acquire(&thread_current()->spt_list_lock);
     while(filesize>0)
     {
       spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
       spte->upage=addr;
-      for (se = list_begin (&thread_current()->spt); se != list_end (&thread_current()->spt);
-      se = list_next (se))
-      {
-        spte2=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-      //[X]不能重叠映射
-        if(spte2->upage==addr)
-        {
-          return -1;
-        }
-      }
     //[X]虚存空间的下一页
       addr=addr+(uint32_t)PGSIZE;
       spte->file=cur->file[fd];
@@ -499,6 +493,21 @@ mapid_t mmap (int fd, void *addr){
   }
 //[X]mapid作为返回值
   return -1;
+}
+
+bool check_overlap(void *addr){
+  struct list_elem *se;
+  struct spt_elem *spte;
+  for (se = list_begin (&thread_current()->spt); se != list_end (&thread_current()->spt);
+  se = list_next (se))
+  {
+    spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
+  //[X]不能重叠映射
+    if(spte2->upage==addr)
+    {
+      return false;
+    }
+  }
 }
 
 void
