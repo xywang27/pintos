@@ -469,8 +469,8 @@ mapid_t mmap (int fd, void *addr){
     //[X]标记mapid
       spte->mapid=mapid;
     //[X]处理边界的最后一页
-      spte->read_bytes = (filesize>=PGSIZE?) PGSIZE : filesize;
-      spte->zero_bytes = (filesize>=PGSIZE?) 0 : PGSIZE-filesize;
+      spte->read_bytes = filesize>=PGSIZE? PGSIZE : filesize;
+      spte->zero_bytes = filesize>=PGSIZE? 0 : PGSIZE-filesize;
       spte->writable=true;
       list_push_back (&thread_current()->spt, &spte->elem);
     //表示一段已经映射进去了
