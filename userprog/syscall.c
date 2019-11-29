@@ -149,7 +149,7 @@ static void syscall_handler (struct intr_frame *f){
     for(se=list_begin(&thread_current()->spt);
     se!=list_end(&thread_current()->spt);se=list_next(se)){
       spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-      if(spte->file==filename){
+      if(spte->file==file_name){
         spte->needremove = true;
         return;
       }
