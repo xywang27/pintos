@@ -203,15 +203,14 @@ page_fault (struct intr_frame *f)
 bool more_stack(void *fault_addr){
   // if(!is_user_vaddr (fault_addr))
   //   return false;
-  bool success = false;
+  if(!is_user_vaddr (fault_addr))
+    return false;
   void *upage = pg_round_down(fault_addr);
   void *kpage = frame_get(true,upage);
-  if (kpage != NULL){
-    success = install_page (upage, kpage, true);
-    if(!success){
-      frame_free(kpage);
-      return false;
-    }
+
+  if(!process_install_page (upage, kpage, true)){
+    frame_free(kpage);
+    return false;
   }
   return true;
 }
