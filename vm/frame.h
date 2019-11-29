@@ -18,7 +18,7 @@ struct list frame_table;                                /*frame table*/
 void frame_table_init(void);
 void* frame_get_page (void* upage);
 void frame_free_page (void *);
-struct list_elem *find_frame (void *kpage);
+struct frame *find_frame (void *kpage);
 
 
 #endif /* vm/frame.h */

@@ -28,10 +28,8 @@ void* frame_get_page(void* upage){
 
 /* a litle change from palloc free page */
 void frame_free_page (void *kpage){
-  struct frame* frame;
-  struct list_elem *e = find_frame (kpage);                                      /*find the corresponding frame*/
+  struct frame* frame = find_frame(kpage);                                       /*find the corresponding frame*/
   palloc_free_page(kpage);
-  frame = list_entry(e, struct frame, elem);
   list_remove (&frame->elem);                                                    /*remove the frame from frame table*/
 }
 
