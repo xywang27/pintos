@@ -486,6 +486,7 @@ init_thread (struct thread *t, const char *name, int priority)
   sema_init (&t->sema1, 0);
   sema_init (&t->sema2, 0);
   t->exit_code = -1;
+  t->load_seccess = true;
   list_init (&t->children);
   list_init(&t->spt);
   list_init(&t->swapt);

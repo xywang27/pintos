@@ -109,6 +109,7 @@ struct thread
     struct list_elem childelem;         /* List element for children list */
     struct list children;               /* List of all children*/
     struct file* exec_file;             /* Executable file. */
+    bool load_sucess;                   /*variable that shows if load is success*/
     struct semaphore sema1;             /* semaphare used to let parent wait while child is loading */
     struct semaphore sema2;             /* the semaphore used to exit*/
     struct semaphore sema3;             /* the semaphare used to wait*/
