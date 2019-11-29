@@ -223,6 +223,9 @@ process_exit (void)
       if(spte->needremove){
         filesys_remove(spte->file);
       }
+      if(spte->needclose){
+        file_close(spte->file);
+      }
     }
 	}
   /* Destroy the current process's page directory and switch back
