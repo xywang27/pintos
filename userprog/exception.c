@@ -241,7 +241,7 @@ bool more_stack(void *fault_addr){
   void *upage = pg_round_down(fault_addr);
   void *kpage = frame_get(true,upage);
 
-  if(!process_install_page (upage, kpage, true)){
+  if(!install_page (upage, kpage, true)){
     frame_free(kpage);
     return false;
   }
@@ -261,7 +261,7 @@ bool load_from_file(struct list_elem* e,void *upage){
   }
   memset (kpage + spte->read_bytes, 0, spte->zero_bytes);
   /* Add the page to the process's address space. */
-  if (!process_install_page (spte->upage, kpage, spte->writable)){
+  if (!install_page (spte->upage, kpage, spte->writable)){
     frame_free(kpage);
     PANIC("[!!INSTALL_PAGE ERROR!!]\n");
     return false;
