@@ -202,7 +202,7 @@ page_fault (struct intr_frame *f)
 }
 
 /* L: alloc more stack for current */
-bool more_stack(void *upage){
+bool grow_stack(void *upage){
    // if(!is_user_vaddr (fault_addr))
    //   return false;
   bool success = false;
