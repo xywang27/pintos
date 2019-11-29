@@ -37,7 +37,7 @@ void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
 mapid_t mmap (int fd, void *addr);
-bool check_overlap(void *addr)
+bool check_overlap(void *addr);
 // void munmap (mapid_t mapping);
 static bool is_valid_fd (int fd);
 
