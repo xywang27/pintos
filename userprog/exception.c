@@ -159,12 +159,9 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
-  struct thread* cur=thread_current();
-  void *pfupage = pg_round_down(fault_addr);
-  struct list_elem *e = find_page (pfupage);
-  // struct list_elem *e2 = swap_find (pfupage);
-  /* not found */
-  if (e == NULL){
+  void *pfupage = pg_round_down(fault_addr);                             /*round up to the nearest page boundary*/
+  struct list_elem *e = find_page (pfupage);                             /*find if is in the spt*/
+  if (!find_page (pfupage)){
     if(is_stack(fault_addr,f->esp,user))
     {
       if(more_stack(fault_addr)){
@@ -177,7 +174,7 @@ page_fault (struct intr_frame *f)
     /* l: add your swap code here */
     // if(e!=NULL)
     // {
-    if(load_from_file(e,pfupage))
+    if(load_from_file(find_page (pfupage),pfupage))
       return;
     // }
     //[X]在swap分区则写回
@@ -271,8 +268,8 @@ bool load_from_file(struct list_elem* e,void *upage){
 
   return true;
 }
-bool load_from_swap(void *upage)
-{
-	void* fp=frame_get(0,upage);
-	return readback(upage,fp);
-}
+// bool load_from_swap(void *upage)
+// {
+// 	void* fp=frame_get(0,upage);
+// 	return readback(upage,fp);
+// }
