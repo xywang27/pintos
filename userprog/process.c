@@ -192,39 +192,21 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   struct thread *child;
-  struct spt_elem *spte;
+  struct spt_elem *a;
   struct list_elem *e;
-  struct list_elem *se;
   uint32_t *pd;
   printf("%s: exit(%d)\n", cur->name, cur->exit_code);
-
-  //  for(se=list_begin(&thread_current()->spt);
-	//    se!=list_end(&thread_current()->spt);se=list_next(se))
-	// {
-	// 	spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-	// 	if(spte->mapid)
-	// 	{
-	// 		if(pagedir_is_dirty(thread_current()->pagedir,spte->upage))
-	// 		{
-	// 			file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
-	// 		}
-	// 	}
-	// }
-	//[X]退出时该删除的文件要删除，该关闭的文件要删除,后面资源统一关闭这里只做删除
-   for(se=list_begin(&thread_current()->spt);
-	   se!=list_end(&thread_current()->spt);se=list_next(se))
-	{
-		spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-    if(spte->mapid){
-      if(pagedir_is_dirty(thread_current()->pagedir,spte->upage))
-    	 		{
-    				file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
-    			}
-      if(spte->needremove){
-        filesys_remove(spte->file);
+  for(e = list_begin(&cur->spt);e != list_end(&cur->spt);e = list_next(e)){                                           /*traverse the spt list of the current thread*/
+		a=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
+    if(a->mapid){                                                                                                     /*check if the spt is mapped*/
+      if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){                                                       /*if the page is modified*/
+        file_write_at(a->file,a->upage,PGSIZE,a->ofs);                                                                /*write back*/
+    	}
+      if(a->needremove){                                                                                              /*if need remove when mapped*/
+        filesys_remove(a->file);
       }
-      if(spte->needclose){
-        file_close(spte->file);
+      if(a->needclose){                                                                                               /*id need close when mapped*/
+        file_close(a->file);
       }
     }
 	}
@@ -579,7 +561,6 @@ setup_stack (void **esp)
   uint8_t *kpage;
   bool success = false;
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  // kpage = frame_get_page(((uint8_t *) PHYS_BASE) - PGSIZE);
   if (kpage != NULL)
   {
     success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
@@ -588,7 +569,6 @@ setup_stack (void **esp)
     }
     else
       palloc_free_page (kpage);
-      //frame_free_page (kpage);
   }
   return success;
 }
