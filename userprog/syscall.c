@@ -39,7 +39,6 @@ void close (int fd);
 mapid_t mmap (int fd, void *addr);
 bool check_overlap(void *addr);
 void munmap (mapid_t mapping);
-struct list_elem *find_mapid (mapid_t mapping);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -257,7 +256,7 @@ static void syscall_handler (struct intr_frame *f){
       return;
     }
     f->eax = mmap (fd, addr);
-  }
+    }
 
 
   else if(syscall_num == SYS_MUNMAP){
@@ -266,6 +265,7 @@ static void syscall_handler (struct intr_frame *f){
     int mapping=*(int *)(ptr + 4);
     munmap(mapping);
   }
+
 
 // Terminates Pintos by calling shutdown_power_off()
 void halt (void){
@@ -479,32 +479,33 @@ bool check_overlap(void *addr){
 }
 
 void munmap (mapid_t mapping){
+  struct thread* t=thread_current();
   struct spt_elem *spte;
   struct list_elem *e;
+  struct list_elem *e2;
   //[X]找到相应mip的对应的页面表项spte
   lock_acquire(&thread_current()->spt_list_lock);
-  e = find_mapid(mapping);
-  spte=list_entry (e, struct spt_elem, elem);
-  //[X]该页是目标页,脏页面要写回
-  if(pagedir_is_dirty(&thread_current()->pagedir,spte->upage))
+  e = list_begin (&t->spt);
+  while(e!=list_end(&t->spt))
   {
-    file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
-  }
-  list_remove(e);
+      spte=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
+      if(spte->mapid==mapping)
+      {
+        //[X]该页是目标页,脏页面要写回
+        if(pagedir_is_dirty(t->pagedir,spte->upage))
+        {
+           file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
+        }
+        e2=e;
+        e = list_next (e);
+        list_remove(e2);
+      }
+      else
+      e = list_next (e);
+    }
   lock_release(&thread_current()->spt_list_lock);
 }
 
-struct list_elem *find_mapid (mapid_t mapping){
-  struct spt_elem *spte;
-  struct list_elem *e;
-  for(e=list_begin(&thread_current()->spt); e!=list_end(&thread_current()->spt); e=list_next(e)){
-    spte = list_entry(e, struct spt_elem, elem);
-    if(spte->mapid == mapping){
-      return e;
-    }
-  }
-  return 0;
-}
 
 void
 syscall_init (void)
