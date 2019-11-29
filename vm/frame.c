@@ -36,13 +36,13 @@ void frame_free_page (void *kpage){
 }
 
 /* find the frame with given kpage*/
-struct list_elem *find_frame (void *kpage){
+struct frame *find_frame (void *kpage){
   struct frame* frame;
   struct list_elem *e;
   for(e=list_begin(&frame_table); e!=list_end(&frame_table); e=list_next(e)){
     frame = list_entry(e, struct frame, elem);
     if(frame->paddr == kpage){
-      return e;
+      return frame;
     }
   }
   return 0;
