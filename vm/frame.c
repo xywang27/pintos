@@ -22,7 +22,7 @@ void* frame_get_page(void* upage){
   frame->paddr=kpage;
   frame->upage=upage;
   frame->holder=thread_current();
-  list_push_front(&frame_table, &f->elem);
+  list_push_front(&frame_table, &frame->elem);
   return kpage;
 }
 /* L:free a frame.
