@@ -439,6 +439,7 @@ mapid_t mmap (int fd, void *addr){
   struct list_elem *se;
   struct list_elem *te;
   struct thread *cur = thread_current ();
+  int temp;
   bool findornot=false;
   // [X]spt指针
   struct spt_elem *spte;
