@@ -460,29 +460,22 @@ mapid_t mmap (int fd, void *addr){
     while(filesize>0)
     {
       spte=(struct spt_elem *)malloc(sizeof(struct spt_elem));
+      spte->holder = cur;
       spte->upage=addr;
     //[X]虚存空间的下一页
-      addr=addr+(uint32_t)PGSIZE;
       spte->file=cur->file[fd];
     //[X]修改文件指针使
       spte->ofs=i * (uint32_t)PGSIZE;
-      i++;
     //[X]标记mapid
       spte->mapid=mapid;
     //[X]处理边界的最后一页
-      if(filesize>=PGSIZE)
-      {
-        spte->read_bytes=PGSIZE;
-        spte->zero_bytes=0;
-      }
-      else
-      {
-        spte->read_bytes=filesize;
-        spte->zero_bytes=PGSIZE-filesize;
-      }
+      spte->read_bytes = (filesize>=PGSIZE?) PGSIZE : filesize;
+      spte->zero_bytes = (filesize>=PGSIZE?) 0 : PGSIZE-filesize;
       spte->writable=true;
       list_push_back (&thread_current()->spt, &spte->elem);
     //表示一段已经映射进去了
+      addr=addr+(uint32_t)PGSIZE;
+      i++;
       filesize=filesize-PGSIZE;
     }
     lock_release(&thread_current()->spt_list_lock);
