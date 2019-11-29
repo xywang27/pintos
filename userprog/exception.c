@@ -159,9 +159,9 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
-  void *pfupage = pg_round_down(fault_addr);                             /*round up to the nearest page boundary*/
-  struct list_elem *e = find_page (pfupage);                             /*find if is in the spt*/
-  if (!find_page (pfupage)){
+  void *page_boundary = pg_round_down(fault_addr);                             /*round up to the nearest page boundary*/
+  struct list_elem *e = find_page (page_boundary);                             /*find if is in the spt*/
+  if (!e){
     if(is_stack(fault_addr,f->esp,user))
     {
       if(more_stack(fault_addr)){
@@ -174,13 +174,13 @@ page_fault (struct intr_frame *f)
     /* l: add your swap code here */
     // if(e!=NULL)
     // {
-    if(load_from_file(find_page (pfupage),pfupage))
+    if(load_from_file(find_page (page_boundary),page_boundary))
       return;
     // }
     //[X]在swap分区则写回
     // if(e2!=NULL)
     // {
-    // if(load_from_swap(pfupage))
+    // if(load_from_swap(page_boundary))
 	  // return;
     // }
   }
@@ -204,9 +204,9 @@ page_fault (struct intr_frame *f)
 
 bool is_stack(void* fault_addr, void *esp, bool user){
   struct thread * cur = thread_current();
-  void * pfupage = pg_round_down(fault_addr);
-  if(fault_addr > PHYS_BASE)
-    return false;
+  void * page_boundary = pg_round_down(fault_addr);
+  // if(fault_addr > PHYS_BASE)
+  //   return false;
 
   if(user){
     cur->stacklow = esp;
@@ -220,13 +220,13 @@ bool is_stack(void* fault_addr, void *esp, bool user){
     else
       return false;
     }
-  else{
-    /* L:PF in a syscall */
-    if(fault_addr >= cur->stacklow)
-      return true;
-    }
-    return false;
-  }
+  // else{
+  //   /* L:PF in a syscall */
+  //   if(fault_addr >= cur->stacklow)
+  //     return true;
+  //   }
+  //   return false;
+  // }
 
 /* L: alloc more stack for current */
 bool more_stack(void *fault_addr){
