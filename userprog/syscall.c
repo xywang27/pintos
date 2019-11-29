@@ -440,20 +440,18 @@ mapid_t mmap (int fd, void *addr){
   struct list_elem *te;
   struct thread *cur = thread_current ();
   int temp;
-  bool findornot=false;
+  int filesize;
+  filesize = file_length (cur->file[fd]);
   // [X]spt指针
   struct spt_elem *spte;
   struct spt_elem *spte2;
-  off_t filesize;
       //[X]找到文件描述符为fd的文件
   if (cur->file[fd] != NULL){
-   findornot=true;
-   filesize= file_length (cur->file[fd]);
    if(filesize == 0){
      return -1;
    }
          //[X]因为一个文件可能占有多个
-   int mapped_page=0;
+   int i=0;
    off_t fileoff=0;
     lock_acquire(&thread_current()->spt_list_lock);
     while(filesize>0)
@@ -465,7 +463,7 @@ mapid_t mmap (int fd, void *addr){
       {
         spte2=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
       //[X]不能重叠映射
-        if(spte2->upage==spte->upage)
+        if(spte2->upage==addr)
         {
           return -1;
         }
@@ -474,8 +472,8 @@ mapid_t mmap (int fd, void *addr){
       addr=addr+(uint32_t)PGSIZE;
       spte->file=cur->file[fd];
     //[X]修改文件指针使
-      spte->ofs=mapped_page * (uint32_t)PGSIZE;
-      mapped_page++;
+      spte->ofs=i * (uint32_t)PGSIZE;
+      i++;
     //[X]标记mapid
       spte->mapid=mapid;
     //[X]处理边界的最后一页
