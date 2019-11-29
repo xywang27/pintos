@@ -160,8 +160,8 @@ page_fault (struct intr_frame *f)
   void *page_boundary = pg_round_down(fault_addr);                             /*round up to the nearest page boundary*/
   struct list_elem *e = find_page (page_boundary);                             /*find if is in the spt*/
   if (e){                                                                      /*if found*/
-    struct spt_elem*a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
-    if(load_file(spte,page_boundary)){                                         /*lazy load*/
+    struct spt_elem *a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+    if(load_file(a,page_boundary)){                                         /*lazy load*/
         return;
     }
   }
