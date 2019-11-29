@@ -149,7 +149,7 @@ static void syscall_handler (struct intr_frame *f){
     		se!=list_end(&thread_current()->spt);se=list_next(se))
     		{
     			spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-    			if(spte->fileptr==*(pp+1))
+    			if(spte->file==*(pp+1))
     			{
     				//暂时不关闭
     				spte->needremove=true;
@@ -242,7 +242,7 @@ static void syscall_handler (struct intr_frame *f){
     			se!=list_end(&thread_current()->spt);se=list_next(se))
     			{
     				spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-    				if(spte->fileptr==thread_current()->file[fd])
+    				if(spte->file==thread_current()->file[fd])
     				{
     					//暂时不关闭
     					spte->needclose=true;
@@ -299,7 +299,7 @@ static void syscall_handler (struct intr_frame *f){
         }
       //[X]虚存空间的下一页
         upage=upage+(uint32_t)PGSIZE;
-        spte->fileptr=cur->file[fd];
+        spte->file=cur->file[fd];
       //[X]修改文件指针使
         spte->ofs=mapped_page * (uint32_t)PGSIZE;
         mapped_page++;
@@ -352,7 +352,7 @@ static void syscall_handler (struct intr_frame *f){
 				  //[X]该页是目标页,脏页面要写回
 				  if(pagedir_is_dirty(t->pagedir,spte->upage))
 				  {
-					   file_write_at(spte->fileptr,spte->upage,PGSIZE,spte->ofs);
+					   file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
 				  }
 				  e2=e;
 				  e = list_next (e);

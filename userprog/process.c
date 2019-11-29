@@ -207,7 +207,7 @@ process_exit (void)
 		{
 			if(pagedir_is_dirty(thread_current()->pagedir,spte->upage))
 			{
-				file_write_at(spte->fileptr,spte->upage,PGSIZE,spte->ofs);
+				file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
 			}
 		}
 	}
@@ -218,7 +218,7 @@ process_exit (void)
 		spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
 		if(spte->mapid&&spte->needremove)
 		{
-			filesys_remove(spte->fileptr);
+			filesys_remove(spte->file);
 		}
 	}
 #endif
@@ -588,8 +588,9 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
          /* L: which upage this spt entry is descripting */
          spte->upage=upage;
          /* L: fill the entry to record the load-file infomation */
-         spte->fileptr=file;
+         spte->file=file;
          /* L: we need a abs ofs of the file */
+         sptr->holder=thread_current();
          spte->ofs=(uint32_t)ofs + (readed_page * (uint32_t)PGSIZE);;
          readed_page++;
 

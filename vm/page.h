@@ -8,10 +8,10 @@
 
 /* a new struct to realize spt */
 struct spt_elem{
-  struct thread* owner;                                       /*the thread who holds this spt_elem*/
+  struct thread* holder;                                       /*the thread who holds this spt_elem*/
   uint8_t *upage;                                              /*the upage the spt stands for*/
 
-  struct file *fileptr;                                           /*in order to track the file*/
+  struct file *file;                                           /*in order to track the file*/
   off_t ofs;
   uint32_t read_bytes;
   uint32_t zero_bytes;

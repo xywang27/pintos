@@ -253,7 +253,7 @@ bool load_from_file(struct list_elem* e,void *upage){
   struct spt_elem* spte= (struct spt_elem *)list_entry (e, struct spt_elem, elem);
   /* load file to upage/frame */
   /* Load this page. */
-  if (file_read_at (spte->fileptr, kpage, spte->read_bytes,spte->ofs) != (int) spte->read_bytes){
+  if (file_read_at (spte->file, kpage, spte->read_bytes,spte->ofs) != (int) spte->read_bytes){
     /* using my frame free er */
     frame_free(kpage);
     PANIC("[!!FILE READ_BYTES ERROR!!]\n");
