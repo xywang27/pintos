@@ -478,33 +478,33 @@ bool check_overlap(void *addr){
   }
 }
 
-void munmap (mapid_t mapping){
-  struct spt_elem *spte;
-  struct list_elem *e;
-  //[X]找到相应mip的对应的页面表项spte
-  lock_acquire(&thread_current()->spt_list_lock);
-  e = find_mapid(mapping);
-  spte=list_entry (e, struct spt_elem, elem);
-  //[X]该页是目标页,脏页面要写回
-  if(pagedir_is_dirty(&thread_current()->pagedir,spte->upage))
-  {
-    file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
-  }
-  list_remove(e);
-  lock_release(&thread_current()->spt_list_lock);
-}
-
-struct list_elem *find_mapid (mapid_t mapping){
-  struct spt_elem *spte;
-  struct list_elem *e;
-  for(e=list_begin(&thread_current()->spt); e!=list_end(&thread_current()->spt); e=list_next(e)){
-    spte = list_entry(e, struct spt_elem, elem);
-    if(spte->mapid == mapping){
-      return e;
-    }
-  }
-  return 0;
-}
+// void munmap (mapid_t mapping){
+//   struct spt_elem *spte;
+//   struct list_elem *e;
+//   //[X]找到相应mip的对应的页面表项spte
+//   lock_acquire(&thread_current()->spt_list_lock);
+//   e = find_mapid(mapping);
+//   spte=list_entry (e, struct spt_elem, elem);
+//   //[X]该页是目标页,脏页面要写回
+//   if(pagedir_is_dirty(&thread_current()->pagedir,spte->upage))
+//   {
+//     file_write_at(spte->file,spte->upage,PGSIZE,spte->ofs);
+//   }
+//   list_remove(e);
+//   lock_release(&thread_current()->spt_list_lock);
+// }
+//
+// struct list_elem *find_mapid (mapid_t mapping){
+//   struct spt_elem *spte;
+//   struct list_elem *e;
+//   for(e=list_begin(&thread_current()->spt); e!=list_end(&thread_current()->spt); e=list_next(e)){
+//     spte = list_entry(e, struct spt_elem, elem);
+//     if(spte->mapid == mapping){
+//       return e;
+//     }
+//   }
+//   return 0;
+// }
 
 void
 syscall_init (void)
