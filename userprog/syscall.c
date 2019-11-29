@@ -497,7 +497,7 @@ void munmap (mapid_t mapping){
 struct list_elem *find_mapid (mapid_t mapping){
   struct spt_elem *spte;
   struct list_elem *e;
-  for(e=list_begin(&thread_current()->spt); e!=list_end(&thread_current()->spt); e=list_next(&thread_current()->spt)){
+  for(e=list_begin(&thread_current()->spt); e!=list_end(&thread_current()->spt); e=list_next(e)){
     spte = list_entry(e, struct spt_elem, elem);
     if(spte->mapid == mapping){
       return e;
