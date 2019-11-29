@@ -471,7 +471,7 @@ void munmap (mapid_t mapping){
   {
 		a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
 	  if(a->mapid == mapping){                                              /*find the element need to be unmapped*/
-			if(pagedir_is_dirty(thread_current()->pagedir,spte->upage)){        /*if it is dirty, it needs to write back*/
+			if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){        /*if it is dirty, it needs to write back*/
 			  file_write_at(a->file,a->upage,PGSIZE,a->ofs);
 			}
 			temp=e;
