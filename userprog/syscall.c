@@ -452,7 +452,7 @@ bool check_overlap(void *addr){
   struct list_elem *e;
   struct spt_elem *a;
   for (e = list_begin (&thread_current()->spt);e != list_end (&thread_current()->spt); e = list_next (e)){
-    a = (struct spt_elem *)list_entry (se, struct spt_elem, elem);
+    a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
     if(a->upage == addr)
     {
       return false;
