@@ -241,7 +241,7 @@ static void syscall_handler (struct intr_frame *f){
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     int fd = *(int *)(ptr + 4);                                        /*get fd*/
     uint32_t addr = *(uint32_t *)(ptr+8);                              /*get addr*/
-    if(addr==0||addr+PGSIZE>f->esp||addr<0x08050000){    /*some situations that may fail*/
+    if(addr==0||(pg_round_down(addr)!=addr)||addr+PGSIZE>f->esp||addr<0x08050000){    /*some situations that may fail*/
        f->eax=-1;
        return;
     }
@@ -477,7 +477,7 @@ void munmap (mapid_t mapping){
 			temp=e;
 			e = list_next (e);
 			list_remove(temp);                                                  /*remove the spt_elem from the spt_list*/
-      continue;
+      break;
 		}
 		e = list_next (e);
  }
