@@ -39,6 +39,7 @@ void close (int fd);
 mapid_t mmap (int fd, void *addr);
 bool check_overlap(void *addr);
 void munmap (mapid_t mapping);
+struct list_elem *find_mapid (mapid_t mapping);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -462,26 +463,46 @@ bool check_overlap(void *addr){
 
 //Unmaps the mapping designated by mapping
 void munmap (mapid_t mapping){
-  struct spt_elem *a;
-  struct list_elem *e;
-  struct list_elem *temp;
-  lock_acquire(&thread_current()->spt_lock);
-  e = list_begin (&thread_current()->spt);
-  while(e!=list_end(&thread_current()->spt))                              /*traverse the spt_list*/
-  {
-		a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
-	  if(a->mapid == mapping){                                              /*find the element need to be unmapped*/
-			if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){        /*if it is dirty, it needs to write back*/
-			  file_write_at(a->file,a->upage,PGSIZE,a->ofs);
-			}
-			temp=e;
-			e = list_next (e);
-			list_remove(temp);                                                  /*remove the spt_elem from the spt_list*/
-      break;
-		}
-		e = list_next (e);
+ //  struct spt_elem *a;
+ //  struct list_elem *e;
+ //  struct list_elem *temp;
+ //  lock_acquire(&thread_current()->spt_lock);
+ //  e = list_begin (&thread_current()->spt);
+ //  while(e!=list_end(&thread_current()->spt))                              /*traverse the spt_list*/
+ //  {
+	// 	a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+	//   if(a->mapid == mapping){                                              /*find the element need to be unmapped*/
+	// 		if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){        /*if it is dirty, it needs to write back*/
+	// 		  file_write_at(a->file,a->upage,PGSIZE,a->ofs);
+	// 		}
+	// 		temp=e;
+	// 		e = list_next (e);
+	// 		list_remove(temp);                                                  /*remove the spt_elem from the spt_list*/
+ //      break;
+	// 	}
+	// 	e = list_next (e);
+ // }
+ //  lock_release(&thread_current()->spt_lock);
+ struct list_elem *e = find_mapid(mapping)
+ struct spt_elem *a;
+ a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+ if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){        /*if it is dirty, it needs to write back*/
+ 		  file_write_at(a->file,a->upage,PGSIZE,a->ofs);
  }
-  lock_release(&thread_current()->spt_lock);
+ list_remove(e);
+}
+
+struct list_elem *find_mapid (mapid_t mapping){
+  struct thread* cur=thread_current();
+  struct spt_elem* a;
+  struct list_elem *e;
+  for (e = list_begin (&cur->spt); e != list_end (&cur->spt);e = list_next (e)){    /*traverse the spt list*/
+    a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+    if(a->mapid == mapping){
+      return e;
+    }
+  }
+  return 0;
 }
 
 
