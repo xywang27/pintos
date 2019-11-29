@@ -140,30 +140,20 @@ static void syscall_handler (struct intr_frame *f){
   }
 
   else if(syscall_num == SYS_REMOVE){                                   /*sys_remove*/
-    #ifdef VM
-        struct list_elem *se;
-        struct spt_elem *spte;
-        bool deny;
-    		deny=false;
-    		for(se=list_begin(&thread_current()->spt);
-    		se!=list_end(&thread_current()->spt);se=list_next(se))
-    		{
-    			spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-    			if(spte->file==*(pp+1))
-    			{
-    				//暂时不关闭
-    				spte->needremove=true;
-    				deny=true;
-    				break;
-    			}
-    		}
-        if(deny)
-		      return;
-    #endif
     is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
+    struct list_elem *se;
+    struct spt_elem *spte;
     char *file_name = *(char **)(ptr+4);                                /*get file name*/
     is_valid_string(file_name);                                         /*check if file name is valid*/
+    for(se=list_begin(&thread_current()->spt);
+    se!=list_end(&thread_current()->spt);se=list_next(se)){
+      spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
+      if(spte->file==filename){
+        spte->needremove = true;
+        return;
+      }
+    }
     f->eax = remove(file_name);
   }
 
@@ -233,28 +223,21 @@ static void syscall_handler (struct intr_frame *f){
     is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    #ifdef VM
-          bool deny;
-          struct list_elem *se;
-          struct spt_elem *spte;
-    			deny=false;
-    			for(se=list_begin(&thread_current()->spt);
-    			se!=list_end(&thread_current()->spt);se=list_next(se))
-    			{
-    				spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
-    				if(spte->file==thread_current()->file[fd])
+    struct list_elem *se;
+    struct spt_elem *spte;
+    for(se=list_begin(&thread_current()->spt);
+    			se!=list_end(&thread_current()->spt);se=list_next(se)){
+    	  spte=(struct spt_elem *)list_entry (se, struct spt_elem, elem);
+    		if(spte->file==thread_current()->file[fd])
     				{
     					//暂时不关闭
     					spte->needclose=true;
-    					deny=true;
-    					break;
+    					return;
     				}
     			}
-          if(deny)
-          return;
-    #endif
     close(fd);
   }
+
   else if(syscall_num == SYS_MMAP){
     struct list_elem *se;
     struct list_elem *te;
