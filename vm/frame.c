@@ -5,21 +5,17 @@
 #include "threads/thread.h"
 #include "threads/synch.h"
 
-struct lock frame_lock;
 
  /*initialize the frame table*/
 void frame_table_init(void){
   list_init (&frame_table);
-  lock_init(&frame_lock);
 }
 
-/* L:this func is just like a normal palloc */
+/* a little change from palloc get page */
 void* frame_get_page(void* upage){
-  /* L;sync */
-  lock_acquire(&frame_lock);
   void *kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  struct frame* f = (struct frame *) malloc (sizeof(struct frame));
-  if(!f){
+  struct frame* frame = (struct frame *) malloc (sizeof(struct frame));
+  if(frame == NULL){
     palloc_free_page(kpage);
     return NULL;
   }
@@ -27,21 +23,16 @@ void* frame_get_page(void* upage){
   f->upage=upage;
   f->holder=thread_current();
   list_push_front(&frame_table, &f->elem);
-
-  lock_release (&frame_lock);
   return kpage;
 }
 /* L:free a frame.
    frame table entry & page must both be freed. */
 void frame_free_page (void *kpage){
   struct frame* f;
-  lock_acquire(&frame_lock);
   struct list_elem *e = find_frame (kpage);
   palloc_free_page(kpage);
   f = list_entry(e, struct frame, elem);
   list_remove (&f->elem);
-  lock_release (&frame_lock);
-  // ASSERT(0);
 }
 
 struct list_elem *find_frame (void *kpage){
