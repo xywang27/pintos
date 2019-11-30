@@ -58,3 +58,23 @@ int wait_to_close(char *file_name){
   }
   return 0;
 }
+
+/*check if needs write back, remove or close*/
+void check_mapping(struct thread *t){
+  struct spt_elem *a;
+  struct list_elem *e;
+  for(e = list_begin(&t->spt);e != list_end(&t->spt);e = list_next(e)){                   /*traverse the spt list of the current thread*/
+    a=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
+    if(a->mapid){                                                                         /*check if the spt is mapped*/
+      if(pagedir_is_dirty(t->pagedir,a->upage)){                                          /*if the page is modified*/
+        file_write_at(a->file,a->upage,PGSIZE,a->ofs);                                    /*write back*/
+      }
+      if(a->remove){                                                                      /*if need remove when mapped*/
+        filesys_remove(a->file);
+      }
+      if(a->close){                                                                       /*id need close when mapped*/
+        file_close(a->file);
+      }
+    }
+  }
+}
