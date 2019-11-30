@@ -9,12 +9,10 @@
  /*initialize the frame table*/
 void frame_table_init(void){
   list_init (&frame_table);
-  lock_init(&frame_lock);
 }
 
 /* a little change from palloc get page */
 void* frame_get_page(void* upage){
-  lock_acquire (&frame_lock);
   void *kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   struct frame* frame = (struct frame *) malloc (sizeof(struct frame));
   if(frame == NULL){
@@ -25,7 +23,6 @@ void* frame_get_page(void* upage){
   frame->upage=upage;
   frame->holder=thread_current();
   list_push_back(&frame_table, &frame->elem);                                    /*push the frame into frame table*/
-  lock_release (&frame_lock);
   return kpage;
 }
 
