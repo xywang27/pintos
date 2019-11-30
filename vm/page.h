@@ -5,7 +5,6 @@
 #include "vm/frame.h"
 #include "filesys/file.h"
 #include "threads/thread.h"
-#include "threads/vaddr.h"
 
 typedef int mapid_t;
 
@@ -31,7 +30,5 @@ struct list_elem *find_mapid (mapid_t mapping);
 int wait_to_remove(char *file_name);
 
 int wait_to_close(char *file_name);
-
-void check_mapping(struct thread *t);
 
 #endif /* vm/page.h */
