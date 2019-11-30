@@ -24,6 +24,6 @@ struct spt_elem{
 
 struct list_elem *find_page (void *upage);
 
-struct list_elem *find_mapid (mapid_t mapping)；
+struct list_elem *find_mapid (mapid_t mapping);
 
 #endif /* vm/page.h */
