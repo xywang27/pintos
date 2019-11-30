@@ -463,30 +463,16 @@ bool check_overlap(void *addr){
 
 //Unmaps the mapping designated by mapping
 void munmap (mapid_t mapping){
- //  struct spt_elem *a;
- //  struct list_elem *e;
- //  struct list_elem *temp;
- //  lock_acquire(&thread_current()->spt_lock);
- //  e = list_begin (&thread_current()->spt);
- //  while(e!=list_end(&thread_current()->spt))                              /*traverse the spt_list*/
- //  {
-	// 	a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
-	//   if(a->mapid == mapping){                                              /*find the element need to be unmapped*/
-	// 		if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){        /*if it is dirty, it needs to write back*/
-	// 		  file_write_at(a->file,a->upage,PGSIZE,a->ofs);
-	// 		}
-	// 		temp=e;
-	// 		e = list_next (e);
-	// 		list_remove(temp);                                                  /*remove the spt_elem from the spt_list*/
- //      break;
-	// 	}
-	// 	e = list_next (e);
- // }
- //  lock_release(&thread_current()->spt_lock);
  struct list_elem *e = find_mapid(mapping);
  struct spt_elem *a = list_entry (e, struct spt_elem, elem);
  if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){        /*if it is dirty, it needs to write back*/
  		  file_write_at(a->file,a->upage,PGSIZE,a->ofs);
+ }
+ if(a->remove){                                                                                              /*if need remove when mapped*/
+   filesys_remove(a->file);
+ }
+ if(a->close){                                                                                               /*id need close when mapped*/
+   file_close(a->file);
  }
  list_remove(e);                                                  /*remove the spt_elem from the spt_list*/
 }
