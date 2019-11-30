@@ -4,6 +4,7 @@
 #include <list.h>
 #include "vm/frame.h"
 #include "filesys/file.h"
+#include "threads/thread.h"
 
 typedef int mapid_t;
 

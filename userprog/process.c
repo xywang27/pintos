@@ -192,24 +192,24 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   struct thread *child;
-  struct spt_elem *a;
   struct list_elem *e;
   uint32_t *pd;
   printf("%s: exit(%d)\n", cur->name, cur->exit_code);
-  for(e = list_begin(&cur->spt);e != list_end(&cur->spt);e = list_next(e)){                                           /*traverse the spt list of the current thread*/
-		a=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
-    if(a->mapid){                                                                                                     /*check if the spt is mapped*/
-      if(pagedir_is_dirty(thread_current()->pagedir,a->upage)){                                                       /*if the page is modified*/
-        file_write_at(a->file,a->upage,PGSIZE,a->ofs);                                                                /*write back*/
-    	}
-      if(a->remove){                                                                                                  /*if need remove when mapped*/
+  struct spt_elem *a;
+  for(e = list_begin(&cur->spt);e != list_end(&cur->spt);e = list_next(e)){                   /*traverse the spt list of the current thread*/
+    a=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
+    if(a->mapid){                                                                         /*check if the spt is mapped*/
+      if(pagedir_is_dirty(cur->pagedir,a->upage)){                                          /*if the page is modified*/
+        file_write_at(a->file,a->upage,PGSIZE,a->ofs);                                    /*write back*/
+      }
+      if(a->remove){                                                                      /*if need remove when mapped*/
         filesys_remove(a->file);
       }
-      if(a->close){                                                                                                   /*id need close when mapped*/
+      if(a->close){                                                                       /*id need close when mapped*/
         file_close(a->file);
       }
     }
-	}
+  }
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;

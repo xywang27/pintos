@@ -15,6 +15,8 @@ struct frame{
 
 struct list frame_table;                                /*frame table*/
 
+struct lock frame_lock;                                 /*frame lock*/
+
 void frame_table_init(void);
 void* frame_get_page (void* upage);
 void frame_free_page (void *);
