@@ -5,7 +5,7 @@
 #include "vm/frame.h"
 #include "filesys/file.h"
 
-
+typedef int mapid_t;
 
 /* a new struct to realize spt */
 struct spt_elem{
