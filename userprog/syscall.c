@@ -427,7 +427,7 @@ mapid_t mmap (int fd, void *addr){
    }
    lock_release(&cur->spt_lock);
    temp = mapid;
-   mapid++;
+   mapid++;                                                                            /*generate a new mapid*/
    return temp;
    }
    return -1;

@@ -160,7 +160,7 @@ page_fault (struct intr_frame *f)
   struct list_elem *e = find_page (page_boundary);                             /*find if is in the spt*/
   if (e){                                                                      /*if found*/
     struct spt_elem *a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
-    if(load_file(a,page_boundary)){                                         /*lazy load*/
+    if(load_file(a,page_boundary)){                                            /*lazy load*/
         return;
     }
   }
