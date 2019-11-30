@@ -26,4 +26,6 @@ struct list_elem *find_page (void *upage);
 
 struct list_elem *find_mapid (mapid_t mapping);
 
+int wait_to_remove(char *file_name);
+
 #endif /* vm/page.h */

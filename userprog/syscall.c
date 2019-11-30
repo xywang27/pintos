@@ -151,12 +151,8 @@ static void syscall_handler (struct intr_frame *f){
     char *file_name = *(char **)(ptr+4);                                /*get file name*/
     is_valid_string(file_name);                                         /*check if file name is valid*/
     /*if the remove is called when the file is mapped, we should wait and remove when thread exit.*/
-    for(e = list_begin(&thread_current()->spt);e != list_end(&thread_current()->spt); e = list_next(e)){
-      a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
-      if(a->file==file_name){
-        a->remove = true;
-        return;
-      }
+    if (wait_to_remove(file_name) == 1){
+      return;
     }
     f->eax = remove(file_name);
   }
