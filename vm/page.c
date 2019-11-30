@@ -16,3 +16,17 @@ struct list_elem *find_page (void *upage){
   }
   return 0;
 }
+
+//find the spt_elem with the given mapping
+struct list_elem *find_mapid (mapid_t mapping){
+  struct thread* cur=thread_current();
+  struct spt_elem* a;
+  struct list_elem *e;
+  for (e = list_begin (&cur->spt); e != list_end (&cur->spt);e = list_next (e)){    /*traverse the spt list*/
+    a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
+    if(a->mapid == mapping){
+      return e;
+    }
+  }
+  return 0;
+}
