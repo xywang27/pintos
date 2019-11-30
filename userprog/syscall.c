@@ -146,12 +146,9 @@ static void syscall_handler (struct intr_frame *f){
   else if(syscall_num == SYS_REMOVE){                                   /*sys_remove*/
     is_valid_ptr(ptr+4);                                                /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                                /*check if the tail of the pointer is valid*/
-    struct list_elem *e;
-    struct spt_elem *a;
     char *file_name = *(char **)(ptr+4);                                /*get file name*/
     is_valid_string(file_name);                                         /*check if file name is valid*/
-    /*if the remove is called when the file is mapped, we should wait and remove when thread exit.*/
-    if (wait_to_remove(file_name) == 1){
+    if (wait_to_remove(file_name) == 1){                                /*check if it needs to wait until exit*/
       return;
     }
     f->eax = remove(file_name);
@@ -219,15 +216,8 @@ static void syscall_handler (struct intr_frame *f){
     is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     int fd = *(int *)(ptr + 4);                                        /*get fd*/
-    struct list_elem *e;
-    struct spt_elem *a;
-    /*if the close is called when the file is mapped, we should wait and close when thread exit.*/
-    for(e = list_begin(&thread_current()->spt);e != list_end(&thread_current()->spt);e = list_next(e)){
-    	a=(struct spt_elem *)list_entry (e, struct spt_elem, elem);
-    	if(a->file==thread_current()->file[fd]){
-    		a->close=true;
-    		return;
-    	}
+    if (wait_to_close(thread_current()->file[fd]) == 1){               /*check if it needs to wait until exit*/
+      return;
     }
     close(fd);
   }
