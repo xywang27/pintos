@@ -4,20 +4,12 @@
 #include "userprog/gdt.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
-#include "threads/synch.h"
-#include "vm/page.h"
-#include "vm/frame.h"
-#include "threads/vaddr.h"
-#include "userprog/process.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
-bool grow_stack(void* upage);
-bool load_file(struct spt_elem* spte,void *upage);
-
 
 /* Registers handlers for interrupts that can be caused by user
    programs.
@@ -156,70 +148,13 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
-  void *page_boundary = pg_round_down(fault_addr);                             /*round up to the nearest page boundary*/
-  struct list_elem *e = find_page (page_boundary);                             /*find if is in the spt*/
-  if (e){                                                                      /*if found*/
-    struct spt_elem *a = (struct spt_elem *)list_entry (e, struct spt_elem, elem);
-    if(load_file(a,page_boundary)){                                            /*lazy load*/
-        return;
-    }
-  }
-  else{                                                                        /*if not found*/
-    if(fault_addr>=f->esp||f->esp==(fault_addr+32)||f->esp==(fault_addr+4)){   /*if needs grow stack*/
-      if(is_user_vaddr (fault_addr)){
-        if (grow_stack(page_boundary)){                                        /*grow stack*/
-          return;
-        }
-      }
-    }
-  }
-
-  f->eip = f->eax;
-  f->eax = 0xffffffff;
-  thread_current()->exit_code=-1;                                              /*kill the programme*/
-  thread_exit();
-  return;
-
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
      which fault_addr refers. */
-  // printf ("Page fault at %p: %s error %s page in %s context.\n",
-  //         fault_addr,
-  //         not_present ? "not present" : "rights violation",
-  //         write ? "writing" : "reading",
-  //         user ? "user" : "kernel");
-  // kill (f);
-}
-
-/*grow stack function*/
-bool grow_stack(void *upage){
-  bool success = false;
-  void *kpage = frame_get_page(upage);                                        /*get new page*/
-  if (kpage != NULL){
-    success = install_page (upage, kpage, true);                              /*adds a mapping from user virtual address  to kernel virtual address*/
-    if(!success){
-      frame_free_page(kpage);                                                 /*free if fail*/
-      return false;
-    }
-  }
-  return true;
-}
-
-/*lazy load function*/
-bool load_file(struct spt_elem* spte,void *upage){
-  void* kpage=frame_get_page(upage);
-  if (kpage == NULL)
-      return false;
-  /* Load this page. */
-  if (file_read_at (spte->file, kpage, spte->read_bytes,spte->ofs) != (int) spte->read_bytes){
-    frame_free_page(kpage);
-    return false;
-  }
-  memset (kpage + spte->read_bytes, 0, spte->zero_bytes);
-  /* Add the page to the process's address space. */
-  if (!install_page (spte->upage, kpage, spte->writable)){
-    frame_free_page(kpage);
-    return false;
-  }
-  return true;
+  printf ("Page fault at %p: %s error %s page in %s context.\n",
+          fault_addr,
+          not_present ? "not present" : "rights violation",
+          write ? "writing" : "reading",
+          user ? "user" : "kernel");
+  kill (f);
 }
