@@ -2,16 +2,20 @@
 #define FILESYS_INODE_H
 
 #include <stdbool.h>
-#include "filesys/off_t.h"
+#include <bitmap.h>
 #include "devices/block.h"
-
-struct bitmap;
+#include "filesys/off_t.h"
+#include "threads/synch.h"
 
 void inode_init (void);
-bool inode_create (block_sector_t, off_t);
+bool inode_create (block_sector_t, off_t, bool);
 struct inode *inode_open (block_sector_t);
 struct inode *inode_reopen (struct inode *);
 block_sector_t inode_get_inumber (const struct inode *);
+bool inode_is_dir (const struct inode *);
+bool inode_removed (const struct inode *inode);
+void inode_lock_dir_acquire (struct inode *inode);
+void inode_lock_dir_release (struct inode *inode);
 void inode_close (struct inode *);
 void inode_remove (struct inode *);
 off_t inode_read_at (struct inode *, void *, off_t size, off_t offset);
