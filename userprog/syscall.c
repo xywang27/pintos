@@ -351,6 +351,9 @@ int write (int fd, const void *buffer, unsigned size){
   }
   else{                                                                                /*if it is not STDOUT*/
     if (cur->file[fd] != NULL){
+      if(inode_is_dir(file_get_inode(cur->file[fd]))){
+        return -1;
+      }
       return file_write (cur->file[fd], buffer, size);
     }
     else{                                                                              /*return -1 if write fails*/
