@@ -35,7 +35,7 @@ int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
-bool chdir (const char *dir);
+bool chdir (const char *pathname);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -216,7 +216,7 @@ static void syscall_handler (struct intr_frame *f){
     is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     const char *dir = *(char **)(ptr+4);                                  /*get fd*/
-    f->eax = chdir(fd);
+    f->eax = chdir(dir);
   }
 }
 
@@ -370,7 +370,7 @@ void close (int fd)
   }
 }
 
-bool chdir (const char *dir){
+bool chdir (const char *pathname){
   struct thread *cur = thread_current();
 
   struct dir *dir;
