@@ -36,6 +36,7 @@ void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
 bool chdir (const char *pathname);
+bool mkdir (const char *pathname);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -218,6 +219,13 @@ static void syscall_handler (struct intr_frame *f){
     const char *dir = *(char **)(ptr+4);                                  /*get fd*/
     f->eax = chdir(dir);
   }
+
+  else if(syscall_num == SYS_MKDIR){                                   /*sys_close*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    const char *dir = *(char **)(ptr+4);                                  /*get fd*/
+    f->eax = mkdir(dir);
+  }
 }
 
 // Terminates Pintos by calling shutdown_power_off()
@@ -397,6 +405,37 @@ bool chdir (const char *pathname){
   dir_close(cur->cwd);
   cur->cwd = dir_open(inode);
   return true;
+}
+
+bool mkdir (const char *pathname){
+  struct dir *dir;
+  char *filename;
+  int result = parse_pathname(pathname, &dir, &filename);
+  if (result == -1 || result == 2) {
+      unpin_str(pathname, PATHNAME_MAX);
+      return false;
+  }
+
+  block_sector_t inode_sector = 0;
+
+  bool success = free_map_allocate(1, &inode_sector)
+          && dir_create(inode_sector, 16)
+          && dir_add(dir, filename, inode_sector, true);
+
+  if (!success && inode_sector != 0) {
+      free_map_release(inode_sector, 1);
+  }
+
+  if (success) {
+      struct dir *newdir = dir_open_sector(inode_sector);
+      dir_add(newdir, ".", inode_sector, true);
+      dir_add(newdir, "..", inode_get_inumber(dir_get_inode(dir)), true);
+      dir_close(newdir);
+  }
+
+  dir_close(dir);
+  free(filename);
+  return success;
 }
 
 void
