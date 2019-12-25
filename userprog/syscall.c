@@ -39,6 +39,7 @@ bool chdir (const char *pathname);
 bool mkdir (const char *pathname);
 bool readdir (int fd, char *name);
 bool isdir (int fd);
+int inumber (int fd);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -242,6 +243,13 @@ static void syscall_handler (struct intr_frame *f){
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     int fd = *(int *)(ptr + 4);
     f->eax = isdir(fd);
+  }
+
+  else if(syscall_num == SYS_INUMBER){                                   /*sys_close*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);
+    f->eax = inumber(fd);
   }
 }
 
@@ -484,6 +492,17 @@ bool isdir (int fd){
   }
 
   return inode_is_dir(file_get_inode(file));
+}
+
+int inumber (int fd){
+  struct thread *cur = thread_current ();
+
+  struct file *file = cur->file[fd];
+  if (file == NULL){
+    return false;
+  }
+
+  return inode_get_inumber(file_get_inode(file));
 }
 
 
