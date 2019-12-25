@@ -7,6 +7,9 @@
 #include "userprog/process.h"
 #include "filesys/file.h"
 #include "filesys/filesys.h"
+#include "filesys/directory.h"
+#include "filesys/free-map.h"
+#include "filesys/inode.h"
 #include "threads/malloc.h"
 #include "threads/synch.h"
 #include "devices/input.h"
@@ -32,6 +35,7 @@ int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
+bool chdir (const char *dir);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -207,6 +211,13 @@ static void syscall_handler (struct intr_frame *f){
     int fd = *(int *)(ptr + 4);                                        /*get fd*/
     close(fd);
   }
+
+  else if(syscall_num == SYS_CHDIR){                                   /*sys_close*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    const char *dir = *(char **)(ptr+4);                                  /*get fd*/
+    f->eax = chdir(fd);
+  }
 }
 
 // Terminates Pintos by calling shutdown_power_off()
@@ -357,6 +368,35 @@ void close (int fd)
   else{                                                                                /*return -1 if close fail*/
     return -1;
   }
+}
+
+bool chdir (const char *dir){
+  struct thread *cur = thread_current();
+
+  struct dir *dir;
+  char *filename;
+  int result = parse_pathname(pathname, &dir, &filename);
+  if (result == -1) {
+      return false;
+  }
+  else if (result == 2) {
+      // root directory
+      dir_close(cur->cwd);
+      cur->cwd = dir_open_root();
+      return true;
+  }
+
+  struct inode *inode = NULL;
+  if (!dir_lookup(dir, filename, &inode) || !inode_is_dir(inode)) {
+      dir_close(dir);
+      free(filename);
+      return false;
+  }
+  dir_close(dir);
+  free(filename);
+  dir_close(cur->cwd);
+  cur->cwd = dir_open(inode);
+  return true;
 }
 
 void
