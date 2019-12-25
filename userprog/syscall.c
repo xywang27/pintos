@@ -233,7 +233,7 @@ static void syscall_handler (struct intr_frame *f){
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     char *name = *(char **)(ptr+8);                                  /*get fd*/
     int fd = *(int *)(ptr + 4);
-    f->eax = readdir(dir);
+    f->eax = readdir(fd, name);
   }
 }
 
@@ -452,7 +452,7 @@ bool readdir (int fd, char *name){
 
   struct file *file = cur->file[fd];
   if (file == NULL){
-    return false
+    return false;
   }
   struct inode *inode = file_get_inode(file);
   if (!inode_is_dir(inode)) {
