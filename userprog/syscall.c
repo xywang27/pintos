@@ -412,7 +412,6 @@ bool mkdir (const char *pathname){
   char *filename;
   int result = parse_pathname(pathname, &dir, &filename);
   if (result == -1 || result == 2) {
-      unpin_str(pathname, PATHNAME_MAX);
       return false;
   }
 
