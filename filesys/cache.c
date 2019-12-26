@@ -25,11 +25,11 @@
 
 struct cache_entry {
     uint8_t buffer[BLOCK_SECTOR_SIZE];
-    block_sector_t sector_number;
-    struct lock lock;
+    struct lock cache_entry_lock;
     bool valid;
     bool dirty;
-    bool accessed;
+    // bool accessed;
+    block_sector_t sector_number;
 };
 
 static struct cache_entry cache[64];
@@ -44,7 +44,7 @@ static void cache_read_ahead(void *aux UNUSED);
 void cache_init(void) {
     size_t i;
     for (i = 0; i < 64; ++i) {
-        lock_init(&cache[i].lock);
+        lock_init(&cache[i].cache_entry_lock);
         cache[i].valid = false;
     }
     lock_init(&cache_lock);
@@ -59,12 +59,12 @@ void cache_flush_all(void) {
     size_t i;
     for (i = 0; i < 64; ++ i) {
         struct cache_entry *ce = cache + i;
-        lock_acquire(&ce->lock);
+        lock_acquire(&ce->cache_entry_lock);
         if (ce->valid && ce->dirty) {
             block_write(fs_device, ce->sector_number, ce->buffer);
             ce->dirty = false;
         }
-        lock_release(&ce->lock);
+        lock_release(&ce->cache_entry_lock);
     }
 }
 
@@ -72,11 +72,11 @@ static struct cache_entry *cache_find(block_sector_t sector) {
     size_t i;
     for (i = 0; i < 64; ++ i) {
         struct cache_entry *ce = cache + i;
-        lock_acquire(&ce->lock);
+        lock_acquire(&ce->cache_entry_lock);
         if (ce->valid && ce->sector_number == sector) {
             return ce;
         }
-        lock_release(&ce->lock);
+        lock_release(&ce->cache_entry_lock);
     }
     return NULL;
 }
@@ -102,15 +102,15 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
     if (buffer) {
         memcpy(buffer, ce->buffer + offset, (size_t) size);
     }
-    ce->accessed = true;
-    lock_release(&ce->lock);
+    // ce->accessed = true;
+    lock_release(&ce->cache_entry_lock);
 }
 
 static struct cache_entry *cache_evict(void) {
     size_t hand = 0;
     while (true) {
         struct cache_entry *ce = cache + hand;
-        bool succ = lock_try_acquire(&ce->lock);
+        bool succ = lock_try_acquire(&ce->cache_entry_lock);
         if (!succ) {
             hand = (hand + 1) % 64;
             continue;
@@ -119,9 +119,9 @@ static struct cache_entry *cache_evict(void) {
             ce->valid = true;
             return ce;
         }
-        if (ce->accessed) {
-            ce->accessed = false;
-        }
+        // if (ce->accessed) {
+        //     ce->accessed = false;
+        // }
         else {
             // evict him! lol
             if (ce->dirty) {
@@ -130,7 +130,7 @@ static struct cache_entry *cache_evict(void) {
             }
             return ce;
         }
-        lock_release(&ce->lock);
+        lock_release(&ce->cache_entry_lock);
         hand = (hand + 1) % 64;
     }
     NOT_REACHED();
@@ -157,9 +157,9 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
         lock_release(&cache_lock);
     }
     memcpy(ce->buffer + offset, buffer, (size_t) size);
-    ce->accessed = true;
+    // ce->accessed = true;
     ce->dirty = true;
-    lock_release(&ce->lock);
+    lock_release(&ce->cache_entry_lock);
 }
 
 // static void cache_write_behind(void *aux UNUSED) {
