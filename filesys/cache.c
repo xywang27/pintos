@@ -78,7 +78,7 @@ void cache_refresh(void) {
       else{
         lock_release(&a->cache_entry_lock);
       }
-      i = i + 1
+      i = i + 1;
     }
     // for (i = 0; i < 64; ++ i) {
     //     struct cache_entry *ce = cache + i;
