@@ -156,13 +156,17 @@ struct cache_entry *cache_evict(void){
       else{
         if (a->lru > min){
           min = a->lru;
+          if(temp){
+            lock_release(&temp->cache_entry_lock);
+          }
           temp = a;
+          i = i + 1;
+          continue;
         }
       }
       lock_release(&a->cache_entry_lock);
       i = i + 1;
     }
-    lock_acquire(&temp->cache_entry_lock);
     if (temp->dirty){
       block_write(fs_device, temp->sector_number, temp->buffer);
       temp->dirty = false;
