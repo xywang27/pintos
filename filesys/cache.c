@@ -99,9 +99,11 @@ struct cache_entry *find_cache_by_sector(block_sector_t sector){
     lock_acquire(&a->cache_entry_lock);
     if (a->sector_number == sector){
       if (a->be_used == 1){
+        lock_release(&a->cache_entry_lock);
         return a;
       }
       else{
+        lock_release(&a->cache_entry_lock);
         return NULL;
       }
     }
