@@ -105,7 +105,7 @@ struct cache_entry *find_cache_by_sector(block_sector_t sector){
         return NULL;
       }
     }
-    lock_release(&ce->cache_entry_lock);
+    lock_release(&a->cache_entry_lock);
     i = i + 1;
   }
   return NULL;
