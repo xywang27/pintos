@@ -26,8 +26,8 @@
 struct cache_entry {
     uint8_t buffer[BLOCK_SECTOR_SIZE];
     struct lock cache_entry_lock;
-    bool valid;
     bool dirty;
+    int valid;
     // bool accessed;
     block_sector_t sector_number;
 };
@@ -38,14 +38,18 @@ static struct lock cache_lock;
 
 static struct cache_entry *cache_find(block_sector_t sector);
 static struct cache_entry *cache_evict(void);
-static void cache_write_behind(void *aux UNUSED);
-static void cache_read_ahead(void *aux UNUSED);
+// static void cache_write_behind(void *aux UNUSED);
+// static void cache_read_ahead(void *aux UNUSED);
 
 void cache_init(void) {
-    size_t i;
-    for (i = 0; i < 64; ++i) {
-        lock_init(&cache[i].cache_entry_lock);
-        cache[i].valid = false;
+    int i = 0;
+    struct cache_entry *a = cache[i];
+    while (i < 64){
+      a = &cache[i];
+      lock_init(&a->cache_entry_lock);
+      a->dirty = false;
+      a->valid = 0;
+      i = i + 1;
     }
     lock_init(&cache_lock);
     // list_init(&ahead_queue);
@@ -116,7 +120,7 @@ static struct cache_entry *cache_evict(void) {
             continue;
         }
         if (!ce->valid) {
-            ce->valid = true;
+            ce->valid = 1;
             return ce;
         }
         // if (ce->accessed) {
