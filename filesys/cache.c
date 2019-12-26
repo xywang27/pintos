@@ -189,11 +189,11 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
         ce = cache_evict();
         for (i = 0; i < 64; ++ i) {
             struct cache_entry *c = buffer_cache + i;
-            lock_acquire(&c->cache_entry_lock);
             if (c != ce) {
+                lock_acquire(&c->cache_entry_lock);
                 c->lru = c->lru + 1;
+                lock_release(&c->cache_entry_lock);
             }
-            lock_release(&c->cache_entry_lock);
         }
         lock_release(&cache_lock);
         ASSERT(ce);
@@ -235,11 +235,11 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
         ce = cache_evict();
         for (i = 0; i < 64; ++ i) {
             struct cache_entry *c = buffer_cache + i;
-            lock_acquire(&c->cache_entry_lock);
             if (c != ce) {
+                lock_acquire(&c->cache_entry_lock);
                 c->lru = c->lru + 1;
+                lock_release(&c->cache_entry_lock);
             }
-            lock_release(&c->cache_entry_lock);
         }
         lock_release(&cache_lock);
         ASSERT(ce);
