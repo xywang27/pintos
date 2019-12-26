@@ -92,33 +92,33 @@ void cache_refresh(void){
 }
 
 struct cache_entry *find_cache_by_sector(block_sector_t sector){
-  // int i = 0;
-  // struct cache_entry *a = &cache[i];
-  // while (i < 64){
-  //   a = &cache[i];
-  //   lock_acquire(&a->cache_entry_lock);
-  //   if (a->sector_number == sector){
-  //     if (a->be_used == 1){
-  //       return a;
-  //     }
-  //     else{
-  //       return NULL;
-  //     }
-  //   }
-  //   lock_release(&a->cache_entry_lock);
-  //   i = i + 1;
-  // }
-  // return NULL;
-    size_t i;
-    for (i = 0; i < 64; ++ i) {
-        struct cache_entry *ce = cache + i;
-        lock_acquire(&ce->cache_entry_lock);
-        if (ce->be_used && ce->sector_number == sector) {
-            return ce;
-        }
-        lock_release(&ce->cache_entry_lock);
+  int i = 0;
+  struct cache_entry *a = &cache[i];
+  while (i < 64){
+    a = &cache[i];
+    lock_acquire(&a->cache_entry_lock);
+    if (a->sector_number == sector){
+      if (a->be_used == 1){
+        return a;
+      }
+      // else{
+      //   return NULL;
+      // }
     }
-    return NULL;
+    lock_release(&a->cache_entry_lock);
+    i = i + 1;
+  }
+  return NULL;
+    // size_t i;
+    // for (i = 0; i < 64; ++ i) {
+    //     struct cache_entry *ce = cache + i;
+    //     lock_acquire(&ce->cache_entry_lock);
+    //     if (ce->be_used && ce->sector_number == sector) {
+    //         return ce;
+    //     }
+    //     lock_release(&ce->cache_entry_lock);
+    // }
+    // return NULL;
 }
 
 void cache_read(block_sector_t sector, void *buffer) {
