@@ -114,11 +114,11 @@ struct cache_entry *cache_evict(void) {
     size_t hand = 0;
     while (true) {
         struct cache_entry *ce = buffer_cache + hand;
-        bool succ = lock_try_acquire(&ce->cache_entry_lock);
-        if (!succ) {
-            hand = (hand + 1) % 64;
-            continue;
-        }
+        // bool succ = lock_try_acquire(&ce->cache_entry_lock);
+        // if (!succ) {
+        //     hand = (hand + 1) % 64;
+        //     continue;
+        // }
         if (!ce->be_used) {
             ce->be_used = 1;
             return ce;
