@@ -183,7 +183,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
         // miss!
         ce = cache_evict();
         for (i = 0; i < 64; ++ i) {
-            struct cache_entry *c = cache + i;
+            struct cache_entry *c = buffer_cache + i;
             lock_acquire(&c->cache_entry_lock);
             if (c != ce) {
                 c->lru = c->lru + 1;
@@ -223,12 +223,13 @@ void cache_write(block_sector_t sector, const void *buffer) {
 void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t offset) {
     ASSERT(buffer);
     lock_acquire(&cache_lock);
+    int i;
     struct cache_entry *ce = find_cache_by_sector(sector);
     if (!ce) {
         // miss!
         ce = cache_evict();
         for (i = 0; i < 64; ++ i) {
-            struct cache_entry *c = cache + i;
+            struct cache_entry *c = buffer_cache + i;
             lock_acquire(&c->cache_entry_lock);
             if (c != ce) {
                 c->lru = c->lru + 1;
