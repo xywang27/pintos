@@ -61,34 +61,34 @@ void cache_init(void) {
 
 void cache_refresh(void) {
     int i = 0;
-    struct cache_entry *a = &cache[i];
-    while (i < 64){
-      lock_acquire(&a->cache_entry_lock);
-      a = &cache[i];
-      if (a->be_used == 1){
-        if (!a->dirty){
-          lock_release(&a->cache_entry_lock);
-        }
-        else{
-          a->dirty = false;
-          block_write(fs_device, a->sector_number, a->buffer);
-          lock_release(&a->cache_entry_lock);
-        }
-      }
-      else{
-        lock_release(&a->cache_entry_lock);
-      }
-      i = i + 1;
-    }
-    // for (i = 0; i < 64; ++ i) {
-    //     struct cache_entry *ce = cache + i;
-    //     lock_acquire(&ce->cache_entry_lock);
-    //     if (ce->be_used && ce->dirty) {
-    //         block_write(fs_device, ce->sector_number, ce->buffer);
-    //         ce->dirty = false;
+    // struct cache_entry *a = &cache[i];
+    // while (i < 64){
+    //   lock_acquire(&a->cache_entry_lock);
+    //   a = &cache[i];
+    //   if (a->be_used == 1){
+    //     if (!a->dirty){
+    //       lock_release(&a->cache_entry_lock);
     //     }
-    //     lock_release(&ce->cache_entry_lock);
+    //     else{
+    //       a->dirty = false;
+    //       block_write(fs_device, a->sector_number, a->buffer);
+    //       lock_release(&a->cache_entry_lock);
+    //     }
+    //   }
+    //   else{
+    //     lock_release(&a->cache_entry_lock);
+    //   }
+    //   i = i + 1;
     // }
+    for (i = 0; i < 64; ++ i) {
+        struct cache_entry *ce = cache + i;
+        lock_acquire(&ce->cache_entry_lock);
+        if (ce->be_used && ce->dirty) {
+            block_write(fs_device, ce->sector_number, ce->buffer);
+            ce->dirty = false;
+        }
+        lock_release(&ce->cache_entry_lock);
+    }
 }
 
 static struct cache_entry *cache_find(block_sector_t sector) {
