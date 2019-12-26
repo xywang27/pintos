@@ -23,21 +23,13 @@
 //     struct list_elem elem;
 // };
 
-struct cache_entry {
-  uint8_t buffer[BLOCK_SECTOR_SIZE];
-  struct lock cache_entry_lock;
-  bool dirty;
-  int be_used;
-  // bool accessed;
-  block_sector_t sector_number;
-};
 
 static struct cache_entry buffer_cache[64];
 
 static struct lock cache_lock;
 
-struct cache_entry *find_cache_by_sector(block_sector_t sector);
-struct cache_entry *cache_evict(void);
+// struct cache_entry *find_cache_by_sector(block_sector_t sector);
+// struct cache_entry *cache_evict(void);
 // static void cache_write_behind(void *aux UNUSED);
 // static void cache_read_ahead(void *aux UNUSED);
 
@@ -118,31 +110,6 @@ struct cache_entry *find_cache_by_sector(block_sector_t sector){
     // return NULL;
 }
 
-void cache_read(block_sector_t sector, void *buffer) {
-    cache_read_at(sector, buffer, BLOCK_SECTOR_SIZE, 0);
-}
-
-void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset) {
-    lock_acquire(&cache_lock);
-    struct cache_entry *ce = find_cache_by_sector(sector);
-    if (!ce) {
-        // miss!
-        ce = cache_evict();
-        lock_release(&cache_lock);
-        ASSERT(ce);
-        ce->sector_number = sector;
-        ce->dirty = false;
-        block_read(fs_device, sector, ce->buffer);
-    } else {
-        lock_release(&cache_lock);
-    }
-    if (buffer) {
-        memcpy(buffer, ce->buffer + offset, (size_t) size);
-    }
-    // ce->accessed = true;
-    lock_release(&ce->cache_entry_lock);
-}
-
 struct cache_entry *cache_evict(void) {
     size_t hand = 0;
     while (true) {
@@ -171,6 +138,31 @@ struct cache_entry *cache_evict(void) {
         hand = (hand + 1) % 64;
     }
     NOT_REACHED();
+}
+
+void cache_read(block_sector_t sector, void *buffer) {
+    cache_read_at(sector, buffer, BLOCK_SECTOR_SIZE, 0);
+}
+
+void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset) {
+    lock_acquire(&cache_lock);
+    struct cache_entry *ce = find_cache_by_sector(sector);
+    if (!ce) {
+        // miss!
+        ce = cache_evict();
+        lock_release(&cache_lock);
+        ASSERT(ce);
+        ce->sector_number = sector;
+        ce->dirty = false;
+        block_read(fs_device, sector, ce->buffer);
+    } else {
+        lock_release(&cache_lock);
+    }
+    if (buffer) {
+        memcpy(buffer, ce->buffer + offset, (size_t) size);
+    }
+    // ce->accessed = true;
+    lock_release(&ce->cache_entry_lock);
 }
 
 void cache_write(block_sector_t sector, const void *buffer) {
