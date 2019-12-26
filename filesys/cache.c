@@ -50,7 +50,7 @@ void cache_init(void) {
     // lock_init(&ahead_lock);
     // cond_init(&ahead_cond);
     thread_create("write_behind", PRI_DEFAULT, cache_write_behind, NULL);
-    thread_create("read_ahead", PRI_DEFAULT, cache_read_ahead, NULL);
+    // thread_create("read_ahead", PRI_DEFAULT, cache_read_ahead, NULL);
 }
 
 void cache_flush_all(void) {

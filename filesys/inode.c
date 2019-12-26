@@ -451,7 +451,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
         if (offset + BLOCK_SECTOR_SIZE < disk_inode->length) {
             block_sector_t sector =
                     byte_to_sector(disk_inode, offset + BLOCK_SECTOR_SIZE);
-            cache_read_ahead_put(sector);
+            // cache_read_ahead_put(sector);
         }
 
         if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE) {
