@@ -10,6 +10,7 @@ struct cache_entry {
   bool dirty;
   int be_used;
   // bool accessed;
+  int lru;
   block_sector_t sector_number;
 };
 
