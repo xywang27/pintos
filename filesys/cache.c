@@ -14,14 +14,14 @@
 #define CACHE_WRITE_INTV (1 * TIMER_FREQ)
 
 static struct lock cache_lock;
-static struct list ahead_queue;
-static struct lock ahead_lock;
-static struct condition ahead_cond;
+// static struct list ahead_queue;
+// static struct lock ahead_lock;
+// static struct condition ahead_cond;
 
-struct ahead_entry {
-    block_sector_t sector;
-    struct list_elem elem;
-};
+// struct ahead_entry {
+//     block_sector_t sector;
+//     struct list_elem elem;
+// };
 
 struct cache_entry {
     uint8_t buffer[BLOCK_SECTOR_SIZE];
@@ -170,26 +170,26 @@ static void cache_write_behind(void *aux UNUSED) {
     NOT_REACHED();
 }
 
-static void cache_read_ahead(void *aux UNUSED) {
-    while (true) {
-        lock_acquire(&ahead_lock);
-        while (list_empty(&ahead_queue))
-            cond_wait(&ahead_cond, &ahead_lock);
-        struct ahead_entry *ae = list_entry(list_pop_front(&ahead_queue),
-                struct ahead_entry, elem);
-        lock_release(&ahead_lock);
-        block_sector_t sector = ae->sector;
-        free(ae);
-        cache_read(sector, NULL);
-    }
-    NOT_REACHED();
-}
-
-void cache_read_ahead_put(block_sector_t sector) {
-    lock_acquire(&ahead_lock);
-    struct ahead_entry *ae = malloc(sizeof(struct ahead_entry));
-    ae->sector = sector;
-    list_push_back(&ahead_queue, &ae->elem);
-    cond_signal(&ahead_cond, &ahead_lock);
-    lock_release(&ahead_lock);
-}
+// static void cache_read_ahead(void *aux UNUSED) {
+//     while (true) {
+//         lock_acquire(&ahead_lock);
+//         while (list_empty(&ahead_queue))
+//             cond_wait(&ahead_cond, &ahead_lock);
+//         struct ahead_entry *ae = list_entry(list_pop_front(&ahead_queue),
+//                 struct ahead_entry, elem);
+//         lock_release(&ahead_lock);
+//         block_sector_t sector = ae->sector;
+//         free(ae);
+//         cache_read(sector, NULL);
+//     }
+//     NOT_REACHED();
+// }
+//
+// void cache_read_ahead_put(block_sector_t sector) {
+//     lock_acquire(&ahead_lock);
+//     struct ahead_entry *ae = malloc(sizeof(struct ahead_entry));
+//     ae->sector = sector;
+//     list_push_back(&ahead_queue, &ae->elem);
+//     cond_signal(&ahead_cond, &ahead_lock);
+//     lock_release(&ahead_lock);
+// }
