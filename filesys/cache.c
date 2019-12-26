@@ -29,7 +29,7 @@ static struct cache_entry buffer_cache[64];
 static struct lock cache_lock;
 
 // struct cache_entry *find_cache_by_sector(block_sector_t sector);
-// struct cache_entry *cache_evict(void);
+// struct cache_entry *clock(void);
 // static void cache_write_behind(void *aux UNUSED);
 // static void cache_read_ahead(void *aux UNUSED);
 
@@ -111,34 +111,62 @@ struct cache_entry *find_cache_by_sector(block_sector_t sector){
     // return NULL;
 }
 
-struct cache_entry *cache_evict(void){
-    size_t hand = 0;
-    while (true) {
-        struct cache_entry *ce = buffer_cache + hand;
-        bool succ = lock_try_acquire(&ce->cache_entry_lock);
-        if (!succ) {
-            hand = (hand + 1) % 64;
-            continue;
+struct cache_entry *clock(void){
+  int i = 0;
+  struct cache_entry *a = &buffer_cache[i];
+  while (i < 64) {
+    a = &buffer_cache[i];
+    if(lock_try_acquire(&a->cache_entry_lock)){
+      if(a->be_used == 0){
+        a->be_used = 1;
+        return a;
+      }
+      else{
+        if(a->dirty){
+          a->dirty = false;
+          block_write(fs_device, a->sector_number, a->buffer);
         }
-        if (!ce->be_used) {
-            ce->be_used = 1;
-            return ce;
-        }
-        // if (ce->accessed) {
-        //     ce->accessed = false;
-        // }
-        else {
-            // evict him! lol
-            if (ce->dirty) {
-                block_write(fs_device, ce->sector_number, ce->buffer);
-                ce->dirty = false;
-            }
-            return ce;
-        }
-        lock_release(&ce->cache_entry_lock);
-        hand = (hand + 1) % 64;
+        return a;
+      }
     }
-    NOT_REACHED();
+    else{
+      if(i == 63){
+        i = 0;
+      }
+      else{
+        i = i + 1;
+      }
+      continue;
+    }
+    lock_release(&a->cache_entry_lock);
+    i = (i + 1) % 64
+  }
+  //   if (!succ) {
+  //       hand = (hand + 1) % 64;
+  //       continue;
+  //   }
+  //   if (!ce->be_used) {
+  //       ce->be_used = 1;
+  //       return ce;
+  //   }
+  //   // if (ce->accessed) {
+  //   //     ce->accessed = false;
+  //   // }
+  //   else {
+  //       // evict him! lol
+  //       if (ce->dirty) {
+  //           block_write(fs_device, ce->sector_number, ce->buffer);
+  //           ce->dirty = false;
+  //       }
+  //       return ce;
+  //   }
+  //   lock_release(&ce->cache_entry_lock);
+  //   hand = (hand + 1) % 64;
+  // }
+  // NOT_REACHED();
+
+
+
     // int min = 0;
     // int i = 0;
     // struct cache_entry *temp;
@@ -186,7 +214,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
     struct cache_entry *ce = find_cache_by_sector(sector);
     if (!ce) {
         // miss!
-        ce = cache_evict();
+        ce = clock();
         // for (i = 0; i < 64; ++ i) {
         //     struct cache_entry *c = buffer_cache + i;
         //     if (c != ce) {
@@ -232,7 +260,7 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
     struct cache_entry *ce = find_cache_by_sector(sector);
     if (!ce) {
         // miss!
-        ce = cache_evict();
+        ce = clock();
         // for (i = 0; i < 64; ++ i) {
         //     struct cache_entry *c = buffer_cache + i;
         //     if (c != ce) {
