@@ -5,15 +5,15 @@
 #include "devices/block.h"
 #include "devices/timer.h"
 #include "threads/thread.h"
-#include "threads/synch.h"
+// #include "threads/synch.h"
 #include "threads/malloc.h"
 #include "filesys/filesys.h"
 #include "filesys/cache.h"
 
-#define CACHE_SIZE 64
+// #define 64 64
 // #define CACHE_WRITE_INTV (1 * TIMER_FREQ)
 
-static struct lock cache_lock;
+
 // static struct list ahead_queue;
 // static struct lock ahead_lock;
 // static struct condition ahead_cond;
@@ -25,14 +25,16 @@ static struct lock cache_lock;
 
 struct cache_entry {
     uint8_t buffer[BLOCK_SECTOR_SIZE];
-    block_sector_t sector;
+    block_sector_t sector_number;
     struct lock lock;
     bool valid;
     bool dirty;
     bool accessed;
 };
 
-static struct cache_entry cache[CACHE_SIZE];
+static struct cache_entry cache[64];
+
+static struct lock cache_lock;
 
 static struct cache_entry *cache_find(block_sector_t sector);
 static struct cache_entry *cache_evict(void);
@@ -41,7 +43,7 @@ static void cache_read_ahead(void *aux UNUSED);
 
 void cache_init(void) {
     size_t i;
-    for (i = 0; i < CACHE_SIZE; ++i) {
+    for (i = 0; i < 64; ++i) {
         lock_init(&cache[i].lock);
         cache[i].valid = false;
     }
@@ -55,11 +57,11 @@ void cache_init(void) {
 
 void cache_flush_all(void) {
     size_t i;
-    for (i = 0; i < CACHE_SIZE; ++ i) {
+    for (i = 0; i < 64; ++ i) {
         struct cache_entry *ce = cache + i;
         lock_acquire(&ce->lock);
         if (ce->valid && ce->dirty) {
-            block_write(fs_device, ce->sector, ce->buffer);
+            block_write(fs_device, ce->sector_number, ce->buffer);
             ce->dirty = false;
         }
         lock_release(&ce->lock);
@@ -68,10 +70,10 @@ void cache_flush_all(void) {
 
 static struct cache_entry *cache_find(block_sector_t sector) {
     size_t i;
-    for (i = 0; i < CACHE_SIZE; ++ i) {
+    for (i = 0; i < 64; ++ i) {
         struct cache_entry *ce = cache + i;
         lock_acquire(&ce->lock);
-        if (ce->valid && ce->sector == sector) {
+        if (ce->valid && ce->sector_number == sector) {
             return ce;
         }
         lock_release(&ce->lock);
@@ -91,7 +93,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
         ce = cache_evict();
         lock_release(&cache_lock);
         ASSERT(ce);
-        ce->sector = sector;
+        ce->sector_number = sector;
         ce->dirty = false;
         block_read(fs_device, sector, ce->buffer);
     } else {
@@ -110,7 +112,7 @@ static struct cache_entry *cache_evict(void) {
         struct cache_entry *ce = cache + hand;
         bool succ = lock_try_acquire(&ce->lock);
         if (!succ) {
-            hand = (hand + 1) % CACHE_SIZE;
+            hand = (hand + 1) % 64;
             continue;
         }
         if (!ce->valid) {
@@ -123,13 +125,13 @@ static struct cache_entry *cache_evict(void) {
         else {
             // evict him! lol
             if (ce->dirty) {
-                block_write(fs_device, ce->sector, ce->buffer);
+                block_write(fs_device, ce->sector_number, ce->buffer);
                 ce->dirty = false;
             }
             return ce;
         }
         lock_release(&ce->lock);
-        hand = (hand + 1) % CACHE_SIZE;
+        hand = (hand + 1) % 64;
     }
     NOT_REACHED();
 }
@@ -147,7 +149,7 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
         ce = cache_evict();
         lock_release(&cache_lock);
         ASSERT(ce);
-        ce->sector = sector;
+        ce->sector_number = sector;
         ce->dirty = false;
         if (size != BLOCK_SECTOR_SIZE)
             block_read(fs_device, sector, ce->buffer);
