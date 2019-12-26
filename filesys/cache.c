@@ -43,7 +43,7 @@ static struct cache_entry *cache_evict(void);
 
 void cache_init(void) {
     int i = 0;
-    struct cache_entry *a = cache[i];
+    struct cache_entry *a = &cache[i];
     while (i < 64){
       a = &cache[i];
       lock_init(&a->cache_entry_lock);
