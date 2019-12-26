@@ -1,8 +1,8 @@
 #ifndef FILESYS_CACHE_H
 #define FILESYS_CACHE_H
 
-#include "devices/block.h"
 #include "off_t.h"
+#include "devices/block.h"
 
 void cache_init(void);
 void cache_flush_all(void);

@@ -1,17 +1,17 @@
-#include "filesys/cache.h"
 #include <stdbool.h>
-#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 #include "devices/block.h"
 #include "devices/timer.h"
-#include "threads/malloc.h"
 #include "threads/thread.h"
 #include "threads/synch.h"
-#include "filesys.h"
+#include "threads/malloc.h"
+#include "filesys/filesys.h"
+#include "filesys/cache.h"
 
 #define CACHE_SIZE 64
-#define CACHE_WRITE_INTV (1 * TIMER_FREQ)
+// #define CACHE_WRITE_INTV (1 * TIMER_FREQ)
 
 static struct lock cache_lock;
 // static struct list ahead_queue;
@@ -83,8 +83,7 @@ void cache_read(block_sector_t sector, void *buffer) {
     cache_read_at(sector, buffer, BLOCK_SECTOR_SIZE, 0);
 }
 
-void cache_read_at(block_sector_t sector, void *buffer,
-        off_t size, off_t offset) {
+void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset) {
     lock_acquire(&cache_lock);
     struct cache_entry *ce = cache_find(sector);
     if (!ce) {
@@ -139,8 +138,7 @@ void cache_write(block_sector_t sector, const void *buffer) {
     cache_write_at(sector, buffer, BLOCK_SECTOR_SIZE, 0);
 }
 
-void cache_write_at(block_sector_t sector, const void *buffer,
-        off_t size, off_t offset) {
+void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t offset) {
     ASSERT(buffer);
     lock_acquire(&cache_lock);
     struct cache_entry *ce = cache_find(sector);
