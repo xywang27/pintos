@@ -134,7 +134,7 @@ struct cache_entry *cache_evict(void) {
             }
             return ce;
         }
-        lock_release(&ce->cache_entry_lock);
+        // lock_release(&ce->cache_entry_lock);
         hand = (hand + 1) % 64;
     }
     NOT_REACHED();
