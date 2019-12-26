@@ -139,7 +139,7 @@ struct cache_entry *clock(void){
       continue;
     }
     lock_release(&a->cache_entry_lock);
-    i = (i + 1) % 64
+    i = (i + 1) % 64;
   }
   //   if (!succ) {
   //       hand = (hand + 1) % 64;
