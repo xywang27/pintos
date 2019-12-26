@@ -5,7 +5,7 @@
 #include "devices/block.h"
 
 void cache_init(void);
-void cache_flush_all(void);
+void cache_refresh(void);
 void cache_read(block_sector_t sector, void *buffer);
 void cache_read_at(block_sector_t sector, void *buffer, off_t size, off_t offset);
 void cache_write(block_sector_t sector, const void *buffer);
