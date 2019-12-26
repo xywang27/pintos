@@ -32,7 +32,7 @@ struct cache_entry {
   block_sector_t sector_number;
 };
 
-static struct cache_entry cache[64];
+static struct cache_entry buffer_cache[64];
 
 static struct lock cache_lock;
 
@@ -44,9 +44,9 @@ struct cache_entry *cache_evict(void);
 void cache_init(void){
   lock_init(&cache_lock);
   int i = 0;
-  struct cache_entry *a = &cache[i];
+  struct cache_entry *a = &buffer_cache[i];
   while (i < 64){
-    a = &cache[i];
+    a = &buffer_cache[i];
     lock_init(&a->cache_entry_lock);
     a->dirty = false;
     a->be_used = 0;
@@ -61,9 +61,9 @@ void cache_init(void){
 
 void cache_refresh(void){
   int i = 0;
-  struct cache_entry *a = &cache[i];
+  struct cache_entry *a = &buffer_cache[i];
   while (i < 64){
-    a = &cache[i];
+    a = &buffer_cache[i];
     lock_acquire(&a->cache_entry_lock);
     if (a->be_used == 1){
       if (!a->dirty){
@@ -93,17 +93,14 @@ void cache_refresh(void){
 
 struct cache_entry *find_cache_by_sector(block_sector_t sector){
   int i = 0;
-  struct cache_entry *a = &cache[i];
+  struct cache_entry *a = &buffer_cache[i];
   while (i < 64){
-    a = &cache[i];
+    a = &buffer_cache[i];
     lock_acquire(&a->cache_entry_lock);
     if (a->sector_number == sector){
       if (a->be_used == 1){
         return a;
       }
-      // else{
-      //   return NULL;
-      // }
     }
     lock_release(&a->cache_entry_lock);
     i = i + 1;
@@ -149,7 +146,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
 struct cache_entry *cache_evict(void) {
     size_t hand = 0;
     while (true) {
-        struct cache_entry *ce = cache + hand;
+        struct cache_entry *ce = buffer_cache + hand;
         bool succ = lock_try_acquire(&ce->cache_entry_lock);
         if (!succ) {
             hand = (hand + 1) % 64;
