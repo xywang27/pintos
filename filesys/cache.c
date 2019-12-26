@@ -162,7 +162,7 @@ struct cache_entry *cache_evict(void){
       lock_release(&a->cache_entry_lock);
       i = i + 1;
     }
-    succ = lock_try_acquire(&temp->cache_entry_lock);
+    lock_acquire(&temp->cache_entry_lock);
     if (temp->dirty){
       block_write(fs_device, temp->sector_number, temp->buffer);
       temp->dirty = false;
