@@ -42,7 +42,7 @@ void cache_init(void){
     lock_init(&a->cache_entry_lock);
     a->dirty = false;
     a->be_used = 0;
-    // a->lru = 0;
+    a->lru = 0;
     i = i + 1;
   }
     // list_init(&ahead_queue);
