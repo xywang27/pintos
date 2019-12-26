@@ -144,7 +144,7 @@ struct cache_entry *cache_evict(void){
     struct cache_entry *temp;
     while (i < 64){
       struct cache_entry *a = buffer_cache + i;
-      bool succ = lock_try_acquire(&ce->cache_entry_lock);
+      bool succ = lock_try_acquire(&a->cache_entry_lock);
       if (!succ) {
         i = i + 1;
         continue;
@@ -159,7 +159,7 @@ struct cache_entry *cache_evict(void){
           temp = a;
         }
       }
-      lock_release(&ce->cache_entry_lock);
+      lock_release(&a->cache_entry_lock);
       i = i + 1;
     }
     if (temp->dirty){
@@ -197,7 +197,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
         block_read(fs_device, sector, ce->buffer);
     } else {
       for (i = 0; i < 64; ++ i) {
-          struct cache_entry *c = cache + i;
+          struct cache_entry *c = buffer_cache + i;
           lock_acquire(&c->cache_entry_lock);
           if (c != ce) {
               c->lru = c->lru + 1;
@@ -244,7 +244,7 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
             block_read(fs_device, sector, ce->buffer);
     } else {
       for (i = 0; i < 64; ++ i) {
-          struct cache_entry *c = cache + i;
+          struct cache_entry *c = buffer_cache + i;
           lock_acquire(&c->cache_entry_lock);
           if (c != ce) {
               c->lru = c->lru + 1;
