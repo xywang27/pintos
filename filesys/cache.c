@@ -239,7 +239,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
       //     else{
       //       c->lru = 0;
       //     }
-      }
+      // }
       lock_release(&cache_lock);
     }
     if (buffer) {
