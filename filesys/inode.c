@@ -113,7 +113,7 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
   size_t sectorsnow = bytes_to_sectors(disk_inode->length);
   int i = sectorsnow;
   if (sectorsneed <= 122){
-    while(i < sectorneed){
+    while(i < sectorsneed){
       if (!free_map_allocate (1, &disk_inode->index0[i])){
         return false;
       }
@@ -154,7 +154,7 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
     if (!inode_extend_level(&disk_inode->index1, sectorsneed, 1)){
       return false;
     }
-    sectors -= INDEX1_CAP;
+    sectorsneed -= INDEX1_CAP;
     if (!inode_extend_level(&disk_inode->index2, sectorsneed, 2)){
       return false;
     }
