@@ -776,70 +776,70 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
  return bytes_written;
 }
 
-off_t
-inode_write_at (struct inode *inode, const void *buffer_, off_t size,
-                off_t offset)
-{
-    struct inode_disk *disk_inode = &inode->data;
-    ASSERT(disk_inode->magic == INODE_MAGIC);
-    const uint8_t *buffer = buffer_;
-    off_t bytes_written = 0;
-    bool extended = false;
-
-    lock_acquire(&inode->inode_lock);
-
-    if (inode->deny_write_cnt) {
-        lock_release(&inode->inode_lock);
-        return 0;
-    }
-
-    if (offset + size > disk_inode->length) {
-        extended = true;
-        if (!inode_extend(&inode->data, offset + size)) {
-            lock_release(&inode->inode_lock);
-            return 0;
-        }
-    } else {
-        lock_release(&inode->inode_lock);
-    }
-
-    while (size > 0)
-    {
-        /* Sector to write, starting byte offset within sector. */
-        int sector_ofs = offset % BLOCK_SECTOR_SIZE;
-        int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
-
-        /* Number of bytes to actually write into this sector. */
-        int chunk_size = size < sector_left ? size : sector_left;
-        if (chunk_size <= 0)
-            break;
-
-        block_sector_t sector_idx = byte_to_sector (inode, offset);
-
-        if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE) {
-            /* Write full sector directly to disk. */
-            cache_write(sector_idx, buffer + bytes_written);
-        } else {
-            cache_write_at(sector_idx, buffer + bytes_written,
-                    chunk_size, sector_ofs);
-        }
-
-        /* Advance. */
-        size -= chunk_size;
-        offset += chunk_size;
-        bytes_written += chunk_size;
-        if (disk_inode->length < offset) {
-            disk_inode->length = offset;
-        }
-    }
-
-    if (extended) {
-        cache_write(inode->sector, &inode->data);
-        lock_release(&inode->inode_lock);
-    }
-
-    return bytes_written;
-}
+// off_t
+// inode_write_at (struct inode *inode, const void *buffer_, off_t size,
+//                 off_t offset)
+// {
+//     struct inode_disk *disk_inode = &inode->data;
+//     ASSERT(disk_inode->magic == INODE_MAGIC);
+//     const uint8_t *buffer = buffer_;
+//     off_t bytes_written = 0;
+//     bool extended = false;
+//
+//     lock_acquire(&inode->inode_lock);
+//
+//     if (inode->deny_write_cnt) {
+//         lock_release(&inode->inode_lock);
+//         return 0;
+//     }
+//
+//     if (offset + size > disk_inode->length) {
+//         extended = true;
+//         if (!inode_extend(&inode->data, offset + size)) {
+//             lock_release(&inode->inode_lock);
+//             return 0;
+//         }
+//     } else {
+//         lock_release(&inode->inode_lock);
+//     }
+//
+//     while (size > 0)
+//     {
+//         /* Sector to write, starting byte offset within sector. */
+//         int sector_ofs = offset % BLOCK_SECTOR_SIZE;
+//         int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
+//
+//         /* Number of bytes to actually write into this sector. */
+//         int chunk_size = size < sector_left ? size : sector_left;
+//         if (chunk_size <= 0)
+//             break;
+//
+//         block_sector_t sector_idx = byte_to_sector (inode, offset);
+//
+//         if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE) {
+//             /* Write full sector directly to disk. */
+//             cache_write(sector_idx, buffer + bytes_written);
+//         } else {
+//             cache_write_at(sector_idx, buffer + bytes_written,
+//                     chunk_size, sector_ofs);
+//         }
+//
+//         /* Advance. */
+//         size -= chunk_size;
+//         offset += chunk_size;
+//         bytes_written += chunk_size;
+//         if (disk_inode->length < offset) {
+//             disk_inode->length = offset;
+//         }
+//     }
+//
+//     if (extended) {
+//         cache_write(inode->sector, &inode->data);
+//         lock_release(&inode->inode_lock);
+//     }
+//
+//     return bytes_written;
+// }
 
 /* Disables writes to INODE.
    May be called at most once per inode opener. */
