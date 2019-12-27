@@ -86,7 +86,7 @@ static bool inode_extend_level(block_sector_t *block,
     size_t i;
     size_t next_level = size_pow(128, level - 1);
     size_t max_sector = DIV_ROUND_UP(sectors, next_level);
-
+nb
     // find the first i that probably needs allocating
     for (i = 0; i < max_sector; ++i) {
         if (iid->blocks[i] == 0)
@@ -274,19 +274,22 @@ byte_to_sector (struct inode *inode, off_t pos)
   }
   else if (pos < 122*512 + 128*512){
     inode->data.level = 1;
-    struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
+    block_sector_t indirect[128];
+    // struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
     if(!indirect){
       return -1;
     }
     cache_read_at(inode->data.index0[123], indirect, BLOCK_SECTOR_SIZE, 0);
-    block_sector_t a = indirect->blocks[(pos-122*512)/512];
-    free(indirect);
+    block_sector_t a = indirect[(pos-122*512)/512];
+    // free(indirect);
     return a;
   }
   else if (pos < 122*512 + 128*512 + 128*128*512){
     inode->data.level = 2;
-    struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
-    struct inode_indirect *doubly_indirect = malloc(sizeof(struct inode_indirect));
+    block_sector_t indirect[128];
+    block_sector_t doubly_indirect[128];
+    // struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
+    // struct inode_indirect *doubly_indirect = malloc(sizeof(struct inode_indirect));
     if(!indirect){
       return -1;
     }
@@ -294,10 +297,10 @@ byte_to_sector (struct inode *inode, off_t pos)
       return -1;
     }
     cache_read_at(inode->data.index0[124], indirect, BLOCK_SECTOR_SIZE, 0);
-    cache_read_at(indirect->blocks[((pos-122*512-128*512)/512)/128], doubly_indirect, BLOCK_SECTOR_SIZE, 0);
-    block_sector_t a = doubly_indirect->blocks[((pos-122*512-128*512)/512)%128];
-    free(indirect);
-    free(doubly_indirect);
+    cache_read_at(indirect[((pos-122*512-128*512)/512)/128], doubly_indirect, BLOCK_SECTOR_SIZE, 0);
+    block_sector_t a = doubly_indirect[((pos-122*512-128*512)/512)%128];
+    // free(indirect);
+    // free(doubly_indirect);
     return a;
   }
   else{
