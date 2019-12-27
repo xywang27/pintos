@@ -245,7 +245,7 @@ byte_to_sector (struct inode *inode, off_t pos)
     }
     cache_read(inode->data.index2, indirect);
     cache_read(indirect->blocks[ofs_ind1], doubly_indirect);
-    block_sector_t a = doubly_indirect->blocks[ofs_ind2];
+    block_sector_t a = doubly_indirect->blocks[((pos-123*512-128*512)/512)%128];
     free(indirect);
     free(doubly_indirect);
     return a;
