@@ -18,9 +18,9 @@ void cache_init(void);
 // void cache_refresh(void);
 struct cache_entry *find_cache_by_sector(block_sector_t sector);
 struct cache_entry *LRU(void);
-void cache_read(block_sector_t sector, void *buffer);
+// void cache_read(block_sector_t sector, void *buffer);
 void cache_read_at(block_sector_t sector, void *buffer, off_t size, off_t offset);
-void cache_write(block_sector_t sector, const void *buffer);
+// void cache_write(block_sector_t sector, const void *buffer);
 void cache_write_at(block_sector_t sector, const void *buffer, off_t size, off_t offset);
 // void cache_read_ahead_put(block_sector_t sector);
 

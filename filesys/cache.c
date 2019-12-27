@@ -204,9 +204,9 @@ struct cache_entry *LRU(void){
 
 }
 
-void cache_read(block_sector_t sector, void *buffer) {
-    cache_read_at(sector, buffer, BLOCK_SECTOR_SIZE, 0);
-}
+// void cache_read(block_sector_t sector, void *buffer) {
+//     cache_read_at(sector, buffer, BLOCK_SECTOR_SIZE, 0);
+// }
 
 void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset){
     lock_acquire(&cache_lock);
@@ -249,9 +249,9 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
     lock_release(&a->cache_entry_lock);
 }
 
-void cache_write(block_sector_t sector, const void *buffer) {
-    cache_write_at(sector, buffer, BLOCK_SECTOR_SIZE, 0);
-}
+// void cache_write(block_sector_t sector, const void *buffer) {
+//     cache_write_at(sector, buffer, BLOCK_SECTOR_SIZE, 0);
+// }
 
 void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t offset) {
     ASSERT(buffer);
