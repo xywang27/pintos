@@ -137,7 +137,15 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       i = i + 1;
     }
     sectorsneed -= 122;
-    if (!inode_extend_level(&disk_inode->index0[123], sectorsneed, 1)){
+    // if (sectorsnow < 122){
+    //   if (!free_map_allocate (1, &disk_inode->index0[123])){
+    //     return false;
+    //   }
+    //   else{
+    //     cache_write_at(disk_inode->index0[i], zeros, BLOCK_SECTOR_SIZE, 0);
+    //   }
+    // }
+    if (!inode_extend_level(&disk_inode->index0[122], sectorsneed, 1)){
       return false;
     }
     return true;
@@ -153,11 +161,11 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       i = i + 1;
     }
     sectorsneed -= 122;
-    if (!inode_extend_level(&disk_inode->index0[123], sectorsneed, 1)){
+    if (!inode_extend_level(&disk_inode->index0[122], sectorsneed, 1)){
       return false;
     }
     sectorsneed -= 128;
-    if (!inode_extend_level(&disk_inode->index0[124], sectorsneed, 2)){
+    if (!inode_extend_level(&disk_inode->index0[123], sectorsneed, 2)){
       return false;
     }
     return true;
@@ -285,7 +293,7 @@ byte_to_sector (struct inode *inode, off_t pos)
     // if(!indirect){
     //   return -1;
     // }
-    cache_read_at(inode->data.index0[123], indirect, BLOCK_SECTOR_SIZE, 0);
+    cache_read_at(inode->data.index0[122], indirect, BLOCK_SECTOR_SIZE, 0);
     return indirect[(pos-122*512)/512];
     // free(indirect);
   }
@@ -301,7 +309,7 @@ byte_to_sector (struct inode *inode, off_t pos)
     // if(!doubly_indirect){
     //   return -1;
     // }
-    cache_read_at(inode->data.index0[124], indirect, BLOCK_SECTOR_SIZE, 0);
+    cache_read_at(inode->data.index0[123], indirect, BLOCK_SECTOR_SIZE, 0);
     cache_read_at(indirect[((pos-122*512-128*512)/512)/128], doubly_indirect, BLOCK_SECTOR_SIZE, 0);
     return doubly_indirect[((pos-122*512-128*512)/512)%128];
     // free(indirect);
