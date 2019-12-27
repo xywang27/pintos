@@ -199,6 +199,7 @@ struct cache_entry *LRU(void){
       block_write(fs_device, temp->sector_number, temp->buffer);
       temp->dirty = false;
       temp->lru = 0;
+      temp->be_used = 1;
     }
     return temp;
 
@@ -215,6 +216,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
     if (!a) {
         // miss!
         a = LRU();
+        a->sector_number = sector;
         for (i = 0; i < 64; ++ i) {
             struct cache_entry *c = &buffer_cache[i];
             if (c != a && c->be_used == 1) {
@@ -225,8 +227,6 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
         }
         lock_release(&cache_lock);
         // ASSERT(a);
-        a->sector_number = sector;
-        a->dirty = false;
         block_read(fs_device, sector, a->buffer);
     } else {
       for (i = 0; i < 64; ++ i) {
