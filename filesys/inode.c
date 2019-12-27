@@ -36,9 +36,9 @@ struct inode_disk
     unsigned magic;                     /* Magic number. */
 };
 
-struct inode_indirect {
-    block_sector_t blocks[128];
-};
+// struct inode_indirect {
+//     block_sector_t blocks[128];
+// };
 
 /* In-memory inode. */
 struct inode
