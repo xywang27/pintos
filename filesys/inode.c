@@ -209,46 +209,46 @@ static void inode_release(struct inode_disk *disk_inode) {
    Returns -1 if INODE does not contain data for a byte at offset
    POS. */
 
-// static block_sector_t
-// byte_to_sector (struct inode *inode, off_t pos)
-// {
-//   ASSERT (inode != NULL);
-//   if (pos < 122*512){
-//     inode->data.level = 0;
-//     return inode->data.index0[pos/512];
-//   }
-//   else if (pos < 122*512 + 128*512){
-//     inode->data.level = 1;
-//     struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
-//     if(!indirect){
-//       return -1;
-//     }
-//     cache_read(inode->data.index1, indirect);
-//     block_sector_t a = indirect->blocks[(pos-122*512)/512];
-//     free(indirect);
-//     return a;
-//   }
-//   else if (pos < 122*512 + 128*512 + 128*128*512){
-//     inode->data.level = 2;
-//     struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
-//     struct inode_indirect *doubly_indirect = malloc(sizeof(struct inode_indirect));
-//     if(!indirect){
-//       return -1;
-//     }
-//     if(!doubly_indirect){
-//       return -1;
-//     }
-//     cache_read(inode->data.index2, indirect);
-//     cache_read(indirect->blocks[((pos-123*512-128*512)/512)/128], doubly_indirect);
-//     block_sector_t a = doubly_indirect->blocks[((pos-123*512-128*512)/512)%128];
-//     free(indirect);
-//     free(doubly_indirect);
-//     return a;
-//   }
-//   else{
-//     return -1;
-//   }
-// }
+static block_sector_t
+byte_to_sector (struct inode *inode, off_t pos)
+{
+  ASSERT (inode != NULL);
+  off_t ofs = pos / BLOCK_SECTOR_SIZE;
+  if (pos < 122*512){
+    inode->data.level = 0;
+    return inode->data.index0[pos/512];
+  }
+  ofs -= INDEX0_CAP;
+  if (ofs < INDEX1_CAP) {
+      struct inode_indirect *iid =
+              malloc(sizeof(struct inode_indirect));
+      if (!iid)
+          return BLOCK_SECTOR_ERROR;
+      cache_read(inode->data.index1, iid);
+      block_sector_t blk = iid->blocks[ofs];
+      free(iid);
+      return blk;
+  }
+
+  // doubly indirect
+  ofs -= INDEX1_CAP;
+  if (ofs < INDEX2_CAP) {
+      off_t ofs_ind1 = ofs / INDIRECT_PER_SECTOR;
+      off_t ofs_ind2 = ofs % INDIRECT_PER_SECTOR;
+      struct inode_indirect *iid =
+              malloc(sizeof(struct inode_indirect));
+      if (!iid)
+          return BLOCK_SECTOR_ERROR;
+      cache_read(inode->data.index2, iid);
+      cache_read(iid->blocks[ofs_ind1], iid);
+      block_sector_t blk = iid->blocks[ofs_ind2];
+      free(iid);
+      return blk;
+  }
+
+  // shouldn't happen
+  return BLOCK_SECTOR_ERROR;
+}
 
 
 static block_sector_t
