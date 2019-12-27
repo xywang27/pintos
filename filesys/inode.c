@@ -218,19 +218,18 @@ byte_to_sector (struct inode *inode, off_t pos)
     inode->data.level = 0;
     return inode->data.index0[pos/512];
   }
-  ofs -= INDEX0_CAP;
-  if (ofs < INDEX1_CAP) {
-      struct inode_indirect *iid =
-              malloc(sizeof(struct inode_indirect));
-      if (!iid)
-          return BLOCK_SECTOR_ERROR;
-      cache_read(inode->data.index1, iid);
-      block_sector_t blk = iid->blocks[ofs];
-      free(iid);
-      return blk;
+  else if (pos < 122*512 + 128*512){
+    inode->data.level = 1;
+    struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
+    if(!indirect){
+      return -1;
+    }
+    cache_read(inode->data.index1, indirect);
+    block_sector_t a = indirect->blocks[(pos-122*512)/512];
+    free(indirect);
+    return a;
   }
-
-  // doubly indirect
+  ofs -= INDEX0_CAP;
   ofs -= INDEX1_CAP;
   if (ofs < INDEX2_CAP) {
       off_t ofs_ind1 = ofs / INDIRECT_PER_SECTOR;
