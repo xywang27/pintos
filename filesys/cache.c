@@ -255,13 +255,14 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
 // }
 
 void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t offset) {
-    ASSERT(buffer);
+    // ASSERT(buffer);
     lock_acquire(&cache_lock);
     int i;
     struct cache_entry *a = find_cache_by_sector(sector);
     if (!a) {
         // miss!
         a = LRU();
+        a->sector_number = sector;
         for (i = 0; i < 64; ++ i) {
             struct cache_entry *c = &buffer_cache[i];
             if (c != a && c->be_used == 1) {
@@ -271,11 +272,12 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
             }
         }
         lock_release(&cache_lock);
-        ASSERT(a);
-        a->sector_number = sector;
-        a->dirty = false;
+        // ASSERT(a);
         if (size != BLOCK_SECTOR_SIZE)
             block_read(fs_device, sector, a->buffer);
+        memcpy(a->buffer + offset, buffer, (size_t) size);
+        a->dirty = true;
+        lock_release(&a->cache_entry_lock);
     } else {
       for (i = 0; i < 64; ++ i) {
           struct cache_entry *c = &buffer_cache[i];
@@ -289,11 +291,12 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
           }
       }
       lock_release(&cache_lock);
+      memcpy(a->buffer + offset, buffer, (size_t) size);
+      a->dirty = true;
+      lock_release(&a->cache_entry_lock);
     }
-    memcpy(a->buffer + offset, buffer, (size_t) size);
     // ce->accessed = true;
-    a->dirty = true;
-    lock_release(&a->cache_entry_lock);
+
 }
 
 // static void cache_write_behind(void *aux UNUSED) {
