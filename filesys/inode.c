@@ -16,7 +16,7 @@ static struct lock inode_open_lock;
 #define INODE_MAGIC 0x494e4f44
 #define BLOCK_SECTOR_ERROR ((block_sector_t) -1)
 
-#define DIRECT_COUNT 123
+#define DIRECT_COUNT 122
 #define INDIRECT_PER_SECTOR (BLOCK_SECTOR_SIZE / 4)
 #define INDEX0_CAP DIRECT_COUNT
 #define INDEX1_CAP INDIRECT_PER_SECTOR
@@ -30,7 +30,7 @@ struct inode_disk
     block_sector_t index0[DIRECT_COUNT];
     block_sector_t index1;
     block_sector_t index2;
-    // int level;
+    int level;
     unsigned is_dir;                    /* Is a directory or not. */
     off_t length;                       /* File size in bytes. */
     unsigned magic;                     /* Magic number. */
@@ -204,26 +204,26 @@ static void inode_release(struct inode_disk *disk_inode) {
    POS. */
 
 static block_sector_t
-byte_to_sector (const struct inode *inode, off_t pos)
+byte_to_sector (struct inode *inode, off_t pos)
 {
   ASSERT (inode != NULL);
-  if (pos < 123*512){
-    // inode->data.level = 0;
+  if (pos < 122*512){
+    inode->data.level = 0;
     return inode->data.index0[pos/512];
   }
-  else if (pos < 123*512 + 128*512){
-    // inode->data.level = 1;
+  else if (pos < 122*512 + 128*512){
+    inode->data.level = 1;
     struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
     if(!indirect){
       return -1;
     }
     cache_read(inode->data.index1, indirect);
-    block_sector_t a = indirect->blocks[(pos-123*512)/512];
+    block_sector_t a = indirect->blocks[(pos-122*512)/512];
     free(indirect);
     return a;
   }
-  else if (pos < 123*512 + 128*512 + 128*128*512){
-    // inode->data.level = 2;
+  else if (pos < 122*512 + 128*512 + 128*128*512){
+    inode->data.level = 2;
     struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
     struct inode_indirect *doubly_indirect = malloc(sizeof(struct inode_indirect));
     if(!indirect){
@@ -322,7 +322,7 @@ inode_create (block_sector_t sector, off_t length, bool is_dir)
         return false;
     disk_inode->is_dir = is_dir ? 1 : 0;
     disk_inode->length = 0;
-    // disk_inode->level = 0;
+    disk_inode->level = 0;
     disk_inode->magic = INODE_MAGIC;
     if (!inode_extend(disk_inode, length)) {
         free(disk_inode);
