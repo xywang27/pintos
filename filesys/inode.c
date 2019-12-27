@@ -3,31 +3,31 @@
 #include <debug.h>
 #include <round.h>
 #include <string.h>
-#include "filesys/cache.h"
 #include "filesys/filesys.h"
 #include "filesys/free-map.h"
 #include "threads/malloc.h"
 #include "threads/synch.h"
+#include "filesys/cache.h"
 
 static const char zeros[BLOCK_SECTOR_SIZE];
 static struct lock inode_open_lock;
 
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
-#define BLOCK_SECTOR_ERROR ((block_sector_t) -1)
+// #define BLOCK_SECTOR_ERROR ((block_sector_t) -1)
 
-#define DIRECT_COUNT 122
-#define INDIRECT_PER_SECTOR (BLOCK_SECTOR_SIZE / 4)
-#define INDEX0_CAP DIRECT_COUNT
-#define INDEX1_CAP INDIRECT_PER_SECTOR
-#define INDEX2_CAP (INDIRECT_PER_SECTOR * INDIRECT_PER_SECTOR)
+// #define DIRECT_COUNT 122
+// #define INDIRECT_PER_SECTOR (BLOCK_SECTOR_SIZE / 4)
+// #define INDEX0_CAP 122
+// #define INDEX1_CAP 128
+// #define INDEX2_CAP (128 * 128)
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 /* On-disk inode.
    Must be exactly BLOCK_SECTOR_SIZE bytes long. */
 struct inode_disk
 {
-    block_sector_t index0[DIRECT_COUNT];
+    block_sector_t index0[122];
     block_sector_t index1;
     block_sector_t index2;
     int level;
@@ -37,7 +37,7 @@ struct inode_disk
 };
 
 struct inode_indirect {
-    block_sector_t blocks[INDIRECT_PER_SECTOR];
+    block_sector_t blocks[128];
 };
 
 /* In-memory inode. */
@@ -84,7 +84,7 @@ static bool inode_extend_level(block_sector_t *block,
     cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
 
     size_t i;
-    size_t next_level = size_pow(INDIRECT_PER_SECTOR, level - 1);
+    size_t next_level = size_pow(128, level - 1);
     size_t max_sector = DIV_ROUND_UP(sectors, next_level);
 
     // find the first i that probably needs allocating
@@ -134,7 +134,7 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       }
       i = i + 1;
     }
-    sectorsneed -= INDEX0_CAP;
+    sectorsneed -= 122;
     if (!inode_extend_level(&disk_inode->index1, sectorsneed, 1)){
       return false;
     }
@@ -150,11 +150,11 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       }
       i = i + 1;
     }
-    sectorsneed -= INDEX0_CAP;
+    sectorsneed -= 122;
     if (!inode_extend_level(&disk_inode->index1, sectorsneed, 1)){
       return false;
     }
-    sectorsneed -= INDEX1_CAP;
+    sectorsneed -= 128;
     if (!inode_extend_level(&disk_inode->index2, sectorsneed, 2)){
       return false;
     }
@@ -209,54 +209,54 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
 //     return false;
 // }
 
-static void inode_release_level(block_sector_t block, unsigned level) {
-    if (level == 0) {
-        free_map_release(block, 1);
-        return;
-    }
+// static void inode_release_level(block_sector_t block, unsigned level) {
+//     if (level == 0) {
+//         free_map_release(block, 1);
+//         return;
+//     }
+//
+//     struct inode_indirect *iid = malloc(BLOCK_SECTOR_SIZE);
+//     ASSERT(iid);
+//     cache_read_at(block, iid, BLOCK_SECTOR_SIZE, 0);
+//
+//     size_t i;
+//     for (i = 0; i < 128; ++i) {
+//         if (iid->blocks[i] == 0)
+//             break;
+//         inode_release_level(iid->blocks[i], level - 1);
+//     }
+//
+//     free(iid);
+// }
 
-    struct inode_indirect *iid = malloc(BLOCK_SECTOR_SIZE);
-    ASSERT(iid);
-    cache_read_at(block, iid, BLOCK_SECTOR_SIZE, 0);
-
-    size_t i;
-    for (i = 0; i < INDIRECT_PER_SECTOR; ++i) {
-        if (iid->blocks[i] == 0)
-            break;
-        inode_release_level(iid->blocks[i], level - 1);
-    }
-
-    free(iid);
-}
-
-static void inode_release(struct inode_disk *disk_inode) {
-    size_t sectors = bytes_to_sectors(disk_inode->length);
-    size_t i, min_sectors;
-
-    // direct
-    min_sectors = MIN(sectors, INDEX0_CAP);
-    for (i = 0; i < min_sectors; ++i) {
-        if (disk_inode->index0[i] == 0)
-            break;
-        free_map_release(disk_inode->index0[i], 1);
-    }
-    if (sectors <= INDEX0_CAP)
-        return;
-
-    // indirect
-    sectors -= INDEX0_CAP;
-    inode_release_level(disk_inode->index1, 1);
-    if (sectors <= INDEX1_CAP)
-        return;
-
-    sectors -= INDEX1_CAP;
-    inode_release_level(disk_inode->index2, 2);
-    if (sectors <= INDEX2_CAP)
-        return;
-
-    // shouldn't happen
-    NOT_REACHED();
-}
+// static void inode_release(struct inode_disk *disk_inode) {
+//     size_t sectors = bytes_to_sectors(disk_inode->length);
+//     size_t i, min_sectors;
+//
+//     // direct
+//     min_sectors = MIN(sectors, INDEX0_CAP);
+//     for (i = 0; i < min_sectors; ++i) {
+//         if (disk_inode->index0[i] == 0)
+//             break;
+//         free_map_release(disk_inode->index0[i], 1);
+//     }
+//     if (sectors <= INDEX0_CAP)
+//         return;
+//
+//     // indirect
+//     sectors -= INDEX0_CAP;
+//     inode_release_level(disk_inode->index1, 1);
+//     if (sectors <= INDEX1_CAP)
+//         return;
+//
+//     sectors -= INDEX1_CAP;
+//     inode_release_level(disk_inode->index2, 2);
+//     if (sectors <= INDEX2_CAP)
+//         return;
+//
+//     // shouldn't happen
+//     NOT_REACHED();
+// }
 
 /* Returns the block device sector that contains byte offset POS
    within INODE.
@@ -530,29 +530,29 @@ inode_get_inumber (const struct inode *inode)
     return inode->sector;
 }
 
-bool
-inode_is_dir (const struct inode *inode)
-{
-    return inode->is_dir;
-}
-
-bool
-inode_removed (const struct inode *inode)
-{
-    return inode->removed;
-}
-
-void
-inode_lock_dir_acquire (struct inode *inode)
-{
-    return lock_acquire(&inode->dir_lock);
-}
-
-void
-inode_lock_dir_release (struct inode *inode)
-{
-    return lock_release(&inode->dir_lock);
-}
+// bool
+// inode_is_dir (const struct inode *inode)
+// {
+//     return inode->is_dir;
+// }
+//
+// bool
+// inode_removed (const struct inode *inode)
+// {
+//     return inode->removed;
+// }
+//
+// void
+// inode_lock_dir_acquire (struct inode *inode)
+// {
+//     return lock_acquire(&inode->dir_lock);
+// }
+//
+// void
+// inode_lock_dir_release (struct inode *inode)
+// {
+//     return lock_release(&inode->dir_lock);
+// }
 
 /* Closes INODE and writes it to disk.
    If this was the last reference to INODE, frees its memory.
