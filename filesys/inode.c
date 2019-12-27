@@ -105,55 +105,109 @@ static bool inode_extend_level(block_sector_t *block,
     return true;
 }
 
-// static bool inode_extend(struct inode_disk *disk_inode, off_t length){
-//   if (length < 0)
-//       return false;
-//   if length <= length
-// }
-
-static bool inode_extend(struct inode_disk *disk_inode, off_t length) {
-    if (length < 0)
+static bool inode_extend(struct inode_disk *disk_inode, off_t length){
+  if (length <= disk_inode->length){
+    return true;
+  }
+  size_t sectorsneed = bytes_to_sectors(length);
+  size_t sectorsnow = bytes_to_sectors(disk_inode->length);
+  int i = sectorsnow;
+  if (sectorsneed <= 122){
+    while(i < sectorneed){
+      if (!free_map_allocate (1, &disk_inode->index0[i])){
         return false;
-
-    size_t sectors = bytes_to_sectors(length);
-    size_t old_sectors = bytes_to_sectors(disk_inode->length);
-
-    if (sectors <= old_sectors)
-        return true;
-
-    size_t i, min_sectors;
-
-    // direct
-    min_sectors = MIN(sectors, INDEX0_CAP);
-    for (i = 0; i < min_sectors; ++i) {
-        if (disk_inode->index0[i] > 0)
-            continue;
-        if (!free_map_allocate(1, &disk_inode->index0[i])) {
-            return false;
-        }
+      }
+      else{
         cache_write(disk_inode->index0[i], zeros);
+      }
+      i = i + 1;
     }
-    if (sectors <= INDEX0_CAP)
-        return true;
-
-    // indirect
-    sectors -= INDEX0_CAP;
-    min_sectors = MIN(sectors, INDEX1_CAP);
-    if (!inode_extend_level(&disk_inode->index1, min_sectors, 1))
+    return true;
+  }
+  else if(122 < sectorsneed <= 122+128){
+    while(i < 122){
+      if (!free_map_allocate (1, &disk_inode->index0[i])){
         return false;
-    if (sectors <= INDEX1_CAP)
-        return true;
-
+      }
+      else{
+        cache_write(disk_inode->index0[i], zeros);
+      }
+      i = i + 1;
+    }
+    sectorsneed -= INDEX0_CAP;
+    if (!inode_extend_level(&disk_inode->index1, sectorsneed, 1)){
+      return false;
+    }
+    return true;
+  }
+  else if (122+128 < sectorsneed <= 122+128+128*128){
+    while(i < 122){
+      if (!free_map_allocate (1, &disk_inode->index0[i])){
+        return false;
+      }
+      else{
+        cache_write(disk_inode->index0[i], zeros);
+      }
+      i = i + 1;
+    }
+    sectorsneed -= INDEX0_CAP;
+    if (!inode_extend_level(&disk_inode->index1, sectorsneed, 1)){
+      return false;
+    }
     sectors -= INDEX1_CAP;
-    min_sectors = MIN(sectors, INDEX2_CAP);
-    if (!inode_extend_level(&disk_inode->index2, min_sectors, 2))
-        return false;
-    if (sectors <= INDEX2_CAP)
-        return true;
-
-    // shouldn't happen
+    if (!inode_extend_level(&disk_inode->index2, sectorsneed, 2)){
+      return false;
+    }
+    return true;
+  }
+  else{
     return false;
+  }
 }
+
+// static bool inode_extend(struct inode_disk *disk_inode, off_t length) {
+//     if (length < 0)
+//         return false;
+//
+//     size_t sectors = bytes_to_sectors(length);
+//     size_t old_sectors = bytes_to_sectors(disk_inode->length);
+//
+//     if (sectors <= old_sectors)
+//         return true;
+//
+//     size_t i, min_sectors;
+//
+//     // direct
+//     min_sectors = MIN(sectors, INDEX0_CAP);
+//     for (i = 0; i < min_sectors; ++i) {
+//         if (disk_inode->index0[i] > 0)
+//             continue;
+//         if (!free_map_allocate(1, &disk_inode->index0[i])) {
+//             return false;
+//         }
+//         cache_write(disk_inode->index0[i], zeros);
+//     }
+//     if (sectors <= INDEX0_CAP)
+//         return true;
+//
+//     // indirect
+//     sectors -= INDEX0_CAP;
+//     min_sectors = MIN(sectors, INDEX1_CAP);
+//     if (!inode_extend_level(&disk_inode->index1, min_sectors, 1))
+//         return false;
+//     if (sectors <= INDEX1_CAP)
+//         return true;
+//
+//     sectors -= INDEX1_CAP;
+//     min_sectors = MIN(sectors, INDEX2_CAP);
+//     if (!inode_extend_level(&disk_inode->index2, min_sectors, 2))
+//         return false;
+//     if (sectors <= INDEX2_CAP)
+//         return true;
+//
+//     // shouldn't happen
+//     return false;
+// }
 
 static void inode_release_level(block_sector_t block, unsigned level) {
     if (level == 0) {
@@ -230,10 +284,6 @@ byte_to_sector (struct inode *inode, off_t pos)
     return a;
   }
   else if (pos < 122*512 + 128*512 + 128*128*512){
-    ofs -= INDEX0_CAP;
-    ofs -= INDEX1_CAP;
-    off_t ofs_ind1 = ofs / INDIRECT_PER_SECTOR;
-    off_t ofs_ind2 = ofs % INDIRECT_PER_SECTOR;
     inode->data.level = 2;
     struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
     struct inode_indirect *doubly_indirect = malloc(sizeof(struct inode_indirect));
