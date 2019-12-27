@@ -256,49 +256,49 @@ byte_to_sector (struct inode *inode, off_t pos)
 }
 
 
-static block_sector_t
-byte_to_sector (const struct inode *inode, off_t pos)
-{
-    ASSERT (inode != NULL);
-
-    // direct
-    off_t ofs = pos / BLOCK_SECTOR_SIZE;
-    if (ofs < INDEX0_CAP) {
-        return inode->data.index0[ofs];
-    }
-
-    // indirect
-    ofs -= INDEX0_CAP;
-    if (ofs < INDEX1_CAP) {
-        struct inode_indirect *iid =
-                malloc(sizeof(struct inode_indirect));
-        if (!iid)
-            return BLOCK_SECTOR_ERROR;
-        cache_read(inode->data.index1, iid);
-        block_sector_t blk = iid->blocks[ofs];
-        free(iid);
-        return blk;
-    }
-
-    // doubly indirect
-    ofs -= INDEX1_CAP;
-    if (ofs < INDEX2_CAP) {
-        off_t ofs_ind1 = ofs / INDIRECT_PER_SECTOR;
-        off_t ofs_ind2 = ofs % INDIRECT_PER_SECTOR;
-        struct inode_indirect *iid =
-                malloc(sizeof(struct inode_indirect));
-        if (!iid)
-            return BLOCK_SECTOR_ERROR;
-        cache_read(inode->data.index2, iid);
-        cache_read(iid->blocks[ofs_ind1], iid);
-        block_sector_t blk = iid->blocks[ofs_ind2];
-        free(iid);
-        return blk;
-    }
-
-    // shouldn't happen
-    return BLOCK_SECTOR_ERROR;
-}
+// static block_sector_t
+// byte_to_sector (const struct inode *inode, off_t pos)
+// {
+//     ASSERT (inode != NULL);
+//
+//     // direct
+//     off_t ofs = pos / BLOCK_SECTOR_SIZE;
+//     if (ofs < INDEX0_CAP) {
+//         return inode->data.index0[ofs];
+//     }
+//
+//     // indirect
+//     ofs -= INDEX0_CAP;
+//     if (ofs < INDEX1_CAP) {
+//         struct inode_indirect *iid =
+//                 malloc(sizeof(struct inode_indirect));
+//         if (!iid)
+//             return BLOCK_SECTOR_ERROR;
+//         cache_read(inode->data.index1, iid);
+//         block_sector_t blk = iid->blocks[ofs];
+//         free(iid);
+//         return blk;
+//     }
+//
+//     // doubly indirect
+//     ofs -= INDEX1_CAP;
+//     if (ofs < INDEX2_CAP) {
+//         off_t ofs_ind1 = ofs / INDIRECT_PER_SECTOR;
+//         off_t ofs_ind2 = ofs % INDIRECT_PER_SECTOR;
+//         struct inode_indirect *iid =
+//                 malloc(sizeof(struct inode_indirect));
+//         if (!iid)
+//             return BLOCK_SECTOR_ERROR;
+//         cache_read(inode->data.index2, iid);
+//         cache_read(iid->blocks[ofs_ind1], iid);
+//         block_sector_t blk = iid->blocks[ofs_ind2];
+//         free(iid);
+//         return blk;
+//     }
+//
+//     // shouldn't happen
+//     return BLOCK_SECTOR_ERROR;
+// }
 
 /* List of open inodes, so that opening a single inode twice
    returns the same `struct inode'. */
