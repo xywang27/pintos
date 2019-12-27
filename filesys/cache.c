@@ -228,6 +228,8 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
         lock_release(&cache_lock);
         // ASSERT(a);
         block_read(fs_device, sector, a->buffer);
+        memcpy(buffer, a->buffer + offset, (size_t) size);
+        lock_release(&a->cache_entry_lock);
     } else {
       for (i = 0; i < 64; ++ i) {
           struct cache_entry *c = &buffer_cache[i];
@@ -241,12 +243,11 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
           }
       }
       lock_release(&cache_lock);
-    }
-    if (buffer) {
-        memcpy(buffer, a->buffer + offset, (size_t) size);
+      memcpy(buffer, a->buffer + offset, (size_t) size);
+      lock_release(&a->cache_entry_lock);
     }
     // ce->accessed = true;
-    lock_release(&a->cache_entry_lock);
+
 }
 
 // void cache_write(block_sector_t sector, const void *buffer) {
