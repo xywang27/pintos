@@ -505,7 +505,7 @@ inode_close (struct inode *inode)
         /* Deallocate blocks if removed. */
         if (inode->removed) {
             free_map_release (inode->sector, 1);
-            inode_release(&inode->data);
+            // inode_release(&inode->data);
         }
 
         lock_release(&inode->inode_lock);
