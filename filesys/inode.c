@@ -69,20 +69,20 @@ static inline size_t size_pow(size_t a, unsigned b) {
 
 static bool inode_extend_level(block_sector_t *block,
         size_t sectors, unsigned level) {
-    // if (*block == 0) {
-    //     if (!free_map_allocate(1, block)) {
-    //         return false;
-    //     }
-    //     cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
-    // }
+    if (*block == 0) {
+        if (!free_map_allocate(1, block)) {
+            return false;
+        }
+        cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
+    }
     if (level == 0)
         return true;
 
     // struct inode_indirect *iid = malloc(BLOCK_SECTOR_SIZE);
     block_sector_t iid[128];
 
-    if (!iid)
-        return false;
+    // if (!iid)
+    //     return false;
     cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
 
     size_t i;
