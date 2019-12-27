@@ -27,9 +27,9 @@ static struct lock inode_open_lock;
    Must be exactly BLOCK_SECTOR_SIZE bytes long. */
 struct inode_disk
 {
-    block_sector_t index0[122];
-    block_sector_t index1;
-    block_sector_t index2;
+    block_sector_t index0[124];
+    // block_sector_t index1;
+    // block_sector_t index2;
     int level;
     bool is_dir;                    /* Is a directory or not. */
     off_t length;                       /* File size in bytes. */
@@ -135,7 +135,7 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       i = i + 1;
     }
     sectorsneed -= 122;
-    if (!inode_extend_level(&disk_inode->index1, sectorsneed, 1)){
+    if (!inode_extend_level(&disk_inode->index0[123], sectorsneed, 1)){
       return false;
     }
     return true;
@@ -151,11 +151,11 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       i = i + 1;
     }
     sectorsneed -= 122;
-    if (!inode_extend_level(&disk_inode->index1, sectorsneed, 1)){
+    if (!inode_extend_level(&disk_inode->index0[123], sectorsneed, 1)){
       return false;
     }
     sectorsneed -= 128;
-    if (!inode_extend_level(&disk_inode->index2, sectorsneed, 2)){
+    if (!inode_extend_level(&disk_inode->index0[124], sectorsneed, 2)){
       return false;
     }
     return true;
@@ -278,7 +278,7 @@ byte_to_sector (struct inode *inode, off_t pos)
     if(!indirect){
       return -1;
     }
-    cache_read_at(inode->data.index1, indirect, BLOCK_SECTOR_SIZE, 0);
+    cache_read_at(inode->data.index0[123], indirect, BLOCK_SECTOR_SIZE, 0);
     block_sector_t a = indirect->blocks[(pos-122*512)/512];
     free(indirect);
     return a;
@@ -293,7 +293,7 @@ byte_to_sector (struct inode *inode, off_t pos)
     if(!doubly_indirect){
       return -1;
     }
-    cache_read_at(inode->data.index2, indirect, BLOCK_SECTOR_SIZE, 0);
+    cache_read_at(inode->data.index0[124], indirect, BLOCK_SECTOR_SIZE, 0);
     cache_read_at(indirect->blocks[((pos-122*512-128*512)/512)/128], doubly_indirect, BLOCK_SECTOR_SIZE, 0);
     block_sector_t a = doubly_indirect->blocks[((pos-122*512-128*512)/512)%128];
     free(indirect);
@@ -383,7 +383,7 @@ inode_create (block_sector_t sector, off_t length, bool is_dir)
  if (disk_inode != NULL)
    {
      size_t sectors = bytes_to_sectors (length);
-     disk_inode->is_dir = is_dir ? 1 : 0;
+     disk_inode->is_dir = is_dir;
      disk_inode->length = 0;
      disk_inode->level = 0;
      disk_inode->magic = INODE_MAGIC;
