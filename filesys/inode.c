@@ -45,11 +45,11 @@ struct inode
 {
     struct list_elem elem;              /* Element in inode list. */
     struct lock inode_lock;             /* Lock */
-    struct lock dir_lock;
+    // struct lock dir_lock;
     block_sector_t sector;              /* Sector number of disk location. */
     int open_cnt;                       /* Number of openers. */
     bool removed;                       /* True if deleted, false otherwise. */
-    bool is_dir;
+    // bool is_dir;
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
     struct inode_disk data;             /* Inode content. */
 };
@@ -461,10 +461,10 @@ inode_open (block_sector_t sector)
  inode->removed = false;
  lock_init(&inode->inode_lock);
  cache_read_at(inode->sector, &inode->data, BLOCK_SECTOR_SIZE, 0);
- inode->is_dir = (bool) inode->data.is_dir;
- if (inode->is_dir) {
-     lock_init(&inode->dir_lock);
- }
+ // inode->is_dir = (bool) inode->data.is_dir;
+ // if (inode->is_dir) {
+ //     lock_init(&inode->dir_lock);
+ // }
  return inode;
 }
 
