@@ -246,14 +246,14 @@ static void inode_release(struct inode_disk *disk_inode) {
 
 
 static block_sector_t
-byte_to_sector (const struct inode *inode, off_t pos)
+byte_to_sector (const struct inode_disk *disk_inode, off_t pos)
 {
-    ASSERT (inode != NULL);
+    ASSERT (disk_inode != NULL);
 
     // direct
     off_t ofs = pos / BLOCK_SECTOR_SIZE;
     if (ofs < INDEX0_CAP) {
-        return inode->data.index0[ofs];
+        return disk_inode->index0[ofs];
     }
 
     // indirect
@@ -263,7 +263,7 @@ byte_to_sector (const struct inode *inode, off_t pos)
                 malloc(sizeof(struct inode_indirect));
         if (!iid)
             return BLOCK_SECTOR_ERROR;
-        cache_read(inode->data.index1, iid);
+        cache_read(disk_inode->index1, iid);
         block_sector_t blk = iid->blocks[ofs];
         free(iid);
         return blk;
@@ -278,7 +278,7 @@ byte_to_sector (const struct inode *inode, off_t pos)
                 malloc(sizeof(struct inode_indirect));
         if (!iid)
             return BLOCK_SECTOR_ERROR;
-        cache_read( inode->data.index2, iid);
+        cache_read(disk_inode->index2, iid);
         cache_read(iid->blocks[ofs_ind1], iid);
         block_sector_t blk = iid->blocks[ofs_ind2];
         free(iid);
@@ -491,10 +491,10 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
             break;
         }
 
-        block_sector_t sector_idx = byte_to_sector (inode, offset);
+        block_sector_t sector_idx = byte_to_sector (disk_inode, offset);
         if (offset + BLOCK_SECTOR_SIZE < disk_inode->length) {
             block_sector_t sector =
-                    byte_to_sector(inode, offset + BLOCK_SECTOR_SIZE);
+                    byte_to_sector(disk_inode, offset + BLOCK_SECTOR_SIZE);
             // cache_read_ahead_put(sector);
         }
 
@@ -558,7 +558,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
         if (chunk_size <= 0)
             break;
 
-        block_sector_t sector_idx = byte_to_sector (inode, offset);
+        block_sector_t sector_idx = byte_to_sector (disk_inode, offset);
 
         if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE) {
             /* Write full sector directly to disk. */
