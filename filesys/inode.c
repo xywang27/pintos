@@ -560,31 +560,54 @@ inode_lock_dir_release (struct inode *inode)
 void
 inode_close (struct inode *inode)
 {
-    /* Ignore null pointer. */
-    if (inode == NULL)
-        return;
+ /* Ignore null pointer. */
+ if (inode == NULL)
+   return;
 
-    lock_acquire(&inode->inode_lock);
+ /* Release resources if this was the last opener. */
+ if (--inode->open_cnt == 0)
+   {
+     /* Remove from inode list and release lock. */
+     list_remove (&inode->elem);
 
-    /* Release resources if this was the last opener. */
-    if(--inode->open_cnt == 0) {
-        lock_acquire(&inode_open_lock);
-        /* Remove from inode list and release lock. */
-        list_remove(&inode->elem);
-        lock_release(&inode_open_lock);
-
-        /* Deallocate blocks if removed. */
-        if (inode->removed) {
-            free_map_release (inode->sector, 1);
-            // inode_release(&inode->data);
-        }
-
-        lock_release(&inode->inode_lock);
-        free (inode);
-    } else {
-        lock_release(&inode->inode_lock);
-    }
+     /* Deallocate blocks if removed. */
+     if (inode->removed)
+       {
+         free_map_release (inode->sector, 1);
+       }
+     free (inode);
+   }
 }
+
+
+// void
+// inode_close (struct inode *inode)
+// {
+//     /* Ignore null pointer. */
+//     if (inode == NULL)
+//         return;
+//
+//     lock_acquire(&inode->inode_lock);
+//
+//     /* Release resources if this was the last opener. */
+//     if(--inode->open_cnt == 0) {
+//         lock_acquire(&inode_open_lock);
+//         /* Remove from inode list and release lock. */
+//         list_remove(&inode->elem);
+//         lock_release(&inode_open_lock);
+//
+//         /* Deallocate blocks if removed. */
+//         if (inode->removed) {
+//             free_map_release (inode->sector, 1);
+//             // inode_release(&inode->data);
+//         }
+//
+//         lock_release(&inode->inode_lock);
+//         free (inode);
+//     } else {
+//         lock_release(&inode->inode_lock);
+//     }
+// }
 
 /* Marks INODE to be deleted when it is closed by the last caller who
    has it open. */
