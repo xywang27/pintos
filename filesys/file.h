@@ -1,9 +1,9 @@
 #ifndef FILESYS_FILE_H
 #define FILESYS_FILE_H
 
-#include "filesys/inode.h"
 #include "filesys/off_t.h"
-#include <stdbool.h>
+
+struct inode;
 
 /* Opening and closing files. */
 struct file *file_open (struct inode *);

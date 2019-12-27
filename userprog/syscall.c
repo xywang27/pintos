@@ -7,9 +7,6 @@
 #include "userprog/process.h"
 #include "filesys/file.h"
 #include "filesys/filesys.h"
-#include "filesys/directory.h"
-#include "filesys/free-map.h"
-#include "filesys/inode.h"
 #include "threads/malloc.h"
 #include "threads/synch.h"
 #include "devices/input.h"
@@ -35,11 +32,6 @@ int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
-bool chdir (const char *pathname);
-bool mkdir (const char *pathname);
-bool readdir (int fd, char *name);
-bool isdir (int fd);
-int inumber (int fd);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -215,42 +207,6 @@ static void syscall_handler (struct intr_frame *f){
     int fd = *(int *)(ptr + 4);                                        /*get fd*/
     close(fd);
   }
-
-  else if(syscall_num == SYS_CHDIR){                                   /*sys_close*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    const char *dir = *(char **)(ptr+4);                                  /*get fd*/
-    f->eax = chdir(dir);
-  }
-
-  else if(syscall_num == SYS_MKDIR){                                   /*sys_close*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    const char *dir = *(char **)(ptr+4);                                  /*get fd*/
-    f->eax = mkdir(dir);
-  }
-
-  else if(syscall_num == SYS_READDIR){                                   /*sys_close*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    char *name = *(char **)(ptr+8);                                  /*get fd*/
-    int fd = *(int *)(ptr + 4);
-    f->eax = readdir(fd, name);
-  }
-
-  else if(syscall_num == SYS_ISDIR){                                   /*sys_close*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);
-    f->eax = isdir(fd);
-  }
-
-  else if(syscall_num == SYS_INUMBER){                                   /*sys_close*/
-    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
-    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
-    int fd = *(int *)(ptr + 4);
-    f->eax = inumber(fd);
-  }
 }
 
 // Terminates Pintos by calling shutdown_power_off()
@@ -351,9 +307,6 @@ int write (int fd, const void *buffer, unsigned size){
   }
   else{                                                                                /*if it is not STDOUT*/
     if (cur->file[fd] != NULL){
-      if(inode_is_dir(file_get_inode(cur->file[fd]))){
-        return -1;
-      }
       return file_write (cur->file[fd], buffer, size);
     }
     else{                                                                              /*return -1 if write fails*/
@@ -405,109 +358,6 @@ void close (int fd)
     return -1;
   }
 }
-
-bool chdir (const char *pathname){
-  struct thread *cur = thread_current();
-
-  struct dir *dir;
-  char *filename;
-  int result = parse_pathname(pathname, &dir, &filename);
-  if (result == -1) {
-      return false;
-  }
-  else if (result == 2) {
-      // root directory
-      dir_close(cur->cwd);
-      cur->cwd = dir_open_root();
-      return true;
-  }
-
-  struct inode *inode = NULL;
-  if (!dir_lookup(dir, filename, &inode) || !inode_is_dir(inode)) {
-      dir_close(dir);
-      free(filename);
-      return false;
-  }
-  dir_close(dir);
-  free(filename);
-  dir_close(cur->cwd);
-  cur->cwd = dir_open(inode);
-  return true;
-}
-
-bool mkdir (const char *pathname){
-  struct dir *dir;
-  char *filename;
-  int result = parse_pathname(pathname, &dir, &filename);
-  if (result == -1 || result == 2) {
-      return false;
-  }
-
-  block_sector_t inode_sector = 0;
-
-  bool success = free_map_allocate(1, &inode_sector)
-          && dir_create(inode_sector, 16)
-          && dir_add(dir, filename, inode_sector, true);
-
-  if (!success && inode_sector != 0) {
-      free_map_release(inode_sector, 1);
-  }
-
-  if (success) {
-      struct dir *newdir = dir_open_sector(inode_sector);
-      dir_add(newdir, ".", inode_sector, true);
-      dir_add(newdir, "..", inode_get_inumber(dir_get_inode(dir)), true);
-      dir_close(newdir);
-  }
-
-  dir_close(dir);
-  free(filename);
-  return success;
-}
-
-bool readdir (int fd, char *name){
-
-  struct thread *cur = thread_current ();
-
-  struct file *file = cur->file[fd];
-  if (file == NULL){
-    return false;
-  }
-  struct inode *inode = file_get_inode(file);
-  if (!inode_is_dir(inode)) {
-      return false;
-  }
-  off_t pos = file_tell(file);
-  struct dir *dir = dir_open(inode);
-  dir_seek(dir, pos);
-  bool result = dir_readdir(dir, name);
-  file_seek(file, dir_tell(dir));
-  free(dir);
-  return result;
-}
-
-bool isdir (int fd){
-  struct thread *cur = thread_current ();
-
-  struct file *file = cur->file[fd];
-  if (file == NULL){
-    return false;
-  }
-
-  return inode_is_dir(file_get_inode(file));
-}
-
-int inumber (int fd){
-  struct thread *cur = thread_current ();
-
-  struct file *file = cur->file[fd];
-  if (file == NULL){
-    return false;
-  }
-
-  return inode_get_inumber(file_get_inode(file));
-}
-
 
 void
 syscall_init (void)

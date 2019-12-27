@@ -20,8 +20,6 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
-static bool booted = false;
-
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
@@ -117,13 +115,6 @@ thread_start (void)
 
   /* Wait for the idle thread to initialize idle_thread. */
   sema_down (&idle_started);
-}
-
-void thread_cwd_init(void) {
-#ifdef USERPROG
-    initial_thread->cwd = dir_open_root();
-    booted = true;
-#endif
 }
 
 /* Called by the timer interrupt handler at each timer tick.
@@ -485,8 +476,6 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->exec_file = NULL;
-  if (booted)
-      t->cwd = dir_open_cwd ();
   int i = 0;
   while(i < 128){
     t->file[i] = NULL;
