@@ -644,18 +644,19 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
      int chunk_size = size < min_left ? size : min_left;
      if (chunk_size <= 0)
        break;
+     cache_read_at(sector_idx, buffer + bytes_read, chunk_size, sector_ofs);
 
-     if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
-       {
-         /* Read full sector directly into caller's buffer. */
-        cache_read_at(sector_idx, buffer + bytes_read, BLOCK_SECTOR_SIZE, 0);
-       }
-     else
-       {
-         /* Read sector into bounce buffer, then partially copy
-            into caller's buffer. */
-        cache_read_at(sector_idx, buffer + bytes_read, chunk_size, sector_ofs);
-       }
+     // if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
+     //   {
+     //     /* Read full sector directly into caller's buffer. */
+     //    cache_read_at(sector_idx, buffer + bytes_read, BLOCK_SECTOR_SIZE, 0);
+     //   }
+     // else
+     //   {
+     //     /* Read sector into bounce buffer, then partially copy
+     //        into caller's buffer. */
+     //    cache_read_at(sector_idx, buffer + bytes_read, chunk_size, sector_ofs);
+     //   }
 
      /* Advance. */
      size -= chunk_size;
