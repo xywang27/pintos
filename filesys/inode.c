@@ -626,50 +626,95 @@ inode_remove (struct inode *inode)
 off_t
 inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 {
-    uint8_t *buffer = buffer_;
-    off_t bytes_read = 0;
-    struct inode_disk *disk_inode = &inode->data;
-    ASSERT(disk_inode->magic == INODE_MAGIC);
+ uint8_t *buffer = buffer_;
+ off_t bytes_read = 0;
+ uint8_t *bounce = NULL;
 
-    while (size > 0)
-    {
-        /* Disk sector to read, starting byte offset within sector. */
-        int sector_ofs = offset % BLOCK_SECTOR_SIZE;
+ while (size > 0)
+   {
+     /* Disk sector to read, starting byte offset within sector. */
+     block_sector_t sector_idx = byte_to_sector (inode, offset);
+     int sector_ofs = offset % BLOCK_SECTOR_SIZE;
 
-        /* Bytes left in inode, bytes left in sector, lesser of the two. */
-        off_t inode_left = disk_inode->length - offset;
-        int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
-        int min_left = inode_left < sector_left ? inode_left : sector_left;
+     /* Bytes left in inode, bytes left in sector, lesser of the two. */
+     off_t inode_left = inode_length (inode) - offset;
+     int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
+     int min_left = inode_left < sector_left ? inode_left : sector_left;
 
-        /* Number of bytes to actually copy out of this sector. */
-        int chunk_size = size < min_left ? size : min_left;
-        if (chunk_size <= 0) {
-            break;
-        }
+     /* Number of bytes to actually copy out of this sector. */
+     int chunk_size = size < min_left ? size : min_left;
+     if (chunk_size <= 0)
+       break;
 
-        block_sector_t sector_idx = byte_to_sector (inode, offset);
-        if (offset + BLOCK_SECTOR_SIZE < disk_inode->length) {
-            block_sector_t sector =
-                    byte_to_sector(inode, offset + BLOCK_SECTOR_SIZE);
-            // cache_read_ahead_put(sector);
-        }
+     if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
+       {
+         /* Read full sector directly into caller's buffer. */
+        cache_read(sector_idx, buffer + bytes_read);
+       }
+     else
+       {
+         /* Read sector into bounce buffer, then partially copy
+            into caller's buffer. */
+        cache_read_at(sector_idx, buffer + bytes_read, chunk_size, sector_ofs);
+       }
 
-        if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE) {
-            /* Read full sector directly into caller's buffer. */
-            cache_read(sector_idx, buffer + bytes_read);
-        } else {
-            cache_read_at(sector_idx, buffer + bytes_read,
-                    chunk_size, sector_ofs);
-        }
+     /* Advance. */
+     size -= chunk_size;
+     offset += chunk_size;
+     bytes_read += chunk_size;
+   }
+ free (bounce);
 
-        /* Advance. */
-        size -= chunk_size;
-        offset += chunk_size;
-        bytes_read += chunk_size;
-    }
-
-    return bytes_read;
+ return bytes_read;
 }
+
+// off_t
+// inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
+// {
+//     uint8_t *buffer = buffer_;
+//     off_t bytes_read = 0;
+//     struct inode_disk *disk_inode = &inode->data;
+//     ASSERT(disk_inode->magic == INODE_MAGIC);
+//
+//     while (size > 0)
+//     {
+//         /* Disk sector to read, starting byte offset within sector. */
+//         int sector_ofs = offset % BLOCK_SECTOR_SIZE;
+//
+//         /* Bytes left in inode, bytes left in sector, lesser of the two. */
+//         off_t inode_left = disk_inode->length - offset;
+//         int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
+//         int min_left = inode_left < sector_left ? inode_left : sector_left;
+//
+//         /* Number of bytes to actually copy out of this sector. */
+//         int chunk_size = size < min_left ? size : min_left;
+//         if (chunk_size <= 0) {
+//             break;
+//         }
+//
+//         block_sector_t sector_idx = byte_to_sector (inode, offset);
+//         if (offset + BLOCK_SECTOR_SIZE < disk_inode->length) {
+//             block_sector_t sector =
+//                     byte_to_sector(inode, offset + BLOCK_SECTOR_SIZE);
+//             // cache_read_ahead_put(sector);
+//         }
+//
+//         if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE) {
+//             /* Read full sector directly into caller's buffer. */
+//             cache_read(sector_idx, buffer + bytes_read);
+//         } else {
+//             cache_read_at(sector_idx, buffer + bytes_read,
+//                     chunk_size, sector_ofs);
+//         }
+//
+//         /* Advance. */
+//         size -= chunk_size;
+//         offset += chunk_size;
+//         bytes_read += chunk_size;
+//     }
+//
+//     return bytes_read;
+// }
 
 /* Writes SIZE bytes from BUFFER into INODE, starting at OFFSET.
    Returns the number of bytes actually written, which may be
