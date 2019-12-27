@@ -204,7 +204,7 @@ static void inode_release(struct inode_disk *disk_inode) {
    POS. */
 
 static block_sector_t
-byte_to_sector (const struct inode *inode, off_t pos)
+byte_to_sector (struct inode *inode, off_t pos)
 {
   ASSERT (inode != NULL);
   if (pos < 123*512){
@@ -214,7 +214,9 @@ byte_to_sector (const struct inode *inode, off_t pos)
   else if (pos < 123*512 + 128*512){
     inode->data.level = 1;
     struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
-    ASSERT(indirect);
+    if(!indirect){
+      return -1;
+    }
     cache_read(inode->data.index1, indirect);
     block_sector_t a = indirect->blocks[(pos-123*512)/512];
     free(indirect);
@@ -224,8 +226,12 @@ byte_to_sector (const struct inode *inode, off_t pos)
     inode->data.level = 2;
     struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
     struct inode_indirect *doubly_indirect = malloc(sizeof(struct inode_indirect))
-    ASSERT(indirect);
-    ASSERT(doubly_indirect);
+    if(!indirect){
+      return -1;
+    }
+    if(!doubly_indirect){
+      return -1;
+    }
     cache_read(inode->data.index2, indirect);
     cache_read(indirect->blocks[((pos-123*512-128*512)/512)/128], doubly_indirect);
     block_sector_t a = doubly_indirect->blocks[((pos-123*512-128*512)/512)%128];
