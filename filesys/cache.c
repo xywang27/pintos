@@ -29,7 +29,7 @@ static struct cache_entry buffer_cache[64];
 static struct lock cache_lock;
 
 // struct cache_entry *find_cache_by_sector(block_sector_t sector);
-// struct cache_entry *clock(void);
+// struct cache_entry *LRU(void);
 // static void cache_write_behind(void *aux UNUSED);
 // static void cache_read_ahead(void *aux UNUSED);
 
@@ -52,27 +52,31 @@ void cache_init(void){
     // thread_create("read_ahead", PRI_DEFAULT, cache_read_ahead, NULL);
 }
 
-void cache_refresh(void){
-  int i = 0;
-  struct cache_entry *a = &buffer_cache[i];
-  while (i < 64){
-    a = &buffer_cache[i];
-    lock_acquire(&a->cache_entry_lock);
-    if (a->be_used == 1){
-      if (!a->dirty){
-        lock_release(&a->cache_entry_lock);
-      }
-      else{
-        a->dirty = false;
-        block_write(fs_device, a->sector_number, a->buffer);
-        lock_release(&a->cache_entry_lock);
-      }
-    }
-    else{
-      lock_release(&a->cache_entry_lock);
-    }
-    i = i + 1;
-  }
+// void cache_refresh(void){
+//   int i = 0;
+//   struct cache_entry *a = &buffer_cache[i];
+//   while (i < 64){
+//     a = &buffer_cache[i];
+//     lock_acquire(&a->cache_entry_lock);
+//     if (a->be_used == 1){
+//       if (!a->dirty){
+//         lock_release(&a->cache_entry_lock);
+//       }
+//       else{
+//         a->dirty = false;
+//         block_write(fs_device, a->sector_number, a->buffer);
+//         lock_release(&a->cache_entry_lock);
+//       }
+//     }
+//     else{
+//       lock_release(&a->cache_entry_lock);
+//     }
+//     i = i + 1;
+//   }
+
+
+
+
     // for (i = 0; i < 64; ++ i) {
     //     struct cache_entry *ce = cache + i;
     //     lock_acquire(&ce->cache_entry_lock);
@@ -111,7 +115,7 @@ struct cache_entry *find_cache_by_sector(block_sector_t sector){
     // return NULL;
 }
 
-struct cache_entry *clock(void){
+struct cache_entry *LRU(void){
   // int i = 0;
   // struct cache_entry *a = &buffer_cache[i];
   // while (i < 64) {
@@ -210,7 +214,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
     struct cache_entry *a = find_cache_by_sector(sector);
     if (!a) {
         // miss!
-        a = clock();
+        a = LRU();
         for (i = 0; i < 64; ++ i) {
             struct cache_entry *c = buffer_cache + i;
             if (c != a && c->be_used == 1) {
@@ -256,7 +260,7 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
     struct cache_entry *a = find_cache_by_sector(sector);
     if (!a) {
         // miss!
-        a = clock();
+        a = LRU();
         for (i = 0; i < 64; ++ i) {
             struct cache_entry *c = buffer_cache + i;
             if (c != a && c->be_used == 1) {
