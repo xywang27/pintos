@@ -175,7 +175,7 @@ struct cache_entry *LRU(void){
     int i = 0;
     struct cache_entry *temp;
     while (i < 64){
-      struct cache_entry *a = buffer_cache + i;
+      struct cache_entry *a = &buffer_cache[i];
       bool succ = lock_try_acquire(&a->cache_entry_lock);
       if (!succ) {
         i = i + 1;
@@ -216,7 +216,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
         // miss!
         a = LRU();
         for (i = 0; i < 64; ++ i) {
-            struct cache_entry *c = buffer_cache + i;
+            struct cache_entry *c = &buffer_cache[i];
             if (c != a && c->be_used == 1) {
                 lock_acquire(&c->cache_entry_lock);
                 c->lru = c->lru + 1;
@@ -224,13 +224,13 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
             }
         }
         lock_release(&cache_lock);
-        ASSERT(a);
+        // ASSERT(a);
         a->sector_number = sector;
         a->dirty = false;
         block_read(fs_device, sector, a->buffer);
     } else {
       for (i = 0; i < 64; ++ i) {
-          struct cache_entry *c = buffer_cache + i;
+          struct cache_entry *c = &buffer_cache[i];
           if (c != a && c->be_used == 1) {
             lock_acquire(&c->cache_entry_lock);
             c->lru = c->lru + 1;
@@ -262,7 +262,7 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
         // miss!
         a = LRU();
         for (i = 0; i < 64; ++ i) {
-            struct cache_entry *c = buffer_cache + i;
+            struct cache_entry *c = &buffer_cache[i];
             if (c != a && c->be_used == 1) {
                 lock_acquire(&c->cache_entry_lock);
                 c->lru = c->lru + 1;
@@ -277,7 +277,7 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
             block_read(fs_device, sector, a->buffer);
     } else {
       for (i = 0; i < 64; ++ i) {
-          struct cache_entry *c = buffer_cache + i;
+          struct cache_entry *c = &buffer_cache[i];
           if (c != a && c->be_used == 1) {
             lock_acquire(&c->cache_entry_lock);
             c->lru = c->lru + 1;
