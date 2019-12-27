@@ -86,7 +86,7 @@ void cache_init(void){
     //     }
     //     lock_release(&ce->cache_entry_lock);
     // }
-}
+// }
 
 struct cache_entry *find_cache_by_sector(block_sector_t sector){
   int i = 0;
