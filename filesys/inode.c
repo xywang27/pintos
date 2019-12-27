@@ -30,7 +30,7 @@ struct inode_disk
     block_sector_t index0[DIRECT_COUNT];
     block_sector_t index1;
     block_sector_t index2;
-    int level;
+    // int level;
     unsigned is_dir;                    /* Is a directory or not. */
     off_t length;                       /* File size in bytes. */
     unsigned magic;                     /* Magic number. */
