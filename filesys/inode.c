@@ -167,6 +167,10 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
   }
 }
 
+// static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
+
+
+
 // static bool inode_extend(struct inode_disk *disk_inode, off_t length) {
 //     if (length < 0)
 //         return false;
@@ -390,6 +394,10 @@ inode_create (block_sector_t sector, off_t length, bool is_dir)
      disk_inode->length = 0;
      disk_inode->level = 0;
      disk_inode->magic = INODE_MAGIC;
+     int i = 0;
+     for (i = 0; i < 124; i++){
+       disk_inode->index0[i] = 0;
+     }
      if (inode_extend(disk_inode, length)){
        disk_inode->length = length;
        cache_write_at(sector, disk_inode, BLOCK_SECTOR_SIZE, 0);
