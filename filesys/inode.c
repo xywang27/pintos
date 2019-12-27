@@ -225,7 +225,7 @@ byte_to_sector (struct inode *inode, off_t pos)
   else if (pos < 123*512 + 128*512 + 128*128*512){
     inode->data.level = 2;
     struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
-    struct inode_indirect *doubly_indirect = malloc(sizeof(struct inode_indirect))
+    struct inode_indirect *doubly_indirect = malloc(sizeof(struct inode_indirect));
     if(!indirect){
       return -1;
     }
