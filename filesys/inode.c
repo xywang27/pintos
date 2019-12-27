@@ -433,47 +433,86 @@ inode_create (block_sector_t sector, off_t length, bool is_dir)
 struct inode *
 inode_open (block_sector_t sector)
 {
-    struct list_elem *e;
-    struct inode *inode;
+ struct list_elem *e;
+ struct inode *inode;
 
-    lock_acquire(&inode_open_lock);
+ /* Check whether this inode is already open. */
+ for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
+      e = list_next (e))
+   {
+     inode = list_entry (e, struct inode, elem);
+     if (inode->sector == sector)
+       {
+         inode_reopen (inode);
+         return inode;
+       }
+   }
 
-    /* Check whether this inode is already open. */
-    for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
-         e = list_next (e))
-    {
-        inode = list_entry (e, struct inode, elem);
-        if (inode->sector == sector)
-        {
-            lock_release(&inode_open_lock);
-            inode_reopen (inode);
-            return inode;
-        }
-    }
+ /* Allocate memory. */
+ inode = malloc (sizeof *inode);
+ if (inode == NULL)
+   return NULL;
 
-    /* Allocate memory. */
-    inode = malloc (sizeof *inode);
-    if (inode == NULL) {
-        lock_release(&inode_open_lock);
-        return NULL;
-    }
-
-    /* Initialize. */
-    list_push_front (&open_inodes, &inode->elem);
-    lock_release(&inode_open_lock);
-    inode->sector = sector;
-    inode->open_cnt = 1;
-    inode->deny_write_cnt = 0;
-    inode->removed = false;
-    lock_init(&inode->inode_lock);
-    cache_read(inode->sector, &inode->data);
-    inode->is_dir = (bool) inode->data.is_dir;
-    ASSERT(inode->data.magic == INODE_MAGIC);
-    if (inode->is_dir) {
-        lock_init(&inode->dir_lock);
-    }
-    return inode;
+ /* Initialize. */
+ list_push_front (&open_inodes, &inode->elem);
+ inode->sector = sector;
+ inode->open_cnt = 1;
+ inode->deny_write_cnt = 0;
+ inode->removed = false;
+ lock_init(&inode->inode_lock);
+ cache_read(inode->sector, &inode->data);
+ inode->is_dir = (bool) inode->data.is_dir;
+ if (inode->is_dir) {
+     lock_init(&inode->dir_lock);
+ }
+ return inode;
 }
+
+
+// struct inode *
+// inode_open (block_sector_t sector)
+// {
+//     struct list_elem *e;
+//     struct inode *inode;
+//
+//     lock_acquire(&inode_open_lock);
+//
+//     /* Check whether this inode is already open. */
+//     for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
+//          e = list_next (e))
+//     {
+//         inode = list_entry (e, struct inode, elem);
+//         if (inode->sector == sector)
+//         {
+//             lock_release(&inode_open_lock);
+//             inode_reopen (inode);
+//             return inode;
+//         }
+//     }
+//
+//     /* Allocate memory. */
+//     inode = malloc (sizeof *inode);
+//     if (inode == NULL) {
+//         lock_release(&inode_open_lock);
+//         return NULL;
+//     }
+//
+//     /* Initialize. */
+//     list_push_front (&open_inodes, &inode->elem);
+//     lock_release(&inode_open_lock);
+//     inode->sector = sector;
+//     inode->open_cnt = 1;
+//     inode->deny_write_cnt = 0;
+//     inode->removed = false;
+//     lock_init(&inode->inode_lock);
+//     cache_read(inode->sector, &inode->data);
+//     inode->is_dir = (bool) inode->data.is_dir;
+//     ASSERT(inode->data.magic == INODE_MAGIC);
+//     if (inode->is_dir) {
+//         lock_init(&inode->dir_lock);
+//     }
+//     return inode;
+// }
 
 /* Reopens and returns INODE. */
 struct inode *
