@@ -269,7 +269,7 @@ static block_sector_t
 byte_to_sector (struct inode *inode, off_t pos)
 {
   ASSERT (inode != NULL);
-  off_t ofs = pos / BLOCK_SECTOR_SIZE;
+  // off_t ofs = pos / BLOCK_SECTOR_SIZE;
   if (pos < 122*512){
     inode->data.level = 0;
     return inode->data.index0[pos/512];
@@ -278,13 +278,12 @@ byte_to_sector (struct inode *inode, off_t pos)
     inode->data.level = 1;
     block_sector_t indirect[128];
     // struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
-    if(!indirect){
-      return -1;
-    }
+    // if(!indirect){
+    //   return -1;
+    // }
     cache_read_at(inode->data.index0[123], indirect, BLOCK_SECTOR_SIZE, 0);
-    block_sector_t a = indirect[(pos-122*512)/512];
+    return indirect[(pos-122*512)/512];
     // free(indirect);
-    return a;
   }
   else if (pos < 122*512 + 128*512 + 128*128*512){
     inode->data.level = 2;
@@ -292,18 +291,17 @@ byte_to_sector (struct inode *inode, off_t pos)
     block_sector_t doubly_indirect[128];
     // struct inode_indirect *indirect = malloc(sizeof(struct inode_indirect));
     // struct inode_indirect *doubly_indirect = malloc(sizeof(struct inode_indirect));
-    if(!indirect){
-      return -1;
-    }
-    if(!doubly_indirect){
-      return -1;
-    }
+    // if(!indirect){
+    //   return -1;
+    // }
+    // if(!doubly_indirect){
+    //   return -1;
+    // }
     cache_read_at(inode->data.index0[124], indirect, BLOCK_SECTOR_SIZE, 0);
     cache_read_at(indirect[((pos-122*512-128*512)/512)/128], doubly_indirect, BLOCK_SECTOR_SIZE, 0);
-    block_sector_t a = doubly_indirect[((pos-122*512-128*512)/512)%128];
+    return doubly_indirect[((pos-122*512-128*512)/512)%128];
     // free(indirect);
     // free(doubly_indirect);
-    return a;
   }
   else{
     return -1;
