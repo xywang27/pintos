@@ -69,12 +69,12 @@ static inline size_t size_pow(size_t a, unsigned b) {
 
 static bool inode_extend_level(block_sector_t *block,
         size_t sectors, unsigned level) {
-    if (*block == 0) {
-        if (!free_map_allocate(1, block)) {
-            return false;
-        }
-        cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
-    }
+    // if (*block == 0) {
+    //     if (!free_map_allocate(1, block)) {
+    //         return false;
+    //     }
+    //     cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
+    // }
     if (level == 0)
         return true;
 
@@ -137,14 +137,14 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       i = i + 1;
     }
     sectorsneed -= 122;
-    // if (sectorsnow < 122){
-    //   if (!free_map_allocate (1, &disk_inode->index0[123])){
-    //     return false;
-    //   }
-    //   else{
-    //     cache_write_at(disk_inode->index0[i], zeros, BLOCK_SECTOR_SIZE, 0);
-    //   }
-    // }
+    if (sectorsnow < 122){
+      if (!free_map_allocate (1, &disk_inode->index0[122])){
+        return false;
+      }
+      else{
+        cache_write_at(disk_inode->index0[122], zeros, BLOCK_SECTOR_SIZE, 0);
+      }
+    }
     if (!inode_extend_level(&disk_inode->index0[122], sectorsneed, 1)){
       return false;
     }
@@ -161,10 +161,26 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       i = i + 1;
     }
     sectorsneed -= 122;
+    if (sectorsnow < 122){
+      if (!free_map_allocate (1, &disk_inode->index0[122])){
+        return false;
+      }
+      else{
+        cache_write_at(disk_inode->index0[122], zeros, BLOCK_SECTOR_SIZE, 0);
+      }
+    }
     if (!inode_extend_level(&disk_inode->index0[122], sectorsneed, 1)){
       return false;
     }
     sectorsneed -= 128;
+    if (sectorsnow < 122+128){
+      if (!free_map_allocate (1, &disk_inode->index0[123])){
+        return false;
+      }
+      else{
+        cache_write_at(disk_inode->index0[123], zeros, BLOCK_SECTOR_SIZE, 0);
+      }
+    }
     if (!inode_extend_level(&disk_inode->index0[123], sectorsneed, 2)){
       return false;
     }
