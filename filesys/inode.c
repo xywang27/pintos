@@ -115,7 +115,8 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
   //     cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
   // }
   block_sector_t iid[128];
-  cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
+  memcpy(iid, *block, BLOCK_SECTOR_SIZE);
+  // cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
   int i = 0;
   // size_t next_level = 1;
   // size_t max_sector = DIV_ROUND_UP(sectors, next_level);
