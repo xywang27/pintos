@@ -141,7 +141,7 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       i = i + 1;
     }
     /*then indirect part*/
-    sectorsneed = sectorneed - 122;                                          /*number of sectors need in indirect blocks*/
+    sectorsneed = sectorsneed - 122;                                          /*number of sectors need in indirect blocks*/
     if (disk_inode->used[122] == 0) {                                        /*if it has not been allocated, first put zeros in it*/
         if (free_map_allocate(1, &disk_inode->used[122])) {                  /*if allocate is success*/
             cache_write_at(disk_inode->used[122], zeros, BLOCK_SECTOR_SIZE, 0);/*write data back to the disk corresponding place*/
