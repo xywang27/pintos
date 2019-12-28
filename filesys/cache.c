@@ -50,23 +50,24 @@ struct cache_entry *find_cache_by_sector(block_sector_t sector){
 
 /*the LRU replacement policy*/
 struct cache_entry *LRU(void){
-    int min = 0;
+    int max = 0;                                                      /*the max lru value*/
     int i = 0;
     struct cache_entry *temp;
     while (i < 64){
       struct cache_entry *a = &buffer_cache[i];
-      bool succ = lock_try_acquire(&a->cache_entry_lock);
-      if (!succ) {
-        i = i + 1;
-        continue;
-      }
+      lock_acquire(&a->cache_entry_lock);
+      // bool succ = lock_try_acquire(&a->cache_entry_lock);
+      // if (!succ) {
+      //   i = i + 1;
+      //   continue;
+      // }
       if (!a->be_used){
         a->be_used = 1;
         return a;
       }
       else{
-        if (a->lru > min){
-          min = a->lru;
+        if (a->lru > max){
+          max = a->lru;
           temp = a;
         }
       }
