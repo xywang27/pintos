@@ -164,7 +164,7 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
           return false;
         }
     }
-    if (inode_extend_level2(&disk_inode->used[123], sectorsneed)){             /*allocate the doubly_indirect blocks*/
+    if (inode_extend_to_doubly_indirect_blocks(&disk_inode->used[123], sectorsneed)){             /*allocate the doubly_indirect blocks*/
       return true;
     }
     return false;
@@ -207,7 +207,7 @@ static bool inode_extend_to_doubly_indirect_blocks(block_sector_t *sector, size_
   int i = 0;
   while(i < sectorsneed) {
       if (doubly_indirect[i] == 0){                                           /*we need to allocate here*/
-        if (!inode_extend_level1(&doubly_indirect[i], 128))                   /*allocate indirect blocks*/
+        if (!inode_extend_to_indirect_blocks(&doubly_indirect[i], 128))       /*allocate indirect blocks*/
             return false;
     }
     i = i + 1;
