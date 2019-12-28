@@ -169,6 +169,7 @@ static bool inode_extend_level2(block_sector_t *block, size_t sectors){
       //   }
       //   cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
       // }
+    }
 
   }
 
