@@ -855,6 +855,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
             // lock_release(&inode->inode_lock);
             return 0;
         }
+        inode->data.length = offset + size;
+        cache_write_at(inode->sector, &inode->data, BLOCK_SECTOR_SIZE, 0);
     //     else {
     //     // lock_release(&inode->inode_lock);
     // }
@@ -886,11 +888,10 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
      //        inode->data.length = offset;
      //    }
    }
- inode->data.length = offset + size;
- if (extended) {
-        cache_write_at(inode->sector, &inode->data, BLOCK_SECTOR_SIZE, 0);
-        // lock_release(&inode->inode_lock);
- }
+ // if (extended) {
+ //        cache_write_at(inode->sector, &inode->data, BLOCK_SECTOR_SIZE, 0);
+ //        // lock_release(&inode->inode_lock);
+ // }
 
 
  return bytes_written;
