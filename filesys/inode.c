@@ -148,12 +148,12 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
 
 static bool inode_extend_level2(block_sector_t *block, size_t sectors){
   static char zeros[BLOCK_SECTOR_SIZE];
-  if (*block == 0) {
-      if (!free_map_allocate(1, block)) {
-          return false;
-      }
-      cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
-  }
+  // if (*block == 0) {
+  //     if (!free_map_allocate(1, block)) {
+  //         return false;
+  //     }
+  //     cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
+  // }
   block_sector_t iid[128];
   cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
   size_t i;
@@ -246,6 +246,12 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       i = i + 1;
     }
     sectorsneed -= 122;
+    if (disk_inode->index0[122] == 0) {
+        if (!free_map_allocate(1, &disk_inode->index0[122])) {
+            return false;
+        }
+        cache_write_at(disk_inode->index0[122], zeros, BLOCK_SECTOR_SIZE, 0);
+    }
     // if (sectorsnow < 122){
     //   if (!free_map_allocate (1, &disk_inode->index0[122])){
     //     return false;
@@ -267,6 +273,12 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
     //   }
     // }
     sectorsneed = sectorsneed/128;
+    if (disk_inode->index0[123] == 0) {
+        if (!free_map_allocate(1, &disk_inode->index0[123])) {
+            return false;
+        }
+        cache_write_at(disk_inode->index0[123], zeros, BLOCK_SECTOR_SIZE, 0);
+    }
     if (!inode_extend_level2(&disk_inode->index0[123], sectorsneed)){
       return false;
     }
