@@ -472,7 +472,7 @@ static bool inode_extend_to_doubly_indirect_blocks(block_sector_t *sector, size_
     i = i + 1;
   }
 
-  cache_write_at(*block, doubly_indirect, BLOCK_SECTOR_SIZE, 0);                          /*write data back to the disk corresponding place*/
+  cache_write_at(*sector, doubly_indirect, BLOCK_SECTOR_SIZE, 0);                          /*write data back to the disk corresponding place*/
 
   return true;
 }
