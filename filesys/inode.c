@@ -125,7 +125,7 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
       if (iid[i] == 0)
           break;
   }
-  i = i == 0 ? 0 : i - 1;
+  // i = i == 0 ? 0 : i - 1;
 
   for (; i < sectors; ++i) {
     if (iid[i] == 0) {
@@ -162,7 +162,7 @@ static bool inode_extend_level2(block_sector_t *block, size_t sectors){
   }
 
   for (; i < max_sector; ++i) {
-      if (!inode_extend_level1(&iid[i], next_level)
+      if (!inode_extend_level1(&iid[i], next_level))
           return false;
   }
 
@@ -246,7 +246,7 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
     //     cache_write_at(disk_inode->index0[123], zeros, BLOCK_SECTOR_SIZE, 0);
     //   }
     // }
-    if (!inode_extend_level(&disk_inode->index0[123], sectorsneed, 2)){
+    if (!inode_extend_level2(&disk_inode->index0[123], sectorsneed)){
       return false;
     }
     return true;
