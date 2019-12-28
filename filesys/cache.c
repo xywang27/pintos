@@ -55,31 +55,26 @@ struct cache_entry *LRU(void){
     struct cache_entry *temp;
     while (i < 64){
       struct cache_entry *a = &buffer_cache[i];
-      lock_acquire(&a->cache_entry_lock);
-      // bool succ = lock_try_acquire(&a->cache_entry_lock);
-      // if (!succ) {
-      //   i = i + 1;
-      //   continue;
-      // }
-      if (!a->be_used){
-        a->be_used = 1;
+      lock_acquire(&a->cache_entry_lock);                             /*get the buffer cache lock*/
+      if (!a->be_used){                                               /*if this buffer cache_entry is not used before, choose it*/
+        a->be_used = 1;                                               /*set be_used to 1*/
         return a;
       }
       else{
-        if (a->lru > max){
-          max = a->lru;
+        if (a->lru > max){                                            /*if this buffer cache_entry is used before, compare it lru value*/
+          max = a->lru;                                               /*set max to the bigger value in a->lru and previous max*/
           temp = a;
         }
       }
-      lock_release(&a->cache_entry_lock);
+      lock_release(&a->cache_entry_lock);                             /*release the lock*/
       i = i + 1;
     }
-    lock_acquire(&temp->cache_entry_lock);
-    if (temp->dirty){
-      block_write(fs_device, temp->sector_number, temp->buffer);
-      temp->dirty = false;
-      temp->lru = 0;
-      temp->be_used = 1;
+    lock_acquire(&temp->cache_entry_lock);                            /*get the lock of the cache_buffer_entry with the biggest lru value*/
+    if (temp->dirty){                                                 /*if it is dirty*/
+      block_write(fs_device, temp->sector_number, temp->buffer);      /*write back before evict*/
+      temp->dirty = false;                                            /*set dirty to false*/
+      temp->lru = 0;                                                  /*set lru to 0*/
+      temp->be_used = 1;                                              /*set be_used to 1*/
     }
     return temp;
 
