@@ -230,14 +230,15 @@ inode_create (block_sector_t sector, off_t length, bool is_dir)
     {
       size_t sectors = bytes_to_sectors (length);
       disk_inode->is_dir = is_dir;
-      disk_inode->length = length;
+      disk_inode->length = 0;
       disk_inode->level = 0;
       disk_inode->magic = INODE_MAGIC;
       int i = 0;
       for (i = 0; i < 124; i++){                                                   /*initialize the used to all zeros*/
         disk_inode->used[i] = 0;
       }
-      if (inode_extend(disk_inode, length)){                                      /*extend the file length to length*/
+      if (inode_extend(disk_inode, length)){
+        disk_inode->length = length;                                    /*extend the file length to length*/
         cache_write_at(sector, disk_inode, BLOCK_SECTOR_SIZE, 0);                 /*write the new inode to sector*/
         success = true;
       }
