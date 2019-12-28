@@ -859,6 +859,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
     //     // lock_release(&inode->inode_lock);
     // }
     }
+ inode->data.length = offset + size;
 
  while (size > 0)
    {
