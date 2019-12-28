@@ -201,7 +201,7 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
   block_sector_t iid[128];
   cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
   size_t i;
-  size_t next_level = 1
+  size_t next_level = 1;
   size_t max_sector = DIV_ROUND_UP(sectors, next_level);
 
   // find the first i that probably needs allocating
@@ -224,6 +224,7 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
   // free(iid);
 
   return true;
+}
 
 
 
