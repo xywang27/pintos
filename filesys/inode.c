@@ -882,9 +882,9 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
      size -= chunk_size;
      offset += chunk_size;
      bytes_written += chunk_size;
-     if (inode->data.length < offset) {
-            inode->data.length = offset;
-        }
+     // if (inode->data.length < offset) {
+     //        inode->data.length = offset;
+     //    }
    }
  if (extended) {
         cache_write_at(inode->sector, &inode->data, BLOCK_SECTOR_SIZE, 0);
