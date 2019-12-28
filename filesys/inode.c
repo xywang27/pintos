@@ -126,7 +126,7 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
         if (!free_map_allocate(1, &iid[i])) {
             return false;
         }
-        cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
+        cache_write_at(iid[i], zeros, BLOCK_SECTOR_SIZE, 0);
     }
   }
   // i = i == 0 ? 0 : i - 1;
@@ -164,7 +164,12 @@ static bool inode_extend_level2(block_sector_t *block, size_t sectors){
       if (iid[i] == 0){
         if (!inode_extend_level1(&iid[i], 128))
             return false;
-      }
+      //   if (!free_map_allocate(1, &iid[i])) {
+      //       return false;
+      //   }
+      //   cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
+      // }
+
   }
 
   // for (; i < max_sector; ++i) {
