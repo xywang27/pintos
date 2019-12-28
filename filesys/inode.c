@@ -142,42 +142,35 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
   return true;
 }
 
-// static bool inode_extend_level2(block_sector_t *block, size_t sectors){
-//   if (*block == 0) {
-//       if (!free_map_allocate(1, block)) {
-//           return false;
-//       }
-//       cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
-//   }
-//   // struct inode_indirect *iid = malloc(BLOCK_SECTOR_SIZE);
-//   block_sector_t iid[128];
-//
-//   // if (!iid)
-//   //     return false;
-//   cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
-//
-//   size_t i;
-//   size_t next_level = 128;
-//   size_t max_sector = sectors / next_level;
-//
-//   // find the first i that probably needs allocating
-//   for (i = 0; i < max_sector; ++i) {
-//       if (iid[i] == 0)
-//           break;
-//   }
-//   // i = i == 0 ? 0 : i - 1;
-//
-//   for (; i < max_sector; ++i) {
-//       if (!inode_extend_level1(&iid[i], 128){
-//         return false;
-//       }
-//   }
-//
-//   cache_write_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
-//   // free(iid);
-//
-//   return true;
-// }
+static bool inode_extend_level2(block_sector_t *block, size_t sectors){
+  if (*block == 0) {
+      if (!free_map_allocate(1, block)) {
+          return false;
+      }
+      cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
+  }
+  block_sector_t iid[128];
+  cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
+  size_t i;
+  size_t next_level = 128;
+  size_t max_sector = sectors/128;
+
+  // find the first i that probably needs allocating
+  for (i = 0; i < max_sector; ++i) {
+      if (iid[i] == 0)
+          break;
+  }
+
+  for (; i < max_sector; ++i) {
+      if (!inode_extend_level1(&iid[i], next_level)
+          return false;
+  }
+
+  cache_write_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
+  // free(iid);
+
+  return true;
+}
 
 static bool inode_extend(struct inode_disk *disk_inode, off_t length){
   if (length <= disk_inode->length){
