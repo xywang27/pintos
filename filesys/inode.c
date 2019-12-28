@@ -87,7 +87,7 @@ static bool inode_extend_level(block_sector_t *block,
 
     size_t i;
     size_t next_level = size_pow(128, level - 1);
-    size_t max_sector = DIV_ROUND_UP(sectors, next_level);
+    size_t max_sector = sectors / next_level;
 
     // find the first i that probably needs allocating
     for (i = 0; i < max_sector; ++i) {
