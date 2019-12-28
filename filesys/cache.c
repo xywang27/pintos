@@ -98,7 +98,7 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
     }
     lock_release(&cache_lock);                                      /*release the lock of the buffer cache*/
     block_read(fs_device, sector, a->buffer);                       /*read the data from disk into the cache buffer*/
-    memcpy(buffer, a->buffer + offset, (size_t) size);              /*copy data to buffer from buffer cache*/
+    memcpy(buffer, a->buffer + offset, size);                       /*copy data to buffer from buffer cache*/
     lock_release(&a->cache_entry_lock);                             /*release the lock of the buffer cache entry*/
   }
   else{                                                             /*cache hit*/
@@ -114,47 +114,49 @@ void cache_read_at(block_sector_t sector, void *buffer,off_t size, off_t offset)
       }
     }
     lock_release(&cache_lock);                                      /*release the buffer cache lock*/
-    memcpy(buffer, a->buffer + offset, (size_t) size);              /*copy data to buffer from buffer cache*/
+    memcpy(buffer, a->buffer + offset, size);                       /*copy data to buffer from buffer cache*/
     lock_release(&a->cache_entry_lock);                             /*release the lock of the buffer cache entry*/
   }
 }
 
-void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t offset) {
-    lock_acquire(&cache_lock);
-    int i;
-    struct cache_entry *a = find_cache_by_sector(sector);
-    if (!a) {
-        // miss!
-        a = LRU();
-        a->sector_number = sector;
-        a->dirty = true;
-        for (i = 0; i < 64; ++ i) {
-            struct cache_entry *c = &buffer_cache[i];
-            if (c != a && c->be_used == 1) {
-                lock_acquire(&c->cache_entry_lock);
-                c->lru = c->lru + 1;
-                lock_release(&c->cache_entry_lock);
-            }
-        }
-        lock_release(&cache_lock);
-        block_read(fs_device, sector, a->buffer);
-        memcpy(a->buffer + offset, buffer, (size_t) size);
-        lock_release(&a->cache_entry_lock);
-    } else {
-      a->dirty = true;
-      for (i = 0; i < 64; ++ i) {
-          struct cache_entry *c = &buffer_cache[i];
-          if (c != a && c->be_used == 1) {
+
+/*write data from buffer cache to disk*/
+void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t offset){
+  lock_acquire(&cache_lock);                                      /*get the lock of the buffer cache*/
+  int i;
+  struct cache_entry *a = find_cache_by_sector(sector);           /*first find if it is cache hit*/
+  if (a == NULL){                                                 /*cache miss!*/
+    a = LRU();                                                    /*find the cache_entry to evict*/
+    a->sector_number = sector;                                    /*set sector number*/
+    a->dirty = true;                                              /*set dirty to true*/
+    for (i = 0; i < 64; ++ i) {                                   /*iterate to update the lru value*/
+        struct cache_entry *c = &buffer_cache[i];
+        if (c != a && c->be_used == 1) {                          /*only update the lru value of the used cache buffer entry*/
             lock_acquire(&c->cache_entry_lock);
-            c->lru = c->lru + 1;
+            c->lru = c->lru + 1;                                  /*add one*/
             lock_release(&c->cache_entry_lock);
-          }
-          else{
-            c->lru = 0;
-          }
-      }
-      lock_release(&cache_lock);
-      memcpy(a->buffer + offset, buffer, (size_t) size);
-      lock_release(&a->cache_entry_lock);
+        }
     }
+    lock_release(&cache_lock);                                    /*release the lock of the buffer cache*/
+    block_read(fs_device, sector, a->buffer);                     /*read the data from disk into the cache buffer*/
+    memcpy(a->buffer + offset, buffer, size;                      /*copy data from buffer to buffer cache*/
+    lock_release(&a->cache_entry_lock);                           /*release the lock of the buffer cache entry*/
+  }
+  else{                                                           /*cache hit*/
+    a->dirty = true;                                              /*set dirty to true*/
+    for (i = 0; i < 64; ++ i){                                    /*iterate to update the lru value*/
+      struct cache_entry *c = &buffer_cache[i];
+      if (c != a && c->be_used == 1) {                            /*only update the lru value of the used cache buffer entry*/
+        lock_acquire(&c->cache_entry_lock);
+        c->lru = c->lru + 1;                                      /*add one*/
+        lock_release(&c->cache_entry_lock);
+      }
+      else{
+        c->lru = 0;
+      }
+    }
+    lock_release(&cache_lock);                                    /*release the buffer cache lock*/
+    memcpy(a->buffer + offset, buffer, size);                     /*copy data from buffer to buffer cache*/
+    lock_release(&a->cache_entry_lock);                           /*release the lock of the buffer cache entry*/
+  }
 }
