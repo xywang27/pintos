@@ -32,7 +32,11 @@ int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
-bool mkdir (const char *pathname);
+bool chdir (const char *dir);
+bool mkdir (const char *dir);
+bool readdir (int fd, char *name);
+bool isdir (int fd);
+int inumber (int fd);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -209,11 +213,40 @@ static void syscall_handler (struct intr_frame *f){
     close(fd);
   }
 
-  else if(syscall_num == SYS_MKDIR){                                   /*sys_close*/
+  else if(syscall_num == SYS_CHDIR){                                   /*sys_close*/
     is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
     is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
     const char *dir = *(char **)(ptr+4);                                  /*get fd*/
+    f->eax = chdir(dir);
+  }
+
+  else if(syscall_num == SYS_MKDIR){                                   /*sys_mkdir*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    const char *dir = *(char **)(ptr+4);                               /*get dir*/
     f->eax = mkdir(dir);
+  }
+
+  else if(syscall_num == SYS_READDIR){                                   /*sys_close*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    char *name = *(char **)(ptr+8);                                  /*get fd*/
+    int fd = *(int *)(ptr + 4);
+    f->eax = readdir(fd, name);
+  }
+
+  else if(syscall_num == SYS_ISDIR){                                   /*sys_close*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);
+    f->eax = isdir(fd);
+  }
+
+  else if(syscall_num == SYS_INUMBER){                                   /*sys_close*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    int fd = *(int *)(ptr + 4);
+    f->eax = inumber(fd);
   }
 }
 
@@ -367,12 +400,40 @@ void close (int fd)
   }
 }
 
-bool mkdir (const char *pathname){
-  size_t len = strlen(pathname);
-  if (len == 0){
+bool chdir (const char *dir)
+{
+  return true;
+}
+
+//Creates the directory named dir
+bool mkdir (const char *dir)
+{
+  size_t len = strlen(dir);
+  if (len == 0){                                                                       /*if the pathname is empty,return false*/
     return false;
   }
   return true;
+}
+
+bool readdir (int fd, char *name)
+{
+  return true;
+}
+
+bool isdir (int fd){
+  return true;
+}
+
+int inumber (int fd)
+{
+  struct thread *cur = thread_current ();
+
+  struct file *file = cur->file[fd];
+  if (file == NULL){
+    return false;
+  }
+
+  return inode_get_inumber(file_get_inode(file));
 }
 
 void
