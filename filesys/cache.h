@@ -4,24 +4,21 @@
 
 #include "devices/block.h"
 
+
+/*buffer cache entry*/
 struct cache_entry {
-  uint8_t buffer[BLOCK_SECTOR_SIZE];
-  struct lock cache_entry_lock;
-  bool dirty;
-  int be_used;
-  // bool accessed;
-  int lru;
-  block_sector_t sector_number;
+  uint8_t buffer[BLOCK_SECTOR_SIZE];  /*the data of the each buffer cache entry*/
+  struct lock cache_entry_lock;       /*buffer cache lock*/
+  bool dirty;                         /*dirty bit of the buffer cache entry*/
+  int be_used;                        /*if the buffer cache entry is empty:0, otherwise, 1*/
+  int lru;                            /*used in lru replacement policy*/
+  block_sector_t sector_number;       /*the sector number of the cache_entry*/
 };
 
 void cache_init(void);
-// void cache_refresh(void);
 struct cache_entry *find_cache_by_sector(block_sector_t sector);
 struct cache_entry *LRU(void);
-// void cache_read(block_sector_t sector, void *buffer);
 void cache_read_at(block_sector_t sector, void *buffer, off_t size, off_t offset);
-// void cache_write(block_sector_t sector, const void *buffer);
 void cache_write_at(block_sector_t sector, const void *buffer, off_t size, off_t offset);
-// void cache_read_ahead_put(block_sector_t sector);
 
 #endif /* filesys/cache.h */
