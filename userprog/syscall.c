@@ -32,6 +32,7 @@ int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
+bool mkdir (const char *pathname);
 static bool is_valid_fd (int fd);
 
 /* Reads a byte at user virtual address UADDR.
@@ -207,6 +208,13 @@ static void syscall_handler (struct intr_frame *f){
     int fd = *(int *)(ptr + 4);                                        /*get fd*/
     close(fd);
   }
+
+  else if(syscall_num == SYS_MKDIR){                                   /*sys_close*/
+    is_valid_ptr(ptr+4);                                               /*check if the head of the pointer is valid*/
+    is_valid_ptr(ptr+7);                                               /*check if the tail of the pointer is valid*/
+    const char *dir = *(char **)(ptr+4);                                  /*get fd*/
+    f->eax = mkdir(dir);
+  }
 }
 
 // Terminates Pintos by calling shutdown_power_off()
@@ -357,6 +365,14 @@ void close (int fd)
   else{                                                                                /*return -1 if close fail*/
     return -1;
   }
+}
+
+bool mkdir (const char *pathname){
+  size_t len = strlen(pathname);
+  if (len == 0){
+    return false;
+  }
+  return true;
 }
 
 void
