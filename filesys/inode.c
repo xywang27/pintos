@@ -168,8 +168,9 @@ static bool inode_extend_level2(block_sector_t *block, size_t sectors){
   // i = i == 0 ? 0 : i - 1;
 
   for (; i < max_sector; ++i) {
-      if (!inode_extend_level1(&iid[i], 128)
-          return false;
+      if (!inode_extend_level1(&iid[i], 128){
+        return false;
+      }    
   }
 
   cache_write_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
