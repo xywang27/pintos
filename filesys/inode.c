@@ -9,7 +9,6 @@
 #include "filesys/cache.h"
 #include "threads/synch.h"
 
-static bool inode_extend(struct inode_disk *disk_inode, off_t length);
 static bool inode_extend_to_indirect_blocks(block_sector_t *sector, size_t sectorsneed);
 static bool inode_extend_to_doubly_indirect_blocks(block_sector_t *sector, size_t sectorsneed);
 
@@ -53,7 +52,7 @@ struct inode
    Returns -1 if INODE does not contain data for a byte at offset
    POS. */
 static block_sector_t
-byte_to_sector (const struct inode *inode, off_t pos)
+byte_to_sector (struct inode *inode, off_t pos)
 {
   ASSERT (inode != NULL);                                                                                 /*the inode can not be NULL*/
   if (pos < 122*512){                                                                                     /*the pos is in direct block*/
@@ -97,7 +96,7 @@ inode_init (void)
    Returns true if successful.
    Returns false if memory or disk allocation fails. */
 bool
-inode_create (block_sector_t sector, off_t length)
+inode_create (block_sector_t sector, off_t length, bool is_dir)
 {
   struct inode_disk *disk_inode = NULL;
   bool success = false;
@@ -202,8 +201,6 @@ inode_close (struct inode *inode)
       if (inode->removed)
         {
           free_map_release (inode->sector, 1);
-          free_map_release (inode->data.start,
-                            bytes_to_sectors (inode->data.length));
         }
 
       free (inode);
@@ -376,7 +373,7 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
       i = i + 1;
     }
     /*then indirect part*/
-    sectorsneed = sectorneed - 122;                                          /*number of sectors need in indirect blocks*/
+    sectorsneed = sectorsneed - 122;                                          /*number of sectors need in indirect blocks*/
     if (disk_inode->used[122] == 0) {                                        /*if it has not been allocated, first put zeros in it*/
         if (free_map_allocate(1, &disk_inode->used[122])) {                  /*if allocate is success*/
             cache_write_at(disk_inode->used[122], zeros, BLOCK_SECTOR_SIZE, 0);/*write data back to the disk corresponding place*/
@@ -455,7 +452,7 @@ static bool inode_extend_to_indirect_blocks(block_sector_t *sector, size_t secto
     i = i + 1;
   }
 
-  cache_write_at(*sector, iid, BLOCK_SECTOR_SIZE, 0);                         /*write data back to the disk corresponding place*/
+  cache_write_at(*sector, indirect, BLOCK_SECTOR_SIZE, 0);                         /*write data back to the disk corresponding place*/
 
   return true;
 }
@@ -465,9 +462,9 @@ static bool inode_extend_to_indirect_blocks(block_sector_t *sector, size_t secto
 static bool inode_extend_to_doubly_indirect_blocks(block_sector_t *sector, size_t sectorsneed){
   static char zeros[BLOCK_SECTOR_SIZE];                                       /*define a zeros char with BLOCK_SECTOR_SIZE length*/
   block_sector_t doubly_indirect[128];                                        /*a list to represent doubly_indirect block*/
-  cache_read_at(*block, doubly_indirect, BLOCK_SECTOR_SIZE, 0);               /*read data from sector into doubly_indirect*/
+  cache_read_at(*sector, doubly_indirect, BLOCK_SECTOR_SIZE, 0);               /*read data from sector into doubly_indirect*/
   int i = 0;
-  while(i < sectors) {
+  while(i < sectorsneed) {
       if (doubly_indirect[i] == 0){                                           /*we need to allocate here*/
         if (!inode_extend_level1(&doubly_indirect[i], 128))                               /*allocate indirect blocks*/
             return false;
