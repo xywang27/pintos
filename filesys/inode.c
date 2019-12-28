@@ -117,7 +117,7 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
   block_sector_t iid[128];
   cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
   size_t i;
-  size_t next_level = 1;
+  // size_t next_level = 1;
   // size_t max_sector = DIV_ROUND_UP(sectors, next_level);
 
   // find the first i that probably needs allocating
@@ -156,11 +156,11 @@ static bool inode_extend_level2(block_sector_t *block, size_t sectors){
   block_sector_t iid[128];
   cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
   size_t i;
-  size_t next_level = 128;
-  size_t max_sector = sectors/128;
+  // size_t next_level = 128;
+  // size_t max_sector = sectors/128;
 
   // find the first i that probably needs allocating
-  for (i = 0; i < max_sector; ++i) {
+  for (i = 0; i < sectors; ++i) {
       if (iid[i] == 0){
         if (!inode_extend_level1(&iid[i], next_level))
             return false;
@@ -252,6 +252,7 @@ static bool inode_extend(struct inode_disk *disk_inode, off_t length){
     //     cache_write_at(disk_inode->index0[123], zeros, BLOCK_SECTOR_SIZE, 0);
     //   }
     // }
+    sectorsneed = sectorsneed/128;
     if (!inode_extend_level2(&disk_inode->index0[123], sectorsneed)){
       return false;
     }
