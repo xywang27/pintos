@@ -162,7 +162,7 @@ static bool inode_extend_level2(block_sector_t *block, size_t sectors){
   // find the first i that probably needs allocating
   for (i = 0; i < sectors; ++i) {
       if (iid[i] == 0){
-        if (!inode_extend_level1(&iid[i], next_level))
+        if (!inode_extend_level1(&iid[i], 128))
             return false;
       }
   }
