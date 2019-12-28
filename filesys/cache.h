@@ -3,6 +3,7 @@
 
 
 #include "devices/block.h"
+#include "threads/synch.h"
 
 
 /*buffer cache entry*/
@@ -14,6 +15,8 @@ struct cache_entry {
   int lru;                            /*used in lru replacement policy*/
   block_sector_t sector_number;       /*the sector number of the cache_entry*/
 };
+
+struct lock cache_lock;               /*the lock for the buffer_cache*/
 
 void cache_init(void);
 struct cache_entry *find_cache_by_sector(block_sector_t sector);
