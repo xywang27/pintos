@@ -21,7 +21,7 @@ static struct lock inode_open_lock;
 // #define INDEX0_CAP 122
 // #define INDEX1_CAP 128
 // #define INDEX2_CAP (128 * 128)
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+// #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 /* On-disk inode.
    Must be exactly BLOCK_SECTOR_SIZE bytes long. */
@@ -108,12 +108,12 @@ bytes_to_sectors (off_t size)
 // }
 
 static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
-  if (*block == 0) {
-      if (!free_map_allocate(1, block)) {
-          return false;
-      }
-      cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
-  }
+  // if (*block == 0) {
+  //     if (!free_map_allocate(1, block)) {
+  //         return false;
+  //     }
+  //     cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
+  // }
   block_sector_t iid[128];
   cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
   size_t i;
