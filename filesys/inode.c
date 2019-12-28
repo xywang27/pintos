@@ -9,7 +9,6 @@
 #include "threads/synch.h"
 #include "filesys/cache.h"
 
-static struct lock inode_open_lock;
 
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
