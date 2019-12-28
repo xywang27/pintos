@@ -1,7 +1,7 @@
 #ifndef FILESYS_CACHE_H
 #define FILESYS_CACHE_H
 
-#include "off_t.h"
+
 #include "devices/block.h"
 
 struct cache_entry {
