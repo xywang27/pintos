@@ -157,7 +157,7 @@ static bool inode_extend_level2(block_sector_t *block, size_t sectors){
   cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
 
   size_t i;
-  size_t next_level = 128
+  size_t next_level = 128;
   size_t max_sector = sectors / next_level;
 
   // find the first i that probably needs allocating
