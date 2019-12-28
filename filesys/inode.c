@@ -9,7 +9,6 @@
 #include "threads/synch.h"
 #include "filesys/cache.h"
 
-static const char zeros[BLOCK_SECTOR_SIZE];
 static struct lock inode_open_lock;
 
 /* Identifies an inode. */
@@ -108,6 +107,7 @@ bytes_to_sectors (off_t size)
 // }
 
 static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
+  static char zeros[BLOCK_SECTOR_SIZE];
   if (*block == 0) {
       if (!free_map_allocate(1, block)) {
           return false;
@@ -147,6 +147,7 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
 }
 
 static bool inode_extend_level2(block_sector_t *block, size_t sectors){
+  static char zeros[BLOCK_SECTOR_SIZE];
   if (*block == 0) {
       if (!free_map_allocate(1, block)) {
           return false;
@@ -185,6 +186,7 @@ static bool inode_extend_level2(block_sector_t *block, size_t sectors){
 }
 
 static bool inode_extend(struct inode_disk *disk_inode, off_t length){
+  static char zeros[BLOCK_SECTOR_SIZE];
   if (length <= disk_inode->length){
     return true;
   }
