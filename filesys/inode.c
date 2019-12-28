@@ -116,18 +116,19 @@ static bool inode_extend_level1(block_sector_t *block, size_t sectors) {
   // }
   block_sector_t iid[128];
   cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
-  size_t i;
+  int i = 0;
   // size_t next_level = 1;
   // size_t max_sector = DIV_ROUND_UP(sectors, next_level);
 
   // find the first i that probably needs allocating
-  for (i = 0; i < sectors; ++i) {
+  while(i < sectors) {
     if (iid[i] == 0) {
         if (!free_map_allocate(1, &iid[i])) {
             return false;
         }
         cache_write_at(iid[i], zeros, BLOCK_SECTOR_SIZE, 0);
     }
+    i = i + 1;
   }
   // i = i == 0 ? 0 : i - 1;
 
@@ -156,22 +157,17 @@ static bool inode_extend_level2(block_sector_t *block, size_t sectors){
   // }
   block_sector_t iid[128];
   cache_read_at(*block, iid, BLOCK_SECTOR_SIZE, 0);
-  size_t i;
+  size_t i = 0;
   // size_t next_level = 128;
   // size_t max_sector = sectors/128;
 
   // find the first i that probably needs allocating
-  for (i = 0; i < sectors; ++i) {
+  while(i < sectors) {
       if (iid[i] == 0){
         if (!inode_extend_level1(&iid[i], 128))
             return false;
-      //   if (!free_map_allocate(1, &iid[i])) {
-      //       return false;
-      //   }
-      //   cache_write_at(*block, zeros, BLOCK_SECTOR_SIZE, 0);
-      // }
     }
-
+    i = i + 1;
   }
 
   // for (; i < max_sector; ++i) {
