@@ -139,7 +139,7 @@ void cache_write_at(block_sector_t sector, const void *buffer,off_t size, off_t 
     }
     lock_release(&cache_lock);                                    /*release the lock of the buffer cache*/
     block_read(fs_device, sector, a->buffer);                     /*read the data from disk into the cache buffer*/
-    memcpy(a->buffer + offset, buffer, size;                      /*copy data from buffer to buffer cache*/
+    memcpy(a->buffer + offset, buffer, size);                     /*copy data from buffer to buffer cache*/
     lock_release(&a->cache_entry_lock);                           /*release the lock of the buffer cache entry*/
   }
   else{                                                           /*cache hit*/
