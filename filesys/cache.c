@@ -12,37 +12,43 @@
 
 static struct cache_entry buffer_cache[64];                        /*the buffer_cache containing cache_entry*/
 
+
+/*initialize the buffer cache*/
 void cache_init(void){
-  lock_init(&cache_lock);
+  lock_init(&cache_lock);                                          /*initialize the buffer cache lock*/
   int i = 0;
   struct cache_entry *a = &buffer_cache[i];
   while (i < 64){
     a = &buffer_cache[i];
-    lock_init(&a->cache_entry_lock);
-    a->dirty = false;
-    a->be_used = 0;
-    a->lru = 0;
+    lock_init(&a->cache_entry_lock);                               /*initialize the buffer cache entry lock*/
+    a->dirty = false;                                              /*dirty is false*/
+    a->be_used = 0;                                                /*not used now*/
+    a->lru = 0;                                                    /*lru = 0*/
     i = i + 1;
   }
 }
 
+
+/*find the corresponding buffer cache entry in the buffer cache according to the given sector number*/
 struct cache_entry *find_cache_by_sector(block_sector_t sector){
   int i = 0;
   struct cache_entry *a = &buffer_cache[i];
-  while (i < 64){
+  while (i < 64){                                                 /*traverse the whole buffer cache*/
     a = &buffer_cache[i];
-    lock_acquire(&a->cache_entry_lock);
-    if (a->sector_number == sector){
-      if (a->be_used == 1){
-        return a;
+    lock_acquire(&a->cache_entry_lock);                           /*get the buffer cache lock*/
+    if (a->sector_number == sector){                              /*if find*/
+      if (a->be_used == 1){                                       /*if this found buffer cache_entry is actually used before*/
+        return a;                                                 /*find!*/
       }
     }
-    lock_release(&a->cache_entry_lock);
+    lock_release(&a->cache_entry_lock);                           /*release the lock*/
     i = i + 1;
   }
-  return NULL;
+  return NULL;                                                    /*not find!*/
 }
 
+
+/*the LRU replacement policy*/
 struct cache_entry *LRU(void){
     int min = 0;
     int i = 0;

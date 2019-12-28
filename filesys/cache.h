@@ -9,7 +9,7 @@
 /*buffer cache entry*/
 struct cache_entry {
   uint8_t buffer[BLOCK_SECTOR_SIZE];  /*the data of the each buffer cache entry*/
-  struct lock cache_entry_lock;       /*buffer cache lock*/
+  struct lock cache_entry_lock;       /*buffer cache entry lock*/
   bool dirty;                         /*dirty bit of the buffer cache entry*/
   int be_used;                        /*if the buffer cache entry is empty:0, otherwise, 1*/
   int lru;                            /*used in lru replacement policy*/
